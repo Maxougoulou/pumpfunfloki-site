@@ -1089,13 +1089,12 @@ export default function App() {
               $PFF is not just a coin — it’s a movement.
             </p>
 
-            <div className="mt-6 grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
-              <NeonButton href="#howtobuy">
-  Buy $PFF
-</NeonButton>
+            <div className="mt-6 w-full max-w-xl">
+  <NeonButton href="#howtobuy" full>
+    Buy $PFF
+  </NeonButton>
+</div>
 
-
-            </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="glass rounded-2xl p-4">
