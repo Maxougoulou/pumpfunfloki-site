@@ -21,6 +21,14 @@ const PUMPFUN_LINK = "https://pump.fun/coin/DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7tak
 const X_LINK = "https://x.com/PumpFunFlokiSol";
 const TG_LINK = "https://t.me/PumpFunFlokiArmy";
 const EMAIL = "pumpfunfloki.cto@gmail.com";
+const PUMPSWAP_LINK = "https://swap.pump.fun/?input=So11111111111111111111111111111111111111112&output=DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump"; // mets le vrai lien
+const JUPITER_LINK = "https://jup.ag/tokens/DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump"; // mets le vrai lien
+const APPLEPAY_LINK = BUY_LINK; // si redirection Dex
+const VISA_LINK = BUY_LINK;
+const TIKTOK_LINK = "https://tiktok.com/@yourhandle";
+const X_COMMUNITY_LINK = "https://x.com/i/communities/yourcommunityid";
+
+
 
 // Put your logo in: public/assets/logo.png
 const LOGO_SRC = "/assets/logo.png";
@@ -344,8 +352,9 @@ function Roadmap() {
     <section id="roadmap" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <SectionTitle
         kicker="Roadmap"
-        title="Path to Glory"
-        desc="Four phases. Full line items. Community-powered execution."
+        title="Path to Glory - PFF roadmap to 10M market cap"
+        desc="This is only the opening march toward Valhalla.
+The 10M path represents the first operational phase of a much larger vision. As experience compounds and community insight deepens, the roadmap will be refined, expanded, and extended all the way to Valhalla."
       />
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
@@ -520,45 +529,7 @@ function PhotoSliderOnly() {
   );
 }
 
-function NarrativeMission() {
-  return (
-    <section id="narrative" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-      <SectionTitle
-        kicker="Narrative"
-        title="Viking Evolution"
-        desc="Reforged through community takeover — built to endure."
-      />
 
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
-        <div className="glass rounded-2xl p-6">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
-              <Flame size={18} />
-            </div>
-            <h3 className="text-lg font-bold text-white">🔥 Narrative</h3>
-          </div>
-          <p className="mt-3 text-sm text-white/75 leading-relaxed">
-            Born from the spirit of OG Floki and reforged through community takeover,
-            PFF carries Viking energy into the Pump.fun era — faster, sharper, and built to endure.
-          </p>
-        </div>
-
-        <div className="glass rounded-2xl p-6">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
-              <Shield size={18} />
-            </div>
-            <h3 className="text-lg font-bold text-white">🛡 Mission</h3>
-          </div>
-          <p className="mt-3 text-sm text-white/75 leading-relaxed">
-            To prove that a community-driven meme coin can outlast rugs, outwork noise,
-            and build lasting structure — through execution, transparency, and relentless forward momentum.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function Tokenomics() {
   return (
@@ -712,6 +683,20 @@ function Tokenomics() {
 }
 
 function HowToBuy() {
+  const buyOptions = [
+    { src: "/assets/payment/pumpswap.png", link: PUMPSWAP_LINK, alt: "Pumpswap" },
+    { src: "/assets/payment/jupiter.png", link: JUPITER_LINK, alt: "Jupiter" },
+    { src: "/assets/payment/applepay.png", link: APPLEPAY_LINK, alt: "Apple Pay" },
+    { src: "/assets/payment/visa.png", link: VISA_LINK, alt: "Visa / Mastercard" },
+  ];
+
+  const chartOptions = [
+    { src: "/assets/payment/dexscrenner2.png", link: BUY_LINK, alt: "Dexscreener" },
+    { src: "/assets/payment/dextools.svg", link: "#", alt: "Dextools" },
+    { src: "/assets/payment/pumpfun.png", link: PUMPFUN_LINK, alt: "Pumpfun" },
+    { src: "/assets/payment/coinmarketcap.png", link: "#", alt: "CoinMarketCap" },
+  ];
+
   return (
     <section id="howtobuy" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <SectionTitle
@@ -720,7 +705,9 @@ function HowToBuy() {
         desc="Fast steps. Don’t overthink it. Verify links and contract."
       />
 
+      {/* Top grid: Steps + Contract/Pro Tips */}
       <div className="mt-10 grid gap-5 md:grid-cols-2">
+        {/* LEFT - Steps */}
         <div className="glass rounded-2xl p-6">
           <div className="flex items-center gap-3">
             <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
@@ -749,6 +736,7 @@ function HowToBuy() {
           </ol>
         </div>
 
+        {/* RIGHT - Contract + Tips */}
         <div className="grid gap-5">
           <ContractCard />
 
@@ -767,9 +755,86 @@ function HowToBuy() {
           </div>
         </div>
       </div>
+
+      {/* Bottom grid: How to Buy + PFF Charts */}
+      <div className="mt-12 grid gap-6 md:grid-cols-2">
+        {/* HOW TO BUY */}
+        <div className="glass rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
+              <Rocket size={18} />
+            </div>
+            <h3 className="text-lg font-bold text-white">How to Buy</h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {buyOptions.map((item) => (
+              <a
+                key={item.alt}
+                href={item.link}
+                target="_blank"
+                rel="noreferrer"
+                className="group glass rounded-xl border border-neon-500/20 h-20
+                           flex items-center justify-center
+                           transition-all duration-300
+                           hover:border-neon-500/70
+                           hover:shadow-[0_0_40px_rgba(0,232,90,.25)]
+                           hover:-translate-y-1"
+              >
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  className="max-h-8 md:max-h-10 object-contain opacity-80
+                             group-hover:opacity-100 transition mix-blend-lighten"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* PFF CHARTS */}
+        <div className="glass rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
+              <span className="text-base leading-none">📈</span>
+            </div>
+            <h3 className="text-lg font-bold text-white">PFF Charts</h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {chartOptions.map((item) => (
+              <a
+                key={item.alt}
+                href={item.link}
+                target="_blank"
+                rel="noreferrer"
+                className="group glass rounded-xl border border-neon-500/20 h-20
+                           flex items-center justify-center
+                           transition-all duration-300
+                           hover:border-neon-500/70
+                           hover:shadow-[0_0_40px_rgba(0,232,90,.25)]
+                           hover:-translate-y-1"
+              >
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  className="max-h-8 md:max-h-10 object-contain opacity-80
+                             group-hover:opacity-100 transition mix-blend-lighten"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
+
+
+
+
+
+
 
 function CommunityGallery() {
   const images = [
@@ -1031,11 +1096,13 @@ export default function App() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Narrative</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">Viking Evolution</div>
+                <div className="mt-1 font-semibold text-neon-300 text-glow">Born from the spirit of OG Floki and reforged through community takeover,
+            PFF carries Viking energy into the Pump.fun era — faster, sharper, and built to endure.</div>
               </div>
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Mission</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">Community-Led Dominance</div>
+                <div className="mt-1 font-semibold text-neon-300 text-glow">To prove that a community-driven meme coin can outlast rugs, outwork noise,
+            and build lasting structure — through execution, transparency, and relentless forward momentum.</div>
               </div>
             </div>
 
@@ -1081,9 +1148,6 @@ export default function App() {
 
       <PhotoSliderOnly />
 
-      {/* Narrative + Mission */}
-      <NarrativeMission />
-
       {/* Tokenomics Full */}
       <Tokenomics />
 
@@ -1095,6 +1159,8 @@ export default function App() {
       <TokenBanner />
 
       <HowToBuy />
+      
+
 
       <CommunityGallery />
 
@@ -1112,14 +1178,48 @@ export default function App() {
               </a>
             </div>
           </div>
-          <div className="flex gap-3">
-            <NeonButton href={X_LINK} variant="outline">
-              X / Twitter
-            </NeonButton>
-            <NeonButton href={TG_LINK} variant="outline">
-              Telegram
-            </NeonButton>
-          </div>
+          <div className="flex items-center gap-5">
+
+  {[
+    { src: "/assets/footer/X.png", link: X_LINK, alt: "X" },
+    { src: "/assets/footer/telegram.png", link: TG_LINK, alt: "Telegram" },
+    { src: "/assets/footer/tiktok.png", link: "https://tiktok.com", alt: "TikTok" },
+    { src: "/assets/footer/X.png", link: "https://x.com/i/communities", alt: "X Community" },
+  ].map((item) => (
+    <a
+      key={item.alt}
+      href={item.link}
+      target="_blank"
+      rel="noreferrer"
+      className="group relative w-16 h-16 rounded-full
+                 border border-neon-500/40
+                 bg-gradient-to-br from-black via-black/80 to-black/60
+                 flex items-center justify-center
+                 transition-all duration-300
+                 hover:border-neon-500
+                 hover:shadow-[0_0_40px_rgba(0,232,90,.45)]
+                 hover:-translate-y-2"
+    >
+      {/* Glow ring */}
+      <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100
+                      shadow-[0_0_60px_rgba(0,232,90,.35)]
+                      transition duration-300" />
+
+      <img
+        src={item.src}
+        alt={item.alt}
+        className="relative w-8 h-8 object-contain opacity-90
+                   group-hover:scale-110
+                   group-hover:opacity-100
+                   transition duration-300"
+      />
+    </a>
+  ))}
+
+</div>
+
+
+
         </div>
 
         <div className="mt-6 text-xs text-white/45">
