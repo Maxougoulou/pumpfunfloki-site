@@ -18,14 +18,14 @@ const CONTRACT = "DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump";
 const BUY_LINK =
   "https://dexscreener.com/solana/eeb1xu5dp9iz573spxxsubjvpduxdr7knpbrrynfl91z";
 const PUMPFUN_LINK = "https://pump.fun/coin/DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump";
-const X_LINK = "https://x.com/PumpFunFlokiSol";
+const X_LINK = "https://x.com/PumpfunFlokiCTO";
 const TG_LINK = "https://t.me/PumpFunFlokiArmy";
 const EMAIL = "pumpfunfloki.cto@gmail.com";
 const PUMPSWAP_LINK = "https://swap.pump.fun/?input=So11111111111111111111111111111111111111112&output=DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump"; // mets le vrai lien
-const JUPITER_LINK = "https://jup.ag/tokens/DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump"; // mets le vrai lien
-const APPLEPAY_LINK = BUY_LINK; // si redirection Dex
+const JUPITER_LINK = "https://jup.ag/tokens/DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump"; 
+const APPLEPAY_LINK = BUY_LINK;
 const VISA_LINK = BUY_LINK;
-const TIKTOK_LINK = "https://tiktok.com/@yourhandle";
+const TIKTOK_LINK = "https://www.tiktok.com/@pumpfun.floki.off";
 const X_COMMUNITY_LINK = "https://x.com/i/communities/yourcommunityid";
 
 
@@ -693,9 +693,9 @@ function HowToBuy() {
 
   const chartOptions = [
     { src: "/assets/payment/dexscrenner2.png", link: BUY_LINK, alt: "Dexscreener" },
-    { src: "/assets/payment/dextools.svg", link: "#", alt: "Dextools" },
+    { src: "/assets/payment/dextools.svg", link: "https://www.dextools.io/app/token/pumpfunflokicto", alt: "Dextools" },
     { src: "/assets/payment/pumpfun.png", link: PUMPFUN_LINK, alt: "Pumpfun" },
-    { src: "/assets/payment/coinmarketcap.png", link: "#", alt: "CoinMarketCap" },
+    { src: "/assets/payment/coinmarketcap.png", link: "https://coinmarketcap.com/currencies/pumpfunfloki/", alt: "CoinMarketCap" },
   ];
 
   return (
