@@ -61,17 +61,18 @@ function NeonButton({ href, children, variant = "solid", full = false }) {
   const outline =
     "border border-neon-500/40 text-white shadow-neon hover:translate-y-[-1px] hover:border-neon-500/70";
 
+  const isExternal = href?.startsWith("http");
+
   return (
     <a
       href={href}
       className={`${base} ${variant === "solid" ? solid : outline} ${
         full ? "w-full" : ""
       }`}
-      target="_blank"
-      rel="noreferrer"
+      {...(isExternal && { target: "_blank", rel: "noreferrer" })}
     >
       {children}
-      <ExternalLink size={16} />
+      {isExternal && <ExternalLink size={16} />}
     </a>
   );
 }
@@ -1020,9 +1021,10 @@ export default function App() {
               <a className="text-sm text-white/70 hover:text-white" href="#faq">
                 FAQ
               </a>
-              <NeonButton href={BUY_LINK} variant="outline">
-                Buy $PFF
-              </NeonButton>
+              <NeonButton href="#howtobuy" variant="outline">
+  How to Buy
+</NeonButton>
+
             </div>
 
             {/* Mobile burger */}
@@ -1088,9 +1090,11 @@ export default function App() {
             </p>
 
             <div className="mt-6 grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
-              <NeonButton href={BUY_LINK} full>
-                Buy $PFF
-              </NeonButton>
+              <NeonButton href="#howtobuy">
+  Buy $PFF
+</NeonButton>
+
+
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
