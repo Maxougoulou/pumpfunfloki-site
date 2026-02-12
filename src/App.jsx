@@ -14,8 +14,9 @@ import { useEffect, useState } from "react";
 
 const CONTRACT = "DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump";
 
-// Put your real links here:
-const BUY_LINK = "https://dexscreener.com/solana/eeb1xu5dp9iz573spxxsubjvpduxdr7knpbrrynfl91z";
+// Links
+const BUY_LINK =
+  "https://dexscreener.com/solana/eeb1xu5dp9iz573spxxsubjvpduxdr7knpbrrynfl91z";
 const PUMPFUN_LINK = "https://pump.fun/coin/DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump";
 const X_LINK = "https://x.com/PumpFunFlokiSol";
 const TG_LINK = "https://t.me/PumpFunFlokiArmy";
@@ -23,6 +24,26 @@ const EMAIL = "pumpfunfloki.cto@gmail.com";
 
 // Put your logo in: public/assets/logo.png
 const LOGO_SRC = "/assets/logo.png";
+
+// Tokenomics constants
+const TOKEN_NAME = "PumpFunFloki (PFF)";
+const BLOCKCHAIN = "Solana";
+const DECIMALS = "6";
+const CIRC_SUPPLY = "~949M PFF";
+const LAUNCH_TYPE = "Pump.fun Fair Launch";
+
+const DEV_LOCK_11_WALLET = "8KmGi6xgzacP6W8DmSd19GYxks5MqHEoWif3cMK7NW6V";
+const DEV_LOCK_11_STREAMFLOW =
+  "https://app.streamflow.finance/contract/solana/mainnet/98uodYWp1r2nBN1gRL1ffhmrc17bpn4DVABV4SJMJRMD";
+
+const DEV_LOCK_2_WALLET = "D9vBCeSKrZZC82qntKJZEBE99EGEPREtiwo17bFRT88f";
+const DEV_LOCK_2_STREAMFLOW =
+  "https://app.streamflow.finance/contract/solana/mainnet/9qNk8Cr2CaCD834iR7Voxz6Ec7KaYD4h1aEEddySJN5b";
+
+const BURN_5_WALLET = "D1PuXuCy2HVri1qBenVEoWURXhcnVThRzBp86kVYAWtN";
+
+const CREATOR_FEE_WALLET = "5XovpHJKGk8pfF4dKttGRU9zmmV3XahzXhaY2qfP6BxQ";
+const TEMP_REWARDS_WALLET = "D6o72zx1Y8ZRo87C4ZNthfWBJXYKwhrjWEz2HowHPQ9u";
 
 function NeonButton({ href, children, variant = "solid", full = false }) {
   const base =
@@ -51,7 +72,6 @@ function SectionTitle({ kicker, title, desc }) {
   return (
     <div className="flex items-end justify-between gap-6">
       <div>
-        {/* Kicker (TOKEN, ROADMAP, FAQ, etc.) */}
         {kicker ? (
           <div className="inline-flex items-center gap-2 mb-1">
             <span className="h-1.5 w-1.5 rounded-full bg-neon-400 shadow-neon" />
@@ -61,18 +81,44 @@ function SectionTitle({ kicker, title, desc }) {
           </div>
         ) : null}
 
-        {/* Main title */}
         <h2 className="mt-2 text-3xl md:text-4xl font-extrabold tracking-tight text-white text-glow drop-shadow-[0_0_18px_rgba(0,232,90,.25)]">
           {title}
         </h2>
 
-        {/* Description under title */}
         {desc ? (
           <p className="mt-3 text-base text-white/90 drop-shadow-[0_0_10px_rgba(0,0,0,.6)] max-w-2xl">
             {desc}
           </p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function CopyRow({ label, value }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1100);
+    } catch {}
+  }
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-neon-500/15 bg-black/20 p-3">
+      <div className="min-w-0">
+        <div className="text-xs text-white/60">{label}</div>
+        <code className="mt-1 block text-sm text-neon-300 break-all">{value}</code>
+      </div>
+      <button
+        onClick={copy}
+        className="sm:ml-4 inline-flex items-center justify-center gap-2 rounded-xl border border-neon-500/25 px-3 py-2 text-xs text-white/80 hover:text-white hover:border-neon-500/55"
+      >
+        <Copy size={16} />
+        {copied ? "Copied" : "Copy"}
+      </button>
     </div>
   );
 }
@@ -124,47 +170,174 @@ function Card({ title, icon, children }) {
 const roadmap = [
   {
     title: "Phase 1 — Foundation & Fire",
-    range: "→ 500k MCAP",
-    points: [
-      "Solid token presence + brand identity",
-      "Consistent community raids & content output",
-      "Supply burn milestone at 75k MCAP",
-      "Target: 4k–5k holders + strong floor",
+    range: "→ 500K MCAP",
+    meta: {
+      targets: "500K MCAP | 4K–5K holders",
+      focus: "build engine + credibility + ignition",
+    },
+    sections: [
+      {
+        label: "Tokenomics / Narrative",
+        items: ["🔥 Burn 5% of supply at 75K MCAP", "Regular buybacks from creator fees"],
+      },
+      {
+        label: "Community",
+        items: [
+          "Social flywheel — creator fees as rewards (creators, bagworkers, contests etc.)",
+          "Expand PFF RAID ARMY (divisions + missions)",
+          "Launch PFF Meme Guild",
+          "Weekly engagement missions begin",
+        ],
+      },
+      {
+        label: "Trust & Structure",
+        items: ["Team and Moderator expansion", "Survival / continuity framework drafted"],
+      },
+      {
+        label: "Discovery & Momentum",
+        items: ["CG optimized", "CMC live", "Dexscreener boosts", "Viking narrative strong"],
+      },
+      {
+        label: "Brand Identity",
+        items: [
+          "Begin building official brand asset foundation",
+          "Establish unique PFF visual identity + mascot direction",
+        ],
+      },
+      {
+        label: "Utility",
+        items: ["NFT Strategy set up — define details", "$PUMP ecosystem — identify integration paths"],
+      },
     ],
   },
+
   {
     title: "Phase 2 — Entry to Legitimacy",
-    range: "500k → 1.5M",
-    points: [
-      "Burn remaining supply milestone at 1M MCAP",
-      "Referral & growth loops",
-      "DAO-lite community council",
-      "Genesis NFT drop + early utility routes",
-      "CEX prep & outreach",
+    range: "500K → 1.5M",
+    meta: {
+      targets: "1.5M MCAP | 6K–8K holders",
+      focus: "real-world entry + trust lock + accessibility",
+    },
+    sections: [
+      {
+        label: "Tokenomics / Narrative",
+        items: ["🔥 Burn remaining 5% of supply at 1M MCAP", "Regular buybacks from creator fees"],
+      },
+      {
+        label: "Community Growth",
+        items: ['Referral Campaign — “Bring 1 Viking Home”', "DAO-Lite / Community Council launched"],
+      },
+      {
+        label: "Trust & Security",
+        items: [
+          "Multi-Sig Treasury LIVE — two level war chest long with Pump.fun creator fees wallet",
+          "Global Moderator program active",
+          "Partnerships / BD function operational",
+        ],
+      },
+      {
+        label: "Liquidity & Listings",
+        items: [
+          "Exchange Readiness Phase completed",
+          "Supply reserve locked for CEX liquidity",
+          "Planned LP strengthening begins",
+        ],
+      },
+      {
+        label: "IRL & Visibility",
+        items: [
+          "Vegas / London / Dubai / Singapore billboards",
+          "Every IRL = cinematic content rule enforced",
+        ],
+      },
+      {
+        label: "Brand Identity",
+        items: [
+          "Professional branding and design team",
+          "Formalize PFF Brand Canon + Style Guide",
+          "Begin initial IP/trademark consultation + documentation",
+        ],
+      },
+      { label: "CEX", items: ["First CEX listing (Target: MEXC)"] },
+      { label: "Utility", items: ["Genesis NFT Collection launch", "$PUMP utility v1 explore rollout"] },
     ],
   },
+
   {
     title: "Phase 3 — Domination Wave",
     range: "1.5M → 5M",
-    points: [
-      "Liquidity strengthening + wider narrative reach",
-      "Major community campaigns + partnerships",
-      "Listings + market maker engagement",
-      "Target: 10k–12k holders",
+    meta: {
+      targets: "5M MCAP | 10K–12K holders",
+      focus: "cultural dominance + liquidity power + expansion",
+    },
+    sections: [
+      {
+        label: "Phase 3 Internal Checkpoints",
+        items: [
+          "🛡 1.5M → 3M: community deepening",
+          "🛡 1.5M → 3M: visibility cycles",
+          "🛡 1.5M → 3M: LP reinforcement",
+          "⚔️ 3M → 5M: scale narrative",
+          "⚔️ 3M → 5M: expand influence",
+        ],
+      },
+      {
+        label: "Community Power",
+        items: [
+          "DAO-Lite voting active",
+          "Raid & Meme Guild expansion",
+          "Referral Campaign Round 2",
+          "Regular buybacks from creator fees",
+        ],
+      },
+      { label: "Trust & Ops", items: ["Ops structure strengthened", "Partnership BD scaling"] },
+      {
+        label: "Listings & Liquidity",
+        items: [
+          "Strong liquidity milestones reinforced",
+          "2nd CEX listing (Gate.io / BitMart)",
+          "Market maker engagement formalized",
+        ],
+      },
+      { label: "Brand Identity", items: ["Finalize IP strategy + priority trademark filings"] },
+      {
+        label: "IRL & Brand Impact",
+        items: [
+          "Repeat city billboard cycles for persistence",
+          "A Global Viking Army Event / Record Breaking Cultural Movement",
+          "Presence at major crypto conferences",
+        ],
+      },
     ],
   },
+
   {
     title: "Phase 4 — Legend Moment",
     range: "5M → 10M",
-    points: [
-      "World-stage narrative push",
-      "IRL presence & big placements (if aligned)",
-      "IP protection & trademarks",
-      "Global CEX collaboration possibilities",
-      "Target: 12k–18k holders",
+    meta: {
+      targets: "10M MCAP | 12K–18K holders",
+      focus: "world-stage arrival + cultural stamp",
+    },
+    sections: [
+      { label: "Buybacks", items: ["Regular buybacks from creator fees"] },
+      { label: "Narrative Peak", items: ["Global arrival story"] },
+      { label: "IRL", items: ["Times Square takeover", "Full cinematic global highlight drop"] },
+      {
+        label: "Brand Identity",
+        items: [
+          "Complete key trademark protections",
+          "Secure PFF as a globally recognized protected brand IP",
+        ],
+      },
+      {
+        label: "Brand Maturity",
+        items: ["Charity / goodwill move (optional, smart timing)", "Expanded physical world footprint"],
+      },
+      { label: "CEX Position", items: ["Eligibility conversations with KuCoin / Bybit / OKX / Kraken"] },
     ],
   },
 ];
+
 
 function Roadmap() {
   return (
@@ -172,7 +345,7 @@ function Roadmap() {
       <SectionTitle
         kicker="Roadmap"
         title="Path to Glory"
-        desc="Four phases. Clear targets. Community-powered execution."
+        desc="Four phases. Full line items. Community-powered execution."
       />
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
@@ -184,20 +357,53 @@ function Roadmap() {
                 {p.range}
               </span>
             </div>
-            <ul className="mt-4 space-y-2 text-sm text-white/75">
-              {p.points.map((x) => (
-                <li key={x} className="flex gap-2">
-                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
-                  <span>{x}</span>
-                </li>
+
+            {/* Targets / Focus */}
+            <div className="mt-4 space-y-2 text-sm text-white/75">
+              <div className="flex gap-2">
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
+                <span>
+                  <span className="text-white/85 font-semibold">Targets:</span>{" "}
+                  {p.meta?.targets}
+                </span>
+              </div>
+
+              <div className="flex gap-2">
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
+                <span>
+                  <span className="text-white/85 font-semibold">Focus:</span>{" "}
+                  {p.meta?.focus}
+                </span>
+              </div>
+            </div>
+
+            {/* Section groups with sub-bullets */}
+            <div className="mt-5 space-y-4 text-sm text-white/75">
+              {(p.sections || []).map((sec) => (
+                <div key={sec.label}>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
+                    <span className="text-white/85 font-semibold">{sec.label}</span>
+                  </div>
+
+                  <ul className="mt-2 ml-5 space-y-2">
+                    {(sec.items || []).map((it) => (
+                      <li key={it} className="flex gap-2">
+                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-white/50" />
+                        <span>{it}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         ))}
       </div>
     </section>
   );
 }
+
 
 function TokenBanner() {
   return (
@@ -208,11 +414,7 @@ function TokenBanner() {
           alt="PumpFun Floki banner"
           className="w-full h-[200px] sm:h-[300px] md:h-[400px] object-cover"
         />
-
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-bg" />
-
-        {/* Soft glow */}
         <div className="pointer-events-none absolute inset-0 shadow-[0_0_100px_rgba(0,232,90,.25)]" />
       </div>
     </section>
@@ -223,7 +425,6 @@ function VideoBanner() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-8">
       <div className="relative overflow-hidden rounded-2xl">
-        {/* VIDEO */}
         <video
           className="w-full h-[200px] sm:h-[300px] md:h-[400px] object-cover"
           src="/assets/pff-2026.mp4"
@@ -233,17 +434,12 @@ function VideoBanner() {
           playsInline
           preload="metadata"
         />
-
-        {/* Dark overlay pour lisibilité */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-bg" />
-
-        {/* Soft glow */}
         <div className="pointer-events-none absolute inset-0 shadow-[0_0_100px_rgba(0,232,90,.25)]" />
       </div>
     </section>
   );
 }
-
 
 function PhotoSliderOnly() {
   const items = [
@@ -261,7 +457,6 @@ function PhotoSliderOnly() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-      {/* Desktop arrows */}
       <div className="flex justify-end mb-4">
         <div className="hidden md:flex items-center gap-2">
           <button
@@ -279,7 +474,6 @@ function PhotoSliderOnly() {
         </div>
       </div>
 
-      {/* Slider */}
       <div className="relative">
         <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-bg to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-bg to-transparent z-10" />
@@ -326,45 +520,189 @@ function PhotoSliderOnly() {
   );
 }
 
-
-
-
-function TokenDetails() {
+function NarrativeMission() {
   return (
-    <section id="token" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+    <section id="narrative" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <SectionTitle
-        kicker="Token"
-        title="Token Details"
-        desc="Quick reference for holders and raiders."
+        kicker="Narrative"
+        title="Viking Evolution"
+        desc="Reforged through community takeover — built to endure."
       />
 
-      <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <Card title="Community First" icon={<Users size={18} />}>
-          $PFF is a meme-first movement. The culture is the utility: raids, memes,
-          lore and community-driven momentum.
-        </Card>
+      <div className="mt-10 grid gap-5 md:grid-cols-2">
+        <div className="glass rounded-2xl p-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
+              <Flame size={18} />
+            </div>
+            <h3 className="text-lg font-bold text-white">🔥 Narrative</h3>
+          </div>
+          <p className="mt-3 text-sm text-white/75 leading-relaxed">
+            Born from the spirit of OG Floki and reforged through community takeover,
+            PFF carries Viking energy into the Pump.fun era — faster, sharper, and built to endure.
+          </p>
+        </div>
 
-        <Card title="Burn & Buyback Mindset" icon={<Flame size={18} />}>
-          Milestone-based burns and buyback energy. The goal is to keep pressure
-          high and the vibe clean.
-        </Card>
+        <div className="glass rounded-2xl p-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
+              <Shield size={18} />
+            </div>
+            <h3 className="text-lg font-bold text-white">🛡 Mission</h3>
+          </div>
+          <p className="mt-3 text-sm text-white/75 leading-relaxed">
+            To prove that a community-driven meme coin can outlast rugs, outwork noise,
+            and build lasting structure — through execution, transparency, and relentless forward momentum.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-        <Card title="Safety Basics" icon={<Shield size={18} />}>
-          Always verify the contract before buying. Never trust random DMs. Use
-          official links only.
-        </Card>
+function Tokenomics() {
+  return (
+    <section id="tokenomics" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <SectionTitle
+        kicker="Tokenomics"
+        title="Tokenomics & Structure"
+        desc="Publicly verifiable locks, milestone burns, and transparent treasury rails."
+      />
 
-        <div className="glass rounded-2xl p-6 md:col-span-2 lg:col-span-3">
-          <div className="text-sm text-white/70">Contract</div>
-          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <code className="text-neon-300 break-all">{CONTRACT}</code>
-            <div className="grid grid-cols-1 sm:flex gap-3">
+      <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        {/* Token Overview */}
+        <div className="glass rounded-2xl p-6 lg:col-span-1">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
+              <Users size={18} />
+            </div>
+            <h3 className="text-lg font-bold text-white">Token Overview</h3>
+          </div>
+
+          <div className="mt-4 space-y-3 text-sm text-white/75">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-white/55">Token Name</span>
+              <span className="text-white">{TOKEN_NAME}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-white/55">Blockchain</span>
+              <span className="text-white">{BLOCKCHAIN}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-white/55">Decimals</span>
+              <span className="text-white">{DECIMALS}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-white/55">Circulating Supply</span>
+              <span className="text-white">{CIRC_SUPPLY}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-white/55">Launch Type</span>
+              <span className="text-white">{LAUNCH_TYPE}</span>
+            </div>
+
+            <div className="pt-3">
+              <div className="text-xs text-white/60 mb-2">Official Contract</div>
+              <CopyRow label="Contract" value={CONTRACT} />
+            </div>
+
+            <div className="pt-3 grid grid-cols-1 gap-3">
               <NeonButton href={BUY_LINK} full>
                 Buy on Dexscreener
               </NeonButton>
               <NeonButton href={PUMPFUN_LINK} variant="outline" full>
                 Pump.fun
               </NeonButton>
+            </div>
+          </div>
+        </div>
+
+        {/* Supply Structure */}
+        <div className="glass rounded-2xl p-6 lg:col-span-2">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
+              <Shield size={18} />
+            </div>
+            <h3 className="text-lg font-bold text-white">Supply Structure</h3>
+          </div>
+
+          <p className="mt-3 text-sm text-white/75 leading-relaxed">
+            PFF follows a structured long-term framework with publicly verifiable locks.
+            Burn milestones are predefined and tracked on-chain.
+          </p>
+
+          <div className="mt-5 space-y-4">
+            <div className="rounded-2xl border border-neon-500/15 bg-black/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-white">🔒 11% Dev Holdings Locked (3 Years)</div>
+                <a
+                  href={DEV_LOCK_11_STREAMFLOW}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-neon-300 hover:underline"
+                >
+                  Verify on Streamflow <ExternalLink size={16} />
+                </a>
+              </div>
+              <div className="mt-3">
+                <CopyRow label="Wallet" value={DEV_LOCK_11_WALLET} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-neon-500/15 bg-black/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-white">🔒 2% Dev Holdings Locked (2 Years)</div>
+                <a
+                  href={DEV_LOCK_2_STREAMFLOW}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-neon-300 hover:underline"
+                >
+                  Verify on Streamflow <ExternalLink size={16} />
+                </a>
+              </div>
+              <div className="mt-3">
+                <CopyRow label="Wallet" value={DEV_LOCK_2_WALLET} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-neon-500/15 bg-black/20 p-4">
+              <div className="font-semibold text-white">🔥 5% Supply Earmarked for Burn at 1M MCAP</div>
+              <div className="mt-3">
+                <CopyRow label="Wallet" value={BURN_5_WALLET} />
+              </div>
+              <p className="mt-3 text-sm text-white/70">
+                This structure ensures long-term alignment and milestone-based supply reduction.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neon-500/15 bg-black/20 p-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
+                  <Flame size={18} />
+                </div>
+                <div className="font-semibold text-white">Treasury & Rewards Infrastructure</div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <CopyRow
+                  label="Pump.fun Creator Fee Wallet (Rewards Distribution)"
+                  value={CREATOR_FEE_WALLET}
+                />
+                <div className="text-sm text-white/75 leading-relaxed">
+                  Used for:
+                  <ul className="mt-2 space-y-1 text-white/70">
+                    <li>• Community rewards</li>
+                    <li>• Bagworker distributions</li>
+                    <li>• Strategic buybacks</li>
+                  </ul>
+                </div>
+
+                <CopyRow
+                  label="Temporary Rewards / Marketing Wallet"
+                  value={TEMP_REWARDS_WALLET}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -394,9 +732,7 @@ function HowToBuy() {
           <ol className="mt-4 space-y-3 text-sm text-white/75">
             <li className="flex gap-3">
               <span className="text-neon-300 font-semibold">1.</span>
-              <span>
-                Open the official chart / buy link (Dexscreener or Pump.fun).
-              </span>
+              <span>Open the official chart / buy link (Dexscreener or Pump.fun).</span>
             </li>
             <li className="flex gap-3">
               <span className="text-neon-300 font-semibold">2.</span>
@@ -463,7 +799,6 @@ function CommunityGallery() {
           desc="Art, memes, posters and visuals forged by the $PFF community."
         />
 
-        {/* Desktop arrows */}
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => scrollByAmount(-1)}
@@ -480,18 +815,15 @@ function CommunityGallery() {
         </div>
       </div>
 
-      {/* Slider wrapper with fades */}
       <div className="relative mt-10">
         <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-bg to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-bg to-transparent z-10" />
 
-        {/* Slider track */}
         <div
           id="pff-gallery-track"
           className="flex gap-4 md:gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth
                    [-ms-overflow-style:none] [scrollbar-width:none]"
         >
-          {/* Hide scrollbar (WebKit) */}
           <style>{`
             #pff-gallery-track::-webkit-scrollbar { display: none; }
           `}</style>
@@ -510,8 +842,6 @@ function CommunityGallery() {
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
-
-              {/* Glow overlay */}
               <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 <div className="absolute inset-0 shadow-[0_0_90px_rgba(0,232,90,.25)]" />
@@ -528,11 +858,11 @@ function FAQ() {
   const items = [
     {
       q: "What is PumpFun Floki ($PFF)?",
-      a: "A meme-first community token with viking neon lore — built around culture, raids, and momentum.",
+      a: "A community-led meme token on Solana, reforged through takeover and built around culture + execution.",
     },
     {
-      q: "Is there a team / utility / roadmap?",
-      a: "The roadmap is community-driven. Utility can evolve, but the core is memetics + community execution.",
+      q: "Is the project secured against rugs?",
+      a: "Dev supply is locked with verifiable contracts, burn milestones are defined, and treasury rails are transparent.",
     },
     {
       q: "Where can I buy?",
@@ -546,11 +876,7 @@ function FAQ() {
 
   return (
     <section id="faq" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-      <SectionTitle
-        kicker="FAQ"
-        title="Frequently Asked Questions"
-        desc="Short answers. Clear vibes."
-      />
+      <SectionTitle kicker="FAQ" title="Frequently Asked Questions" desc="Short answers. Clear vibes." />
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
         {items.map((x) => (
@@ -567,7 +893,6 @@ function FAQ() {
 export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Close mobile menu when resizing to desktop
   useEffect(() => {
     const onResize = () => {
       if (window.innerWidth >= 768) setMobileOpen(false);
@@ -590,20 +915,14 @@ export default function App() {
           aria-hidden
         />
         <div className="absolute inset-0 grain" aria-hidden />
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-black/30 via-bg/70 to-bg"
-          aria-hidden
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-bg/70 to-bg" aria-hidden />
       </div>
 
       {/* Nav */}
       <header className="relative mx-auto max-w-6xl px-4 pt-6">
         <div className="relative">
           <nav className="glass flex items-center justify-between rounded-2xl px-4 py-3">
-            <a
-              href="#"
-              className="flex items-center gap-3 font-extrabold tracking-tight"
-            >
+            <a href="#" className="flex items-center gap-3 font-extrabold tracking-tight">
               <img
                 src={LOGO_SRC}
                 alt="Floki logo"
@@ -615,33 +934,22 @@ export default function App() {
                   <span className="text-white">Floki</span>
                   <span className="text-xs text-white/50">($PFF)</span>
                 </div>
-                <div className="mt-1 text-[11px] text-white/55">
-                  The Viking Returns
-                </div>
+                <div className="mt-1 text-[11px] text-white/55">The Viking Returns</div>
               </div>
             </a>
 
             {/* Desktop menu */}
             <div className="hidden md:flex items-center gap-4">
-              <a className="text-sm text-white/70 hover:text-white" href="#token">
-                Token
+              <a className="text-sm text-white/70 hover:text-white" href="#tokenomics">
+                Tokenomics
               </a>
-              <a
-                className="text-sm text-white/70 hover:text-white"
-                href="#roadmap"
-              >
+              <a className="text-sm text-white/70 hover:text-white" href="#roadmap">
                 Roadmap
               </a>
-              <a
-                className="text-sm text-white/70 hover:text-white"
-                href="#howtobuy"
-              >
+              <a className="text-sm text-white/70 hover:text-white" href="#howtobuy">
                 How to Buy
               </a>
-              <a
-                className="text-sm text-white/70 hover:text-white"
-                href="#gallery"
-              >
+              <a className="text-sm text-white/70 hover:text-white" href="#gallery">
                 Creations
               </a>
               <a className="text-sm text-white/70 hover:text-white" href="#faq">
@@ -666,39 +974,19 @@ export default function App() {
           {mobileOpen && (
             <div className="md:hidden absolute left-0 right-0 mt-3 glass rounded-2xl p-4 z-50">
               <div className="flex flex-col gap-3">
-                <a
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm text-white/80 hover:text-white"
-                  href="#token"
-                >
-                  Token
+                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#tokenomics">
+                  Tokenomics
                 </a>
-                <a
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm text-white/80 hover:text-white"
-                  href="#roadmap"
-                >
+                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#roadmap">
                   Roadmap
                 </a>
-                <a
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm text-white/80 hover:text-white"
-                  href="#howtobuy"
-                >
+                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#howtobuy">
                   How to Buy
                 </a>
-                <a
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm text-white/80 hover:text-white"
-                  href="#gallery"
-                >
+                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#gallery">
                   Creations
                 </a>
-                <a
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm text-white/80 hover:text-white"
-                  href="#faq"
-                >
+                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#faq">
                   FAQ
                 </a>
 
@@ -724,39 +1012,30 @@ export default function App() {
               className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-glow text-white"
             >
               The Viking Returns.
-              <span className="block text-white/80">
-                On Pump For Fun
-              </span>
+              <span className="block text-white/80">On Pump For Fun</span>
             </motion.h1>
 
             <p className="mt-4 text-white/70 max-w-xl leading-relaxed">
-          $PFF is PumpFun Floki — a new era of meme coin forged in the wild lands of PumpFun. Inspired by the OG meme FLOKI, the spirit of the Viking lives on: mischievous, fearless, and ready to raid the timeline.
-Backed by the most powerful meme culture in crypto history, $PFF is not just a coin — it’s a movement.
-
-
+              $PFF is PumpFun Floki — a new era of meme coin forged in the wild lands of PumpFun.
+              Inspired by the OG meme FLOKI, the spirit of the Viking lives on: mischievous, fearless,
+              and ready to raid the timeline. Backed by the most powerful meme culture in crypto history,
+              $PFF is not just a coin — it’s a movement.
             </p>
 
-            {/* Responsive buttons */}
             <div className="mt-6 grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
               <NeonButton href={BUY_LINK} full>
                 Buy $PFF
               </NeonButton>
-
-             
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Narrative</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">
-                  Viking Lore
-                </div>
+                <div className="mt-1 font-semibold text-neon-300 text-glow">Viking Evolution</div>
               </div>
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Mission</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">
-                  Community First
-                </div>
+                <div className="mt-1 font-semibold text-neon-300 text-glow">Community-Led Dominance</div>
               </div>
             </div>
 
@@ -765,14 +1044,13 @@ Backed by the most powerful meme culture in crypto history, $PFF is not just a c
             </div>
           </div>
 
-          {/* Mascot image (NO BORDER / NO GLASS) */}
+          {/* Mascot */}
           <div className="relative mx-auto max-w-[520px] lg:max-w-none">
             <img
               src="/assets/floki.png"
               alt="PumpFun Floki mascot"
               className="w-full object-contain drop-shadow-[0_0_35px_rgba(0,232,90,.25)]"
             />
-
             <div
               className="pointer-events-none absolute -inset-8 -z-10 rounded-[2rem] blur-2xl opacity-60"
               style={{ boxShadow: "0 0 220px rgba(0,232,90,.20)" }}
@@ -781,32 +1059,45 @@ Backed by the most powerful meme culture in crypto history, $PFF is not just a c
         </div>
       </section>
 
-      {/* About / Value props */}
+      {/* About / Value props (UPDATED 3 CARDS) */}
       <section id="about" className="mx-auto max-w-6xl px-4 py-8">
         <div className="grid gap-5 md:grid-cols-3">
-          <Card title="Culture = Utility" icon={<Users size={18} />}>
-            Memes, lore and community execution are the real product. If the
-            vibe is strong, everything follows.
+          <Card title="Community First" icon={<Users size={18} />}>
+            PFF is powered by holders, not insiders. After the rug, the community CTO’d the project and rebuilt it with conviction.
+            Every milestone and expansion is driven by collective execution — not hidden agendas.
           </Card>
-          <Card title="Raid Ready" icon={<Rocket size={18} />}>
-            Built for fast content cycles: posters, edits, lightning visuals,
-            and “locked-in” narrative pushes.
+
+          <Card title="Unruggable by Design" icon={<Shield size={18} />}>
+            Dev supply is locked with long-term structure. Burn milestones are predefined and buybacks are executed with intent.
+            Liquidity will be progressively thickened and expanded to improve stability and reduce fragility. The foundation is built for durability.
           </Card>
-          <Card title="Verify Everything" icon={<Shield size={18} />}>
-            Only trust official channels. Always compare the contract with the
-            one displayed on this site.
+
+          <Card title="Forever Forward" icon={<Rocket size={18} />}>
+            Execution is constant — meme cycles, daily engagement, roadmap progression, and strategic expansion.
+            No stagnation. No fade. Momentum is permanent.
           </Card>
         </div>
       </section>
 
+      <PhotoSliderOnly />
 
-      <PhotoSliderOnly/>
-      <TokenDetails />
-       <VideoBanner/>
+      {/* Narrative + Mission */}
+      <NarrativeMission />
+
+      {/* Tokenomics Full */}
+      <Tokenomics />
+
+      <VideoBanner />
+
+      {/* Roadmap Full */}
       <Roadmap />
+
       <TokenBanner />
+
       <HowToBuy />
+
       <CommunityGallery />
+
       <FAQ />
 
       {/* Footer */}
@@ -816,10 +1107,7 @@ Backed by the most powerful meme culture in crypto history, $PFF is not just a c
             <div className="font-bold text-white">Join the raid</div>
             <div className="text-sm text-white/70">
               X • Telegram • Email:{" "}
-              <a
-                className="text-neon-300 hover:underline"
-                href={`mailto:${EMAIL}`}
-              >
+              <a className="text-neon-300 hover:underline" href={`mailto:${EMAIL}`}>
                 {EMAIL}
               </a>
             </div>
@@ -835,7 +1123,7 @@ Backed by the most powerful meme culture in crypto history, $PFF is not just a c
         </div>
 
         <div className="mt-6 text-xs text-white/45">
-          Disclaimer: meme coin. NFA. High risk. Verify links and contract.  -- PumpFunFloki 
+          Disclaimer: meme coin. NFA. High risk. Verify links and contract. — PumpFunFloki
         </div>
       </footer>
     </main>
