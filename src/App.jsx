@@ -847,7 +847,6 @@ function CommunityGallery() {
     "/assets/gallery/community2.png",
     "/assets/gallery/community3.png",
     "/assets/gallery/community4.png",
-    "/assets/gallery/community5.png",
     "/assets/gallery/community6.png",
     "/assets/gallery/community7.png",
     "/assets/gallery/community8.png",
