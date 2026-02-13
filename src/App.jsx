@@ -25,7 +25,7 @@ const PUMPSWAP_LINK = "https://swap.pump.fun/?input=So11111111111111111111111111
 const JUPITER_LINK = "https://jup.ag/tokens/DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump"; 
 const APPLEPAY_LINK = BUY_LINK;
 const VISA_LINK = BUY_LINK;
-const TIKTOK_LINK = "https://www.tiktok.com/@pumpfun.floki.off";
+const TIKTOK_LINK = "https://tiktok.com/@pumpfun.floki.off";
 const X_COMMUNITY_LINK = "https://x.com/i/communities/yourcommunityid";
 
 
@@ -847,6 +847,28 @@ function CommunityGallery() {
     "/assets/gallery/community6.png",
     "/assets/gallery/community7.png",
     "/assets/gallery/community8.png",
+    "/assets/gallery/community9.jpg",
+    "/assets/gallery/community10.jpg",
+    "/assets/gallery/community21.jpg",
+    "/assets/gallery/community12.jpg",
+    "/assets/gallery/community23.jpg",
+    "/assets/gallery/community14.jpg",
+    "/assets/gallery/community15.jpg",
+    "/assets/gallery/community16.jpg",
+    "/assets/gallery/community17.jpg",
+    "/assets/gallery/community18.jpg",
+    "/assets/gallery/community19.jpg",
+    "/assets/gallery/community20.jpg",
+    "/assets/gallery/community11.jpg",
+    "/assets/gallery/community22.jpg",
+    "/assets/gallery/community13.jpg",
+    "/assets/gallery/community24.jpg",
+    "/assets/gallery/community25.jpg",
+    "/assets/gallery/community26.jpg",
+    "/assets/gallery/community27.jpg",
+    "/assets/gallery/community28.jpg",
+    "/assets/gallery/community29.jpg",
+    "/assets/gallery/community30.jpg",
   ];
 
   function scrollByAmount(dir) {
@@ -924,7 +946,7 @@ function FAQ() {
   const items = [
     {
       q: "What is PumpFun Floki ($PFF)?",
-      a: "A community-led meme token on Solana, reforged through takeover and built around culture + execution.",
+      a: "A community meme token on Solana, reforged through takeover and built around culture + execution.",
     },
     {
       q: "Is the project secured against rugs?",
@@ -1117,7 +1139,7 @@ export default function App() {
           {/* Mascot */}
           <div className="relative mx-auto max-w-[520px] lg:max-w-none">
             <img
-              src="/assets/floki.png"
+              src="/assets/community9.png"
               alt="PumpFun Floki mascot"
               className="w-full object-contain drop-shadow-[0_0_35px_rgba(0,232,90,.25)]"
             />
