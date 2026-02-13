@@ -1125,7 +1125,7 @@ export default function App() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Narrative</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">Born from OG Floki’s spirit and reforged through community takeover, PFF evolves the narrative for the Pump.fun creator era. As meme culture, art tech, and Gen-AI reshape the arena, evolution isn’t optional — it’s the edge. Faster, sharper, built to endure. The first and only Floki narrative on Pump.fun and Solana.</div>
+                <div className="mt-1 font-semibold text-neon-300 text-glow">Born from OG Floki’s spirit and reforged through community takeover, PFF evolves the narrative for the Pump.fun creator era. As meme culture, art tech, and Gen-AI reshape the arena, evolution isn’t optional — it’s the edge. Faster, sharper, built to endure.</div>
               </div>
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Mission</div>
