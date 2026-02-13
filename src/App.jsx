@@ -1121,13 +1121,11 @@ export default function App() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Narrative</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">Born from the spirit of OG Floki and reforged through community takeover,
-            PFF carries Viking energy into the Pump.fun era — faster, sharper, and built to endure.</div>
+                <div className="mt-1 font-semibold text-neon-300 text-glow">Born from the spirit of OG Floki and reforged through community takeover, PFF evolves the Floki narrative for the Pump.fun creator era. As meme culture, art tech, and Gen-AI reshape the arena, evolution isn’t optional — it’s the edge. Faster, sharper, built to endure. The first and only Floki narrative on Pump.fun and Solana.</div>
               </div>
               <div className="glass rounded-2xl p-4">
                 <div className="text-xs text-white/60">Mission</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">To prove that a community-driven meme coin can outlast rugs, outwork noise,
-            and build lasting structure — through execution, transparency, and relentless forward momentum.</div>
+                <div className="mt-1 font-semibold text-neon-300 text-glow">To prove that a community-driven meme coin can outlast rugs, outwork noise, and build lasting structure. Powered by next-level art, a battle-tested community, transparent locks, liquidity thickening, and disciplined execution, PFF marches toward Valhalla.</div>
               </div>
             </div>
 
