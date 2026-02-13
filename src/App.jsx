@@ -456,6 +456,10 @@ function PhotoSliderOnly() {
     { type: "image", src: "/assets/gallery/communi1.png" },
     { type: "video", src: "/assets/gallery/community-video.mp4" },
     { type: "image", src: "/assets/gallery/communi2.png" },
+    { type: "video", src: "/assets/gallery/commvideo1.mp4" },
+    { type: "image", src: "/assets/gallery/communi3.jpg" },
+    { type: "video", src: "/assets/gallery/commvideo2.mp4" },
+    { type: "image", src: "/assets/gallery/communi4.jpg" },
   ];
 
   function scrollByAmount(dir) {
@@ -580,7 +584,7 @@ function Tokenomics() {
 
             <div className="pt-3 grid grid-cols-1 gap-3">
               <NeonButton href={BUY_LINK} full>
-                Buy on Dexscreener
+              Dexscreener
               </NeonButton>
               <NeonButton href={PUMPFUN_LINK} variant="outline" full>
                 Pump.fun
@@ -1206,7 +1210,7 @@ export default function App() {
   {[
     { src: "/assets/footer/X.png", link: X_LINK, alt: "X" },
     { src: "/assets/footer/telegram.png", link: TG_LINK, alt: "Telegram" },
-    { src: "/assets/footer/tiktok.png", link: "https://tiktok.com", alt: "TikTok" },
+    { src: "/assets/footer/tiktok.png", link: "https://tiktok.com/@pumpfun.floki.off", alt: "TikTok" },
     { src: "/assets/footer/X.png", link: "https://x.com/i/communities", alt: "X Community" },
   ].map((item) => (
     <a
