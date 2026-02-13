@@ -1095,63 +1095,88 @@ export default function App() {
       </header>
 
       {/* Hero */}
-      <section className="relative mx-auto max-w-6xl px-4 pt-12 md:pt-14 pb-10 md:pb-12">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div>
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-glow text-white"
-            >
-              The Viking Returns.
-              <span className="block text-white/80">On Pump For Fun</span>
-            </motion.h1>
+      {/* Hero */}
+<section className="relative mx-auto max-w-6xl px-4 pt-12 md:pt-14 pb-10 md:pb-12">
+  <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+    {/* LEFT */}
+    <div>
+      <motion.h1
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-glow text-white"
+      >
+        The Viking Returns.
+        <span className="block text-white/80">On Pump For Fun</span>
+      </motion.h1>
 
-            <p className="mt-4 text-white/70 max-w-xl leading-relaxed">
-              $PFF is PumpFun Floki — a new era of meme coin forged in the wild lands of PumpFun.
-              Inspired by the OG meme FLOKI, the spirit of the Viking lives on: mischievous, fearless,
-              and ready to raid the timeline. Backed by the most powerful meme culture in crypto history,
-              $PFF is not just a coin — it’s a movement.
-            </p>
+      <p className="mt-4 text-white/70 max-w-xl leading-relaxed">
+        $PFF is PumpFun Floki — a new era of meme coin forged in the wild lands of PumpFun.
+        Inspired by the OG meme FLOKI, the spirit of the Viking lives on: mischievous, fearless,
+        and ready to raid the timeline. Backed by the most powerful meme culture in crypto history,
+        $PFF is not just a coin — it’s a movement.
+      </p>
 
-            <div className="mt-6 w-full max-w-xl">
-  <NeonButton href="#howtobuy" full>
-    Buy $PFF
-  </NeonButton>
-</div>
+      {/* MOBILE MASCOT (between text and CTA) */}
+      <div className="mt-6 lg:hidden">
+        <img
+          src="/assets/community9.png"
+          alt="PumpFun Floki mascot"
+          className="w-full max-w-[360px] mx-auto object-contain drop-shadow-[0_0_35px_rgba(0,232,90,.25)]"
+        />
+        <div
+          className="pointer-events-none mx-auto mt-0 max-w-[360px] rounded-[2rem] blur-2xl opacity-60"
+          style={{ boxShadow: "0 0 220px rgba(0,232,90,.20)" }}
+        />
+      </div>
 
+      {/* CTA */}
+      <div className="mt-6 w-full max-w-xl">
+        <NeonButton href="#howtobuy" full>
+          Buy $PFF
+        </NeonButton>
+      </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="glass rounded-2xl p-4">
-                <div className="text-xs text-white/60">Narrative</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">Born from OG Floki’s spirit and reforged through community takeover, PFF evolves the narrative for the Pump.fun creator era. As meme culture, art tech, and Gen-AI reshape the arena, evolution isn’t optional — it’s the edge. Faster, sharper, built to endure.</div>
-              </div>
-              <div className="glass rounded-2xl p-4">
-                <div className="text-xs text-white/60">Mission</div>
-                <div className="mt-1 font-semibold text-neon-300 text-glow">To prove that a community-driven meme coin can outlast rugs, outwork noise, and build lasting structure. Powered by next-level art, a battle-tested community, transparent locks, liquidity thickening, and disciplined execution, PFF marches toward Valhalla.</div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <ContractCard />
-            </div>
-          </div>
-
-          {/* Mascot */}
-          <div className="relative mx-auto max-w-[520px] lg:max-w-none">
-            <img
-              src="/assets/community9.png"
-              alt="PumpFun Floki mascot"
-              className="w-full object-contain drop-shadow-[0_0_35px_rgba(0,232,90,.25)]"
-            />
-            <div
-              className="pointer-events-none absolute -inset-8 -z-10 rounded-[2rem] blur-2xl opacity-60"
-              style={{ boxShadow: "0 0 220px rgba(0,232,90,.20)" }}
-            />
+      {/* Narrative / Mission */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="glass rounded-2xl p-4">
+          <div className="text-xs text-white/60">Narrative</div>
+          <div className="mt-1 font-semibold text-neon-300 text-glow">
+            Born from OG Floki’s spirit and reforged through community takeover, PFF evolves the narrative for the Pump.fun creator era.
+            As meme culture, art tech, and Gen-AI reshape the arena, evolution isn’t optional — it’s the edge. Faster, sharper, built to endure.
           </div>
         </div>
-      </section>
+
+        <div className="glass rounded-2xl p-4">
+          <div className="text-xs text-white/60">Mission</div>
+          <div className="mt-1 font-semibold text-neon-300 text-glow">
+            To prove that a community-driven meme coin can outlast rugs, outwork noise, and build lasting structure.
+            Powered by next-level art, a battle-tested community, transparent locks, liquidity thickening, and disciplined execution,
+            PFF marches toward Valhalla.
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <ContractCard />
+      </div>
+    </div>
+
+    {/* RIGHT MASCOT (desktop only) */}
+    <div className="relative mx-auto max-w-[520px] lg:max-w-none hidden lg:block">
+      <img
+        src="/assets/community9.png"
+        alt="PumpFun Floki mascot"
+        className="w-full object-contain drop-shadow-[0_0_35px_rgba(0,232,90,.25)]"
+      />
+      <div
+        className="pointer-events-none absolute -inset-8 -z-10 rounded-[2rem] blur-2xl opacity-60"
+        style={{ boxShadow: "0 0 220px rgba(0,232,90,.20)" }}
+      />
+    </div>
+  </div>
+</section>
+
 
       {/* About / Value props (UPDATED 3 CARDS) */}
       <section id="about" className="mx-auto max-w-6xl px-4 py-8">
