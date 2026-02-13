@@ -950,7 +950,7 @@ function FAQ() {
   const items = [
     {
       q: "What is PumpFun Floki ($PFF)?",
-      a: "A community meme token on Solana, reforged through takeover and built around culture + execution.",
+      a: "A community-led meme token on Solana, reforged through takeover and built around culture + execution.",
     },
     {
       q: "Is the project secured against rugs?",
