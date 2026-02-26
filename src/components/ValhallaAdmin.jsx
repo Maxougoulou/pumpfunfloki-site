@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 async function getRecaptchaToken(siteKey, action) {
   return new Promise((resolve, reject) => {
@@ -13,7 +13,7 @@ function Card({ children }) {
   return <div className="glass rounded-2xl border border-neon-500/15 p-6">{children}</div>;
 }
 
-function Btn({ children, onClick, tone="solid", disabled=false }) {
+function Btn({ children, onClick, tone = "solid", disabled = false }) {
   const base = "rounded-xl px-4 py-2 text-sm font-extrabold transition";
   const solid = "bg-neon-500 text-black shadow-neonStrong hover:bg-neon-400";
   const outline = "border border-neon-500/25 text-white/85 hover:border-neon-500/55";
@@ -21,7 +21,9 @@ function Btn({ children, onClick, tone="solid", disabled=false }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${base} ${tone==="solid"?solid:outline} ${disabled?"opacity-40 cursor-not-allowed":""}`}
+      className={`${base} ${tone === "solid" ? solid : outline} ${
+        disabled ? "opacity-40 cursor-not-allowed" : ""
+      }`}
     >
       {children}
     </button>
@@ -45,7 +47,28 @@ export default function ValhallaAdmin() {
   // logs
   const [logs, setLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
-  const [logForm, setLogForm] = useState({ title: "", description: "", proof_link: "", type: "event" });
+  const [logForm, setLogForm] = useState({
+    title: "",
+    description: "",
+    proof_link: "",
+    type: "event",
+  });
+
+  // quests
+  const [quests, setQuests] = useState([]);
+  const [questsLoading, setQuestsLoading] = useState(false);
+  const [questForm, setQuestForm] = useState({
+    id: "",
+    title: "",
+    description: "",
+    type: "raid",
+    difficulty: "easy",
+    reward: "",
+    proof_type: "text",
+    time_window: "",
+    status: "LIVE",
+  });
+  const [questErr, setQuestErr] = useState("");
 
   async function refreshMe() {
     setMe({ loading: true, admin: false });
@@ -54,7 +77,9 @@ export default function ValhallaAdmin() {
     setMe({ loading: false, admin: !!j.admin });
   }
 
-  useEffect(() => { refreshMe(); }, []);
+  useEffect(() => {
+    refreshMe();
+  }, []);
 
   async function login() {
     try {
@@ -81,7 +106,9 @@ export default function ValhallaAdmin() {
 
   async function loadSubmissions() {
     setSubsLoading(true);
-    const r = await fetch(`/api/admin-submissions?status=${encodeURIComponent(subStatus)}`, { credentials: "include" });
+    const r = await fetch(`/api/admin-submissions?status=${encodeURIComponent(subStatus)}`, {
+      credentials: "include",
+    });
     const j = await r.json();
     setSubs(j?.data || []);
     setSubsLoading(false);
@@ -118,17 +145,78 @@ export default function ValhallaAdmin() {
     }
   }
 
+  async function loadQuests() {
+    setQuestsLoading(true);
+    setQuestErr("");
+    const r = await fetch("/api/admin-quests", { credentials: "include" });
+    const j = await r.json();
+    if (!r.ok) {
+      setQuestErr(j?.error || "failed-to-load-quests");
+      setQuests([]);
+      setQuestsLoading(false);
+      return;
+    }
+    setQuests(j?.data || []);
+    setQuestsLoading(false);
+  }
+
+  async function createQuest() {
+    setQuestErr("");
+    const r = await fetch("/api/admin-quests", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(questForm),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setQuestErr(j?.error || "failed-to-create-quest");
+      return;
+    }
+    setQuestForm({
+      id: "",
+      title: "",
+      description: "",
+      type: "raid",
+      difficulty: "easy",
+      reward: "",
+      proof_type: "text",
+      time_window: "",
+      status: "LIVE",
+    });
+    await loadQuests();
+  }
+
+  async function deleteQuest(id) {
+    setQuestErr("");
+    const r = await fetch("/api/admin-quests", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setQuestErr(j?.error || "failed-to-delete-quest");
+      return;
+    }
+    await loadQuests();
+  }
+
   useEffect(() => {
     if (!me.admin) return;
     if (tab === "submissions") loadSubmissions();
     if (tab === "logs") loadLogs();
+    if (tab === "quests") loadQuests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.admin, tab, subStatus]);
 
   if (me.loading) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-12">
-        <Card><div className="text-white/80">Loading Valhalla…</div></Card>
+        <Card>
+          <div className="text-white/80">Loading Valhalla…</div>
+        </Card>
       </main>
     );
   }
@@ -154,14 +242,16 @@ export default function ValhallaAdmin() {
           {err ? <div className="mt-4 text-sm text-red-200">{err}</div> : null}
 
           <div className="mt-6 flex gap-3">
-            <Btn onClick={login} disabled={!pwd || !siteKey}>Login</Btn>
-            <Btn tone="outline" onClick={() => (window.location.href = "/")}>Back site</Btn>
+            <Btn onClick={login} disabled={!pwd || !siteKey}>
+              Login
+            </Btn>
+            <Btn tone="outline" onClick={() => (window.location.href = "/")}>
+              Back site
+            </Btn>
           </div>
 
           {!siteKey ? (
-            <div className="mt-4 text-xs text-yellow-200">
-              Missing VITE_RECAPTCHA_SITE_KEY in env.
-            </div>
+            <div className="mt-4 text-xs text-yellow-200">Missing VITE_RECAPTCHA_SITE_KEY in env.</div>
           ) : null}
         </Card>
       </main>
@@ -173,10 +263,14 @@ export default function ValhallaAdmin() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="text-white font-extrabold text-3xl">Valhalla Admin</div>
-          <div className="mt-1 text-white/60 text-sm">Approve quests • Post execution proofs • Run discipline.</div>
+          <div className="mt-1 text-white/60 text-sm">
+            Approve quests • Post execution proofs • Run discipline.
+          </div>
         </div>
         <div className="flex gap-3">
-          <Btn tone="outline" onClick={() => (window.location.href = "/")}>Back site</Btn>
+          <Btn tone="outline" onClick={() => (window.location.href = "/")}>
+            Back site
+          </Btn>
           <Btn onClick={logout}>Logout</Btn>
         </div>
       </div>
@@ -185,6 +279,7 @@ export default function ValhallaAdmin() {
         {[
           ["submissions", "Submissions"],
           ["logs", "Execution Logs"],
+          ["quests", "Quests"],
         ].map(([k, label]) => (
           <button
             key={k}
@@ -210,11 +305,19 @@ export default function ValhallaAdmin() {
                   onChange={(e) => setSubStatus(e.target.value)}
                   className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
                 >
-                  <option className="bg-black" value="pending">pending</option>
-                  <option className="bg-black" value="approved">approved</option>
-                  <option className="bg-black" value="rejected">rejected</option>
+                  <option className="bg-black" value="pending">
+                    pending
+                  </option>
+                  <option className="bg-black" value="approved">
+                    approved
+                  </option>
+                  <option className="bg-black" value="rejected">
+                    rejected
+                  </option>
                 </select>
-                <Btn tone="outline" onClick={loadSubmissions}>Refresh</Btn>
+                <Btn tone="outline" onClick={loadSubmissions}>
+                  Refresh
+                </Btn>
               </div>
             </div>
 
@@ -228,12 +331,18 @@ export default function ValhallaAdmin() {
                   <div key={s.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                       <div>
-                        <div className="text-white font-extrabold">{s.handle} <span className="text-white/50 text-xs">({s.quest_id})</span></div>
+                        <div className="text-white font-extrabold">
+                          {s.handle} <span className="text-white/50 text-xs">({s.quest_id})</span>
+                        </div>
                         <div className="text-white/60 text-xs">{new Date(s.created_at).toLocaleString()}</div>
                       </div>
                       <div className="flex gap-2">
-                        <Btn tone="outline" onClick={() => setSubmissionStatus(s.id, "approved")}>Approve</Btn>
-                        <Btn tone="outline" onClick={() => setSubmissionStatus(s.id, "rejected")}>Reject</Btn>
+                        <Btn tone="outline" onClick={() => setSubmissionStatus(s.id, "approved")}>
+                          Approve
+                        </Btn>
+                        <Btn tone="outline" onClick={() => setSubmissionStatus(s.id, "rejected")}>
+                          Reject
+                        </Btn>
                       </div>
                     </div>
                     <div className="mt-3 text-white/85 text-sm whitespace-pre-wrap">{s.proof}</div>
@@ -262,9 +371,15 @@ export default function ValhallaAdmin() {
                 onChange={(e) => setLogForm((v) => ({ ...v, type: e.target.value }))}
                 className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
               >
-                <option className="bg-black" value="event">event</option>
-                <option className="bg-black" value="buyback">buyback</option>
-                <option className="bg-black" value="burn">burn</option>
+                <option className="bg-black" value="event">
+                  event
+                </option>
+                <option className="bg-black" value="buyback">
+                  buyback
+                </option>
+                <option className="bg-black" value="burn">
+                  burn
+                </option>
               </select>
               <input
                 value={logForm.proof_link}
@@ -281,8 +396,12 @@ export default function ValhallaAdmin() {
               />
             </div>
             <div className="mt-4 flex gap-3">
-              <Btn onClick={createLog} disabled={!logForm.title}>Publish</Btn>
-              <Btn tone="outline" onClick={loadLogs}>Refresh</Btn>
+              <Btn onClick={createLog} disabled={!logForm.title}>
+                Publish
+              </Btn>
+              <Btn tone="outline" onClick={loadLogs}>
+                Refresh
+              </Btn>
             </div>
           </Card>
 
@@ -298,14 +417,142 @@ export default function ValhallaAdmin() {
                   <div key={l.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-white font-extrabold">{l.title} <span className="text-white/50 text-xs">({l.type})</span></div>
+                        <div className="text-white font-extrabold">
+                          {l.title} <span className="text-white/50 text-xs">({l.type})</span>
+                        </div>
                         <div className="text-white/60 text-xs">{new Date(l.created_at).toLocaleString()}</div>
                       </div>
                       {l.proof_link ? (
-                        <a className="text-neon-300 text-sm hover:underline" href={l.proof_link} target="_blank" rel="noreferrer">Proof</a>
+                        <a
+                          className="text-neon-300 text-sm hover:underline"
+                          href={l.proof_link}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Proof
+                        </a>
                       ) : null}
                     </div>
                     {l.description ? <div className="mt-3 text-white/85 text-sm whitespace-pre-wrap">{l.description}</div> : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      ) : null}
+
+      {tab === "quests" ? (
+        <div className="mt-6 grid gap-5">
+          <Card>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-white font-extrabold">Quests</div>
+                <div className="text-xs text-white/60">Create quests for the Quest Board (stored in Supabase).</div>
+              </div>
+              <Btn tone="outline" onClick={loadQuests}>
+                Refresh
+              </Btn>
+            </div>
+
+            {questErr ? <div className="mt-4 text-sm text-red-200">{questErr}</div> : null}
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <input
+                value={questForm.id}
+                onChange={(e) => setQuestForm((v) => ({ ...v, id: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="id (ex: Q-005)"
+              />
+              <input
+                value={questForm.title}
+                onChange={(e) => setQuestForm((v) => ({ ...v, title: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="title"
+              />
+
+              <input
+                value={questForm.type}
+                onChange={(e) => setQuestForm((v) => ({ ...v, type: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="type (lore/art/raid/oracle)"
+              />
+              <input
+                value={questForm.difficulty}
+                onChange={(e) => setQuestForm((v) => ({ ...v, difficulty: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="difficulty (easy/medium/hard)"
+              />
+
+              <input
+                value={questForm.reward}
+                onChange={(e) => setQuestForm((v) => ({ ...v, reward: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="reward"
+              />
+              <input
+                value={questForm.proof_type}
+                onChange={(e) => setQuestForm((v) => ({ ...v, proof_type: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="proof_type (text/link/image)"
+              />
+
+              <input
+                value={questForm.time_window}
+                onChange={(e) => setQuestForm((v) => ({ ...v, time_window: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="time_window (ex: This week)"
+              />
+              <input
+                value={questForm.status}
+                onChange={(e) => setQuestForm((v) => ({ ...v, status: e.target.value }))}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                placeholder="status (LIVE/UPCOMING/ENDED)"
+              />
+
+              <textarea
+                value={questForm.description}
+                onChange={(e) => setQuestForm((v) => ({ ...v, description: e.target.value }))}
+                rows={4}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none md:col-span-2"
+                placeholder="description"
+              />
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <Btn onClick={createQuest} disabled={!questForm.id || !questForm.title}>
+                Create quest
+              </Btn>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="text-white font-extrabold">Existing quests</div>
+
+            {questsLoading ? (
+              <div className="mt-4 text-white/60">Loading…</div>
+            ) : quests.length === 0 ? (
+              <div className="mt-4 text-white/60">No quests yet.</div>
+            ) : (
+              <div className="mt-5 grid gap-3">
+                {quests.map((q) => (
+                  <div key={q.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-white font-extrabold truncate">
+                          {q.title} <span className="text-white/50 text-xs">({q.id})</span>
+                        </div>
+                        <div className="mt-1 text-xs text-white/60">
+                          {q.status} • {q.type} • {q.difficulty} • {q.proof_type} • {q.time_window}
+                        </div>
+                      </div>
+                      <Btn tone="outline" onClick={() => deleteQuest(q.id)}>
+                        Delete
+                      </Btn>
+                    </div>
+                    {q.description ? (
+                      <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap">{q.description}</div>
+                    ) : null}
                   </div>
                 ))}
               </div>
