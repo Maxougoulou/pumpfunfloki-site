@@ -11,6 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import PFFSwarmOracleHub from "./components/PFFSwarmOracle";
+import ValhallaAdmin from "./components/ValhallaAdmin";
 
 const CONTRACT = "DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump";
 
@@ -27,6 +29,7 @@ const APPLEPAY_LINK = BUY_LINK;
 const VISA_LINK = BUY_LINK;
 const TIKTOK_LINK = "https://tiktok.com/@pumpfun.floki.off";
 const X_COMMUNITY_LINK = "https://x.com/i/communities/yourcommunityid";
+
 
 
 
@@ -983,6 +986,8 @@ function FAQ() {
 
 export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
+    const isAdminRoute = window.location.pathname === "/valhalla-admin";
+  if (isAdminRoute) return <ValhallaAdmin />;
 
   useEffect(() => {
     const onResize = () => {
@@ -1046,6 +1051,12 @@ export default function App() {
               <a className="text-sm text-white/70 hover:text-white" href="#faq">
                 FAQ
               </a>
+              <a className="text-sm text-white/70 hover:text-white" href="#swarm">
+                Swarm
+              </a>
+              <a className="text-sm text-white/70 hover:text-white" href="#oracle">
+                Oracle
+              </a>
               <NeonButton href="#howtobuy" variant="outline">
   How to Buy
 </NeonButton>
@@ -1074,6 +1085,9 @@ export default function App() {
                 </a>
                 <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#howtobuy">
                   How to Buy
+                </a>
+                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#oracle">
+                  Oracle
                 </a>
                 <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#gallery">
                   Creations
@@ -1208,6 +1222,9 @@ export default function App() {
       <Roadmap />
 
       <TokenBanner />
+
+      <PFFSwarmOracleHub contract={CONTRACT} />
+
 
       <HowToBuy />
       
