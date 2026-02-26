@@ -120,6 +120,17 @@ const DEFAULT_BUYBACK_THRESHOLDS = [
 ];
 
 /** ------------ HELPERS ------------- */
+
+async function getRecaptchaToken(siteKey, action) {
+  return new Promise((resolve, reject) => {
+    if (!window.grecaptcha) return reject(new Error("reCAPTCHA not loaded"));
+    window.grecaptcha.ready(() => {
+      window.grecaptcha.execute(siteKey, { action }).then(resolve).catch(reject);
+    });
+  });
+}
+
+
 function cx(...c) {
   return c.filter(Boolean).join(" ");
 }
@@ -1072,6 +1083,7 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
   const [filter, setFilter] = useState({ status: "ALL", type: "ALL", difficulty: "ALL" });
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [toast, setToast] = useState(null);
+  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
   useEffect(() => {
     setLocalSubmissions(loadSubmissions());
@@ -1096,14 +1108,19 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
     // If backend is enabled AND API exists, we’ll hit it.
     // If not (dev/local), we fallback to local storage.
     if (backendEnabled) {
-      try {
-        const res = await fetch("/api/submit-quest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+  try {
+    if (!siteKey) throw new Error("Missing VITE_RECAPTCHA_SITE_KEY");
+
+    const recaptchaToken = await getRecaptchaToken(siteKey, "submit_quest");
+
+    const res = await fetch("/api/submit-quest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...payload,
+        recaptchaToken,
+      }),
+    });
 
         setToast({ tone: "good", msg: "Submitted to backend ✅ (pending review)" });
         setTimeout(() => setToast(null), 2500);
