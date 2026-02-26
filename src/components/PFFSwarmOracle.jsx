@@ -1134,37 +1134,6 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
   );
 }
 
-function ApprovedSubmissionsPanel({ state }) {
-  return (
-    <div className="mt-10">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-white font-extrabold text-lg">Verified proofs (approved)</div>
-        <Badge tone={state?.error ? "warn" : state?.loading ? "neutral" : "good"}>{state?.loading ? "loading…" : state?.error ? "offline" : "live"}</Badge>
-      </div>
-
-      <div className="mt-4 grid gap-5 md:grid-cols-2">
-        {(state?.rows || []).slice(0, 6).map((s) => (
-          <PffCard key={s.id} className="p-5 border border-neon-500/15">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-white font-extrabold truncate">{s.handle}</div>
-                <div className="text-xs text-white/60">{s.created_at ? new Date(s.created_at).toLocaleString() : ""}</div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <Badge>{s.quest_id}</Badge>
-                {typeof s.points_awarded === "number" ? <Badge tone="good">{s.points_awarded} pts</Badge> : null}
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-white/85 leading-relaxed line-clamp-4">{s.proof}</div>
-            {s.note ? <div className="mt-2 text-xs text-white/60">Note: {s.note}</div> : null}
-          </PffCard>
-        ))}
-      </div>
-
-      {!state?.loading && !(state?.rows || []).length ? <div className="mt-3 text-sm text-white/60">No approved submissions yet.</div> : null}
-    </div>
-  );
-}
 
 function LocalPendingPanel({ localSubmissions }) {
   if (!localSubmissions?.length) return null;
