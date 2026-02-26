@@ -4,36 +4,11 @@ import { supabase } from "../lib/supabase";
 
 /**
  * PFF Swarm / Oracle — V2 Structured (Supabase-ready)
- * - LIVE Dexscreener stats (price/mcap/volume/liquidity)
- * - Pull settings + scoring_rules from Supabase (public read)
- * - Swarm Score hybrid (milestones 60% / activity 40%)
- * - Leaderboard Top 10 (public)
- * - Execution logs timeline (public)
- * - QuestBoard: local fallback + API-ready submit (serverless)
  */
 
 const LS_KEY = "pff_swarm_submissions_v3";
 
-/** ------------ EDIT DATA HERE ------------- */
-
-const publicQuests = usePublicQuests(45000);
-
-const questsFromDb = (publicQuests.rows || []).map((q) => ({
-  id: q.id,
-  title: q.title,
-  type: q.type,
-  difficulty: q.difficulty,
-  reward: q.reward,
-  window: q.time_window,      // 👈 mapping vers ton UI existante
-  status: q.status,
-  proofType: q.proof_type,    // 👈 mapping
-  desc: q.description,
-  points: q.points || 0,
-}));
-
-const questsToShow = questsFromDb.length ? questsFromDb : quests;
-
-
+/** ------------ DEFAULT DATA ------------- */
 const DEFAULT_QUESTS = [
   {
     id: "Q-001",
@@ -45,6 +20,7 @@ const DEFAULT_QUESTS = [
     status: "LIVE",
     proofType: "text",
     desc: "Write a short Viking-style confession poem (no doxxing, no hate). Submit proof to the Horde.",
+    points: 0,
   },
   {
     id: "Q-002",
@@ -56,6 +32,7 @@ const DEFAULT_QUESTS = [
     status: "LIVE",
     proofType: "image",
     desc: "Use the Viking helmet overlay and post your PFP. Submit link or image as proof.",
+    points: 0,
   },
   {
     id: "Q-003",
@@ -67,6 +44,7 @@ const DEFAULT_QUESTS = [
     status: "LIVE",
     proofType: "link",
     desc: "Reply to 10 relevant CT posts with clean lore (no spam). Submit thread links as proof.",
+    points: 0,
   },
   {
     id: "Q-004",
@@ -78,68 +56,23 @@ const DEFAULT_QUESTS = [
     status: "UPCOMING",
     proofType: "text",
     desc: "Write a short prophecy: what milestone hits next and why. Bonus only if verified by outcome.",
+    points: 0,
   },
 ];
 
 const DEFAULT_MILESTONES = [
-  {
-    id: "M-001",
-    label: "Horde Awakening",
-    metric: "Market Cap",
-    target: 250000,
-    current: 172000,
-    unit: "$",
-    reward: "Buyback #1 + Swarm boost",
-  },
-  {
-    id: "M-002",
-    label: "Raid Season",
-    metric: "24h Volume",
-    target: 150000,
-    current: 62000,
-    unit: "$",
-    reward: "Burn #1 (threshold)",
-  },
-  {
-    id: "M-003",
-    label: "Saga Breakout",
-    metric: "Holders",
-    target: 2500,
-    current: 1860,
-    unit: "",
-    reward: "Oracle Week + Quest pack",
-  },
+  { id: "M-001", label: "Horde Awakening", metric: "Market Cap", target: 250000, current: 172000, unit: "$", reward: "Buyback #1 + Swarm boost" },
+  { id: "M-002", label: "Raid Season", metric: "24h Volume", target: 150000, current: 62000, unit: "$", reward: "Burn #1 (threshold)" },
+  { id: "M-003", label: "Saga Breakout", metric: "Holders", target: 2500, current: 1860, unit: "", reward: "Oracle Week + Quest pack" },
 ];
 
 const DEFAULT_BUYBACK_THRESHOLDS = [
-  {
-    id: "B-001",
-    trigger: "Market Cap ≥ $250k",
-    action: "Buyback",
-    amount: "X% of fees wallet",
-    execution: "Deterministic (manual proof on-chain)",
-    status: "Standby",
-  },
-  {
-    id: "B-002",
-    trigger: "24h Volume ≥ $150k",
-    action: "Burn",
-    amount: "Y tokens",
-    execution: "Deterministic (threshold)",
-    status: "Standby",
-  },
-  {
-    id: "B-003",
-    trigger: "Holders ≥ 2,500",
-    action: "Buyback + Raid Budget",
-    amount: "Z% split",
-    execution: "Deterministic (announced schedule)",
-    status: "Standby",
-  },
+  { id: "B-001", trigger: "Market Cap ≥ $250k", action: "Buyback", amount: "X% of fees wallet", execution: "Deterministic (manual proof on-chain)", status: "Standby" },
+  { id: "B-002", trigger: "24h Volume ≥ $150k", action: "Burn", amount: "Y tokens", execution: "Deterministic (threshold)", status: "Standby" },
+  { id: "B-003", trigger: "Holders ≥ 2,500", action: "Buyback + Raid Budget", amount: "Z% split", execution: "Deterministic (announced schedule)", status: "Standby" },
 ];
 
 /** ------------ HELPERS ------------- */
-
 async function getRecaptchaToken(siteKey, action) {
   return new Promise((resolve, reject) => {
     if (!window.grecaptcha) return reject(new Error("reCAPTCHA not loaded"));
@@ -148,7 +81,6 @@ async function getRecaptchaToken(siteKey, action) {
     });
   });
 }
-
 
 function cx(...c) {
   return c.filter(Boolean).join(" ");
@@ -184,30 +116,20 @@ function safeJson(x, fallback) {
     return fallback;
   }
 }
-function shortAddr(s) {
-  if (!s || typeof s !== "string") return "";
-  return s.length > 18 ? `${s.slice(0, 10)}…${s.slice(-6)}` : s;
-}
 
-/** ------------ DEXSCREENER LIVE ------------- */
+/** ------------ DEXSCREENER ------------- */
 function pickBestPair(pairs = []) {
   const solPairs = pairs.filter((p) => (p.chainId || "").toLowerCase() === "solana");
   const list = solPairs.length ? solPairs : pairs;
   return (
     list
       .slice()
-      .sort((a, b) => Number(b?.liquidity?.usd || 0) - Number(a?.liquidity?.usd || 0))[0] ||
-    null
+      .sort((a, b) => Number(b?.liquidity?.usd || 0) - Number(a?.liquidity?.usd || 0))[0] || null
   );
 }
 
 function useDexScreenerToken(contract, refreshMs = 30000) {
-  const [state, setState] = useState({
-    loading: true,
-    error: null,
-    pair: null,
-    updatedAt: null,
-  });
+  const [state, setState] = useState({ loading: true, error: null, pair: null, updatedAt: null });
 
   useEffect(() => {
     if (!contract) return;
@@ -218,36 +140,19 @@ function useDexScreenerToken(contract, refreshMs = 30000) {
     async function run() {
       try {
         setState((s) => ({ ...s, loading: true, error: null }));
-
         const url = `https://api.dexscreener.com/latest/dex/tokens/${contract}`;
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) throw new Error(`Dexscreener HTTP ${res.status}`);
-
         const json = await res.json();
         const pair = pickBestPair(json?.pairs || []);
-
-        if (!cancelled) {
-          setState({
-            loading: false,
-            error: null,
-            pair,
-            updatedAt: Date.now(),
-          });
-        }
+        if (!cancelled) setState({ loading: false, error: null, pair, updatedAt: Date.now() });
       } catch (e) {
-        if (!cancelled) {
-          setState((s) => ({
-            ...s,
-            loading: false,
-            error: e?.message || "Dex fetch failed",
-          }));
-        }
+        if (!cancelled) setState((s) => ({ ...s, loading: false, error: e?.message || "Dex fetch failed" }));
       }
     }
 
     run();
     timer = setInterval(run, refreshMs);
-
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
@@ -257,15 +162,9 @@ function useDexScreenerToken(contract, refreshMs = 30000) {
   return state;
 }
 
-/** ------------ SUPABASE CONFIG (public read) ------------- */
+/** ------------ SUPABASE PUBLIC READ HOOKS ------------- */
 function usePffConfig(refreshMs = 60000) {
-  const [state, setState] = useState({
-    loading: true,
-    error: null,
-    settings: null,
-    rules: null,
-    updatedAt: null,
-  });
+  const [state, setState] = useState({ loading: true, error: null, settings: null, rules: null, updatedAt: null });
 
   useEffect(() => {
     let cancelled = false;
@@ -274,39 +173,22 @@ function usePffConfig(refreshMs = 60000) {
     async function run() {
       try {
         setState((s) => ({ ...s, loading: true, error: null }));
-
-        const [{ data: settingsData, error: settingsError }, { data: rulesData, error: rulesError }] =
-          await Promise.all([
-            supabase.from("settings").select("*").order("updated_at", { ascending: false }).limit(1),
-            supabase.from("scoring_rules").select("*").order("updated_at", { ascending: false }).limit(1),
-          ]);
+        const [{ data: settingsData, error: settingsError }, { data: rulesData, error: rulesError }] = await Promise.all([
+          supabase.from("settings").select("*").order("updated_at", { ascending: false }).limit(1),
+          supabase.from("scoring_rules").select("*").order("updated_at", { ascending: false }).limit(1),
+        ]);
 
         if (settingsError) throw settingsError;
         if (rulesError) throw rulesError;
 
-        if (!cancelled) {
-          setState({
-            loading: false,
-            error: null,
-            settings: settingsData?.[0] || null,
-            rules: rulesData?.[0] || null,
-            updatedAt: Date.now(),
-          });
-        }
+        if (!cancelled) setState({ loading: false, error: null, settings: settingsData?.[0] || null, rules: rulesData?.[0] || null, updatedAt: Date.now() });
       } catch (e) {
-        if (!cancelled) {
-          setState((s) => ({
-            ...s,
-            loading: false,
-            error: e?.message || "Config fetch failed",
-          }));
-        }
+        if (!cancelled) setState((s) => ({ ...s, loading: false, error: e?.message || "Config fetch failed" }));
       }
     }
 
     run();
     timer = setInterval(run, refreshMs);
-
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
@@ -326,13 +208,8 @@ function usePublicLeaderboard(refreshMs = 45000) {
     async function run() {
       try {
         setState((s) => ({ ...s, loading: true, error: null }));
-        const { data, error } = await supabase
-          .from("leaderboard")
-          .select("pseudo, points, last_update")
-          .order("points", { ascending: false })
-          .limit(10);
+        const { data, error } = await supabase.from("leaderboard").select("pseudo, points, last_update").order("points", { ascending: false }).limit(10);
         if (error) throw error;
-
         if (!cancelled) setState({ loading: false, error: null, rows: data || [], updatedAt: Date.now() });
       } catch (e) {
         if (!cancelled) setState((s) => ({ ...s, loading: false, error: e?.message || "Leaderboard fetch failed" }));
@@ -341,7 +218,6 @@ function usePublicLeaderboard(refreshMs = 45000) {
 
     run();
     timer = setInterval(run, refreshMs);
-
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
@@ -361,13 +237,8 @@ function useExecutionLogs(refreshMs = 60000) {
     async function run() {
       try {
         setState((s) => ({ ...s, loading: true, error: null }));
-        const { data, error } = await supabase
-          .from("execution_logs")
-          .select("id, title, description, proof_link, type, created_at")
-          .order("created_at", { ascending: false })
-          .limit(12);
+        const { data, error } = await supabase.from("execution_logs").select("id, title, description, proof_link, type, created_at").order("created_at", { ascending: false }).limit(12);
         if (error) throw error;
-
         if (!cancelled) setState({ loading: false, error: null, rows: data || [], updatedAt: Date.now() });
       } catch (e) {
         if (!cancelled) setState((s) => ({ ...s, loading: false, error: e?.message || "Logs fetch failed" }));
@@ -376,7 +247,6 @@ function useExecutionLogs(refreshMs = 60000) {
 
     run();
     timer = setInterval(run, refreshMs);
-
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
@@ -396,23 +266,33 @@ function useApprovedSubmissions(refreshMs = 45000) {
     async function run() {
       try {
         setState((s) => ({ ...s, loading: true, error: null }));
-        // RLS: only approved are readable publicly
         const { data, error } = await supabase
           .from("submissions")
           .select("id, quest_id, handle, proof, note, status, type, difficulty, points_awarded, created_at")
           .eq("status", "approved")
           .order("created_at", { ascending: false })
           .limit(12);
-        if (error) throw error;
 
+        if (error) throw error;
         if (!cancelled) setState({ loading: false, error: null, rows: data || [], updatedAt: Date.now() });
       } catch (e) {
         if (!cancelled) setState((s) => ({ ...s, loading: false, error: e?.message || "Submissions fetch failed" }));
       }
     }
 
-    function usePublicQuests(refreshMs = 45000) {
-  const [state, setState] = useState({ loading: true, error: null, rows: [] });
+    run();
+    timer = setInterval(run, refreshMs);
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+    };
+  }, [refreshMs]);
+
+  return state;
+}
+
+function usePublicQuests(refreshMs = 45000) {
+  const [state, setState] = useState({ loading: true, error: null, rows: [], updatedAt: null });
 
   useEffect(() => {
     let cancelled = false;
@@ -427,15 +307,15 @@ function useApprovedSubmissions(refreshMs = 45000) {
           .limit(200);
 
         if (error) throw error;
-        if (!cancelled) setState({ loading: false, error: null, rows: data || [] });
+
+        if (!cancelled) setState({ loading: false, error: null, rows: data || [], updatedAt: Date.now() });
       } catch (e) {
-        if (!cancelled) setState({ loading: false, error: e?.message || "Quests fetch failed", rows: [] });
+        if (!cancelled) setState({ loading: false, error: e?.message || "Quests fetch failed", rows: [], updatedAt: Date.now() });
       }
     }
 
     run();
     timer = setInterval(run, refreshMs);
-
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
@@ -445,19 +325,7 @@ function useApprovedSubmissions(refreshMs = 45000) {
   return state;
 }
 
-    run();
-    timer = setInterval(run, refreshMs);
-
-    return () => {
-      cancelled = true;
-      if (timer) clearInterval(timer);
-    };
-  }, [refreshMs]);
-
-  return state;
-}
-
-/** ------------ UI PRIMITIVES (PFF SKIN) ------------- */
+/** ------------ UI PRIMITIVES ------------- */
 function PffSectionTitle({ kicker, title, desc, right }) {
   return (
     <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -465,21 +333,13 @@ function PffSectionTitle({ kicker, title, desc, right }) {
         {kicker ? (
           <div className="inline-flex items-center gap-2 mb-1">
             <span className="h-1.5 w-1.5 rounded-full bg-neon-400 shadow-neon" />
-            <span className="text-sm font-extrabold tracking-widest uppercase text-neon-400 text-glow drop-shadow-[0_0_14px_rgba(0,232,90,.45)]">
-              {kicker}
-            </span>
+            <span className="text-sm font-extrabold tracking-widest uppercase text-neon-400 text-glow drop-shadow-[0_0_14px_rgba(0,232,90,.45)]">{kicker}</span>
           </div>
         ) : null}
 
-        <h2 className="mt-2 text-3xl md:text-4xl font-extrabold tracking-tight text-white text-glow drop-shadow-[0_0_18px_rgba(0,232,90,.25)]">
-          {title}
-        </h2>
+        <h2 className="mt-2 text-3xl md:text-4xl font-extrabold tracking-tight text-white text-glow drop-shadow-[0_0_18px_rgba(0,232,90,.25)]">{title}</h2>
 
-        {desc ? (
-          <p className="mt-3 text-base text-white/80 drop-shadow-[0_0_10px_rgba(0,0,0,.6)] max-w-3xl leading-relaxed">
-            {desc}
-          </p>
-        ) : null}
+        {desc ? <p className="mt-3 text-base text-white/80 drop-shadow-[0_0_10px_rgba(0,0,0,.6)] max-w-3xl leading-relaxed">{desc}</p> : null}
       </div>
 
       {right ? <div className="shrink-0">{right}</div> : null}
@@ -489,19 +349,12 @@ function PffSectionTitle({ kicker, title, desc, right }) {
 
 function Badge({ children, tone = "neutral" }) {
   const cls =
-    tone === "good"
-      ? "border-neon-500/35 text-neon-300 shadow-neon"
-      : tone === "warn"
-      ? "border-yellow-400/30 text-yellow-200"
-      : tone === "bad"
-      ? "border-red-400/30 text-red-200"
-      : "border-white/10 text-white/80";
+    tone === "good" ? "border-neon-500/35 text-neon-300 shadow-neon" :
+    tone === "warn" ? "border-yellow-400/30 text-yellow-200" :
+    tone === "bad" ? "border-red-400/30 text-red-200" :
+    "border-white/10 text-white/80";
 
-  return (
-    <span className={cx("inline-flex items-center gap-2 rounded-full border bg-black/30 px-3 py-1 text-xs", cls)}>
-      {children}
-    </span>
-  );
+  return <span className={cx("inline-flex items-center gap-2 rounded-full border bg-black/30 px-3 py-1 text-xs", cls)}>{children}</span>;
 }
 
 function PffCard({ children, className = "" }) {
@@ -520,7 +373,7 @@ function ProgressBar({ value01 }) {
   );
 }
 
-/** ------------ NEXT LEVEL: TOAST ------------- */
+/** ------------ TOAST ------------- */
 function HordeSurgeToast({ hits }) {
   return (
     <AnimatePresence>
@@ -539,10 +392,7 @@ function HordeSurgeToast({ hits }) {
                 <div className="mt-1 text-sm text-white/80">{hits.map((h) => h.label).join(" • ")}</div>
                 <div className="mt-1 text-xs text-white/60">Rewards: {hits.map((h) => h.reward).join(" • ")}</div>
               </div>
-
-              <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold bg-neon-500 text-black shadow-neonStrong">
-                LIVE
-              </span>
+              <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold bg-neon-500 text-black shadow-neonStrong">LIVE</span>
             </div>
           </div>
         </motion.div>
@@ -551,7 +401,7 @@ function HordeSurgeToast({ hits }) {
   );
 }
 
-/** ------------ TOP REALTIME BAR (module-level) ------------- */
+/** ------------ REALTIME BAR ------------- */
 function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
   const scorePct = Math.round(clamp01(swarmScore01) * 100);
 
@@ -560,37 +410,11 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
       <PffCard className="p-4 border border-neon-500/15 shadow-[0_0_80px_rgba(0,232,90,.12)]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={dexStatus?.error ? "warn" : dexStatus?.loading ? "neutral" : "good"}>
-              Dex: {dexStatus?.loading ? "loading…" : dexStatus?.error ? "offline" : "live"}
-            </Badge>
-
-            <Badge>
-              Price:{" "}
-              <span className="text-white/90">
-                {dexStatus?.priceUsd ? `$${dexStatus.priceUsd.toFixed(8)}` : "—"}
-              </span>
-            </Badge>
-
-            <Badge>
-              MCAP:{" "}
-              <span className="text-white/90">
-                {dexStatus?.mcapUsd ? `$${formatNumber(Math.round(dexStatus.mcapUsd))}` : "—"}
-              </span>
-            </Badge>
-
-            <Badge>
-              Vol 24h:{" "}
-              <span className="text-white/90">
-                {dexStatus?.vol24Usd ? `$${formatNumber(Math.round(dexStatus.vol24Usd))}` : "—"}
-              </span>
-            </Badge>
-
-            <Badge>
-              Liq:{" "}
-              <span className="text-white/90">
-                {dexStatus?.liquidityUsd ? `$${formatNumber(Math.round(dexStatus.liquidityUsd))}` : "—"}
-              </span>
-            </Badge>
+            <Badge tone={dexStatus?.error ? "warn" : dexStatus?.loading ? "neutral" : "good"}>Dex: {dexStatus?.loading ? "loading…" : dexStatus?.error ? "offline" : "live"}</Badge>
+            <Badge>Price: <span className="text-white/90">{dexStatus?.priceUsd ? `$${dexStatus.priceUsd.toFixed(8)}` : "—"}</span></Badge>
+            <Badge>MCAP: <span className="text-white/90">{dexStatus?.mcapUsd ? `$${formatNumber(Math.round(dexStatus.mcapUsd))}` : "—"}</span></Badge>
+            <Badge>Vol 24h: <span className="text-white/90">{dexStatus?.vol24Usd ? `$${formatNumber(Math.round(dexStatus.vol24Usd))}` : "—"}</span></Badge>
+            <Badge>Liq: <span className="text-white/90">{dexStatus?.liquidityUsd ? `$${formatNumber(Math.round(dexStatus.liquidityUsd))}` : "—"}</span></Badge>
           </div>
 
           <div className="flex items-center gap-3">
@@ -633,7 +457,9 @@ export default function PFFSwarmOracleHub({
   const logs = useExecutionLogs(60000);
   const approved = useApprovedSubmissions(45000);
 
-  // parse settings/rules
+  // ✅ quests from DB (public)
+  const publicQuests = usePublicQuests(45000);
+
   const settings = cfg.settings || null;
   const rules = cfg.rules || null;
 
@@ -644,16 +470,30 @@ export default function PFFSwarmOracleHub({
     const sum = milestonesW + activityW;
     if (sum <= 0) return { milestones: 0.6, activity: 0.4, activityTargetPoints: 1000 };
     const norm = { milestones: milestonesW / sum, activity: activityW / sum };
-    const activityTargetPoints =
-      typeof w?.activity_target_points === "number" ? w.activity_target_points : 1000;
+    const activityTargetPoints = typeof w?.activity_target_points === "number" ? w.activity_target_points : 1000;
     return { ...norm, activityTargetPoints };
   }, [settings]);
 
   const basePoints = useMemo(() => safeJson(rules?.base_points, { raid: 10, art: 15, lore: 8, oracle: 12 }), [rules]);
-  const multipliers = useMemo(
-    () => safeJson(rules?.difficulty_multipliers, { easy: 1, medium: 1.5, hard: 2 }),
-    [rules]
-  );
+  const multipliers = useMemo(() => safeJson(rules?.difficulty_multipliers, { easy: 1, medium: 1.5, hard: 2 }), [rules]);
+
+  // map DB quests -> UI quests
+  const questsFromDb = useMemo(() => {
+    return (publicQuests.rows || []).map((q) => ({
+      id: q.id,
+      title: q.title,
+      type: q.type,
+      difficulty: q.difficulty,
+      reward: q.reward,
+      window: q.time_window,
+      status: q.status,
+      proofType: q.proof_type,
+      desc: q.description,
+      points: typeof q.points === "number" ? q.points : Number(q.points || 0),
+    }));
+  }, [publicQuests.rows]);
+
+  const questsToShow = useMemo(() => (questsFromDb.length ? questsFromDb : quests), [questsFromDb, quests]);
 
   // live stats (dex)
   const liveMcap = Number(pair?.marketCap || pair?.fdv || 0);
@@ -665,7 +505,7 @@ export default function PFFSwarmOracleHub({
     return milestones.map((m) => {
       if (m.metric === "Market Cap") return { ...m, current: liveMcap || m.current };
       if (m.metric === "24h Volume") return { ...m, current: liveVol24h || m.current };
-      return m; // holders later
+      return m;
     });
   }, [milestones, liveMcap, liveVol24h]);
 
@@ -683,28 +523,22 @@ export default function PFFSwarmOracleHub({
     [dex.loading, dex.error, dex.updatedAt, pair, liveLiq, livePrice, liveMcap, liveVol24h]
   );
 
-  // detect newly completed milestones
+  // milestone hit toast
   const prevCompletedRef = useRef(new Set());
   const [justHit, setJustHit] = useState([]);
 
   useEffect(() => {
-    const completedNow = new Set(
-      liveMilestones
-        .filter((m) => Number(m.current ?? 0) >= Number(m.target ?? 0))
-        .map((m) => m.id)
-    );
-
+    const completedNow = new Set(liveMilestones.filter((m) => Number(m.current ?? 0) >= Number(m.target ?? 0)).map((m) => m.id));
     const newly = liveMilestones.filter((m) => completedNow.has(m.id) && !prevCompletedRef.current.has(m.id));
 
     if (newly.length) {
       setJustHit(newly.map(({ id, label, metric, reward }) => ({ id, label, metric, reward })));
       setTimeout(() => setJustHit([]), 6000);
     }
-
     prevCompletedRef.current = completedNow;
   }, [liveMilestones]);
 
-  // dynamic thresholds (Standby -> Ready)
+  // dynamic thresholds
   const liveStats = useMemo(() => {
     const mcap = Number(pair?.marketCap || pair?.fdv || 0);
     const vol24 = Number(pair?.volume?.h24 || 0);
@@ -715,7 +549,6 @@ export default function PFFSwarmOracleHub({
   const dynamicThresholds = useMemo(() => {
     return buybackThresholds.map((row) => {
       const trig = (row.trigger || "").toLowerCase();
-
       const mcapReady = liveStats.mcap >= 250000;
       const volReady = liveStats.vol24 >= 150000;
       const holdersReady = liveStats.holders >= 2500;
@@ -729,7 +562,7 @@ export default function PFFSwarmOracleHub({
     });
   }, [buybackThresholds, liveStats]);
 
-  // milestones progress (0..1)
+  // swarm score
   const milestonesProgress01 = useMemo(() => {
     if (!liveMilestones?.length) return 0;
     const vals = liveMilestones.map((m) => {
@@ -738,11 +571,9 @@ export default function PFFSwarmOracleHub({
       if (!tgt || tgt <= 0) return 0;
       return clamp01(cur / tgt);
     });
-    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    return clamp01(avg);
+    return clamp01(vals.reduce((a, b) => a + b, 0) / vals.length);
   }, [liveMilestones]);
 
-  // activity progress (0..1) from leaderboard top points
   const activityProgress01 = useMemo(() => {
     const top = Number(leaderboard.rows?.[0]?.points || 0);
     const target = Number(weights.activityTargetPoints || 1000);
@@ -750,21 +581,18 @@ export default function PFFSwarmOracleHub({
     return clamp01(top / target);
   }, [leaderboard.rows, weights.activityTargetPoints]);
 
-  const swarmScore01 = useMemo(() => {
-    return clamp01(weights.milestones * milestonesProgress01 + weights.activity * activityProgress01);
-  }, [weights, milestonesProgress01, activityProgress01]);
+  const swarmScore01 = useMemo(() => clamp01(weights.milestones * milestonesProgress01 + weights.activity * activityProgress01), [
+    weights,
+    milestonesProgress01,
+    activityProgress01,
+  ]);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <HordeSurgeToast hits={justHit} />
 
       <div className="space-y-12">
-        <RealtimeSwarmBar
-          dexStatus={dexStatus}
-          swarmScore01={swarmScore01}
-          weights={weights}
-          configLoading={cfg.loading}
-        />
+        <RealtimeSwarmBar dexStatus={dexStatus} swarmScore01={swarmScore01} weights={weights} configLoading={cfg.loading} />
 
         <TheSwarmSection basePoints={basePoints} multipliers={multipliers} />
         <TheOracleSection />
@@ -785,7 +613,6 @@ export default function PFFSwarmOracleHub({
         />
 
         <BuybackThresholdsTable rows={dynamicThresholds} />
-
       </div>
     </section>
   );
@@ -813,9 +640,7 @@ function TheSwarmSection({ basePoints, multipliers }) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
               <div className="text-white font-extrabold">Scoring (live rules)</div>
-              <div className="mt-1 text-sm text-white/70">
-                base(type) × multiplier(difficulty) + bonus (admin). Fully configurable.
-              </div>
+              <div className="mt-1 text-sm text-white/70">base(type) × multiplier(difficulty) + bonus (admin). Fully configurable.</div>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -833,32 +658,6 @@ function TheSwarmSection({ basePoints, multipliers }) {
           </div>
         </PffCard>
       </div>
-
-      <div className="mt-8 grid gap-5 md:grid-cols-3">
-        <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/35 transition">
-          <div className="text-xs text-white/60">How it works</div>
-          <div className="mt-2 text-white font-extrabold text-lg">Weekly quests</div>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed">
-            Telegram quests drop on schedule. Complete them, submit proof, earn fixed rewards.
-          </p>
-        </PffCard>
-
-        <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/35 transition">
-          <div className="text-xs text-white/60">Anti-chaos</div>
-          <div className="mt-2 text-white font-extrabold text-lg">Predictable outcomes</div>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed">
-            Bonus rewards are voted by the Horde. Everything is transparent and trackable.
-          </p>
-        </PffCard>
-
-        <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/35 transition">
-          <div className="text-xs text-white/60">Lore layer</div>
-          <div className="mt-2 text-white font-extrabold text-lg">Renaissance cycles</div>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed">
-            X is used for scheduled “Horde Renaissance” saga drops — not noise.
-          </p>
-        </PffCard>
-      </div>
     </div>
   );
 }
@@ -872,58 +671,11 @@ function TheOracleSection() {
         desc="Prophecies are milestones. Milestones are triggers. Triggers are deterministic actions — buybacks, burns, raid budgets."
         right={<Badge tone="good">Threshold-driven</Badge>}
       />
-
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/35 transition">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-white font-extrabold text-lg">Prophecy Board</div>
-            <Badge>Scheduled drops</Badge>
-          </div>
-
-          <p className="mt-3 text-sm text-white/80 leading-relaxed">
-            The Oracle posts sagas on a fixed cadence. No “mystery mechanics” — just clear objectives.
-          </p>
-
-          <ul className="mt-5 space-y-2 text-sm text-white/80">
-            <li className="flex gap-2">
-              <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
-              Clear milestones (MCAP / volume / holders)
-            </li>
-            <li className="flex gap-2">
-              <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
-              Public triggers and proofs
-            </li>
-            <li className="flex gap-2">
-              <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
-              Community signal & narrative cohesion
-            </li>
-          </ul>
-        </PffCard>
-
-        <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/35 transition">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-white font-extrabold text-lg">Deterministic Actions</div>
-            <Badge tone="warn">No RNG</Badge>
-          </div>
-
-          <p className="mt-3 text-sm text-white/80 leading-relaxed">
-            When a threshold is hit, the action is executed as described. The site displays the rules and the current
-            progress.
-          </p>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Badge tone="good">Buybacks</Badge>
-            <Badge>Burns</Badge>
-            <Badge>Raid budget</Badge>
-            <Badge>Quest packs</Badge>
-          </div>
-        </PffCard>
-      </div>
     </div>
   );
 }
 
-/** ------------ MILESTONES (LIVE + PULSE) ------------- */
+/** ------------ MILESTONES ------------- */
 function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
   const total = milestones.length;
   const completed = milestones.filter((m) => (m.current ?? 0) >= (m.target ?? 0)).length;
@@ -939,26 +691,7 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
             <Badge tone={completed === total ? "good" : "neutral"}>
               {completed}/{total} completed
             </Badge>
-
-            {dexStatus?.loading ? (
-              <Badge>Dex: loading…</Badge>
-            ) : dexStatus?.error ? (
-              <Badge tone="warn">Dex: offline</Badge>
-            ) : (
-              <Badge tone="good">Dex: live</Badge>
-            )}
-
-            {!dexStatus?.loading && !dexStatus?.error && dexStatus?.priceUsd ? (
-              <Badge>
-                Price: <span className="text-white/90">${dexStatus.priceUsd.toFixed(8)}</span>
-              </Badge>
-            ) : null}
-
-            {!dexStatus?.loading && !dexStatus?.error && dexStatus?.liquidityUsd ? (
-              <Badge>
-                Liq: <span className="text-white/90">${formatNumber(Math.round(dexStatus.liquidityUsd))}</span>
-              </Badge>
-            ) : null}
+            {dexStatus?.loading ? <Badge>Dex: loading…</Badge> : dexStatus?.error ? <Badge tone="warn">Dex: offline</Badge> : <Badge tone="good">Dex: live</Badge>}
           </div>
         }
       />
@@ -975,11 +708,7 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
             <motion.div
               key={m.id}
               initial={false}
-              animate={
-                isJustHit
-                  ? { scale: [1, 1.02, 1], boxShadow: "0 0 90px rgba(0,232,90,.28)" }
-                  : { scale: 1, boxShadow: "0 0 0 rgba(0,0,0,0)" }
-              }
+              animate={isJustHit ? { scale: [1, 1.02, 1], boxShadow: "0 0 90px rgba(0,232,90,.28)" } : { scale: 1, boxShadow: "0 0 0 rgba(0,0,0,0)" }}
               transition={{ duration: 0.7 }}
             >
               <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/35 transition">
@@ -991,14 +720,7 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
                       {formatNumber(target)}
                     </div>
                   </div>
-
-                  {done ? (
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.25 }}>
-                      <Badge tone="good">DONE</Badge>
-                    </motion.div>
-                  ) : (
-                    <Badge tone="neutral">IN PROGRESS</Badge>
-                  )}
+                  {done ? <Badge tone="good">DONE</Badge> : <Badge tone="neutral">IN PROGRESS</Badge>}
                 </div>
 
                 <div className="mt-5">
@@ -1019,8 +741,6 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
           );
         })}
       </div>
-
-      {dexStatus?.updatedAt ? <div className="mt-4 text-xs text-white/50">Updated: {new Date(dexStatus.updatedAt).toLocaleTimeString()}</div> : null}
     </div>
   );
 }
@@ -1034,9 +754,7 @@ function LeaderboardPanel({ leaderboard }) {
       <PffCard className="mt-8 overflow-hidden border border-neon-500/15">
         <div className="p-4 border-b border-neon-500/10 flex items-center justify-between">
           <div className="text-white font-extrabold">Horde Champions</div>
-          <div className="text-xs text-white/55">
-            {leaderboard.loading ? "Loading…" : leaderboard.error ? "Offline" : "Live"}
-          </div>
+          <div className="text-xs text-white/55">{leaderboard.loading ? "Loading…" : leaderboard.error ? "Offline" : "Live"}</div>
         </div>
 
         <div className="divide-y divide-neon-500/10">
@@ -1044,7 +762,12 @@ function LeaderboardPanel({ leaderboard }) {
             leaderboard.rows.map((r, idx) => (
               <div key={r.pseudo} className="px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className={cx("w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border", idx === 0 ? "border-neon-500/50 bg-neon-500 text-black" : "border-neon-500/15 bg-black/20 text-white/80")}>
+                  <span
+                    className={cx(
+                      "w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border",
+                      idx === 0 ? "border-neon-500/50 bg-neon-500 text-black" : "border-neon-500/15 bg-black/20 text-white/80"
+                    )}
+                  >
                     {idx + 1}
                   </span>
                   <div className="min-w-0">
@@ -1068,16 +791,11 @@ function LeaderboardPanel({ leaderboard }) {
   );
 }
 
-/** ------------ EXECUTION LOG TIMELINE ------------- */
+/** ------------ EXECUTION LOGS ------------- */
 function ExecutionTimeline({ logs }) {
   return (
     <div id="execution" className="scroll-mt-24">
-      <PffSectionTitle
-        kicker="Transparency"
-        title="Execution Logs"
-        desc="Every action is logged with proof — buybacks, burns, events."
-        right={<Badge tone="good">Public</Badge>}
-      />
+      <PffSectionTitle kicker="Transparency" title="Execution Logs" desc="Every action is logged with proof — buybacks, burns, events." right={<Badge tone="good">Public</Badge>} />
 
       <PffCard className="mt-8 p-5 border border-neon-500/15">
         {logs.loading ? (
@@ -1095,9 +813,7 @@ function ExecutionTimeline({ logs }) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="text-white font-extrabold truncate">{x.title}</div>
-                      <Badge tone={String(x.type).toLowerCase() === "burn" ? "warn" : String(x.type).toLowerCase() === "buyback" ? "good" : "neutral"}>
-                        {x.type}
-                      </Badge>
+                      <Badge tone={String(x.type).toLowerCase() === "burn" ? "warn" : String(x.type).toLowerCase() === "buyback" ? "good" : "neutral"}>{x.type}</Badge>
                     </div>
                     <div className="mt-1 text-sm text-white/75 leading-relaxed">{x.description}</div>
                     {x.proof_link ? (
@@ -1107,9 +823,7 @@ function ExecutionTimeline({ logs }) {
                     ) : null}
                   </div>
 
-                  <div className="text-xs text-white/55 shrink-0">
-                    {x.created_at ? new Date(x.created_at).toLocaleDateString() : ""}
-                  </div>
+                  <div className="text-xs text-white/55 shrink-0">{x.created_at ? new Date(x.created_at).toLocaleDateString() : ""}</div>
                 </div>
               </div>
             ))}
@@ -1122,7 +836,7 @@ function ExecutionTimeline({ logs }) {
   );
 }
 
-/** ------------ QUEST BOARD (API-ready + local fallback) ------------- */
+/** ------------ QUEST BOARD ------------- */
 function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEnabled }) {
   const [localSubmissions, setLocalSubmissions] = useState([]);
   const [filter, setFilter] = useState({ status: "ALL", type: "ALL", difficulty: "ALL" });
@@ -1135,7 +849,7 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
   }, []);
 
   const filtered = useMemo(() => {
-    return quests.filter((q) => {
+    return (quests || []).filter((q) => {
       const okStatus = filter.status === "ALL" ? true : q.status === filter.status;
       const okType = filter.type === "ALL" ? true : q.type === filter.type;
       const okDiff = filter.difficulty === "ALL" ? true : q.difficulty === filter.difficulty;
@@ -1150,28 +864,24 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
   }
 
   async function submit(payload) {
-    // If backend is enabled AND API exists, we’ll hit it.
-    // If not (dev/local), we fallback to local storage.
     if (backendEnabled) {
-  try {
-    if (!siteKey) throw new Error("Missing VITE_RECAPTCHA_SITE_KEY");
+      try {
+        if (!siteKey) throw new Error("Missing VITE_RECAPTCHA_SITE_KEY");
+        const recaptchaToken = await getRecaptchaToken(siteKey, "submit_quest");
 
-    const recaptchaToken = await getRecaptchaToken(siteKey, "submit_quest");
+        const res = await fetch("/api/submit-quest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, recaptchaToken }),
+        });
 
-    const res = await fetch("/api/submit-quest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...payload,
-        recaptchaToken,
-      }),
-    });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
 
         setToast({ tone: "good", msg: "Submitted to backend ✅ (pending review)" });
         setTimeout(() => setToast(null), 2500);
         return true;
       } catch (e) {
-        // fallback locally but warn
         setToast({ tone: "warn", msg: `Backend not ready (${e.message}). Saved locally.` });
         setTimeout(() => setToast(null), 3200);
       }
@@ -1205,9 +915,7 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
         desc="Pick a quest, submit proof, and earn your place in the Horde."
         right={
           <div className="flex items-center gap-2">
-            <Badge tone="good">
-              {approvedState?.rows?.length ? `${approvedState.rows.length} approved proofs (latest)` : "Approved proofs: —"}
-            </Badge>
+            <Badge tone="good">{approvedState?.rows?.length ? `${approvedState.rows.length} approved proofs (latest)` : "Approved proofs: —"}</Badge>
             <Badge>{backendEnabled ? "Backend: ON" : "Backend: OFF"}</Badge>
           </div>
         }
@@ -1224,26 +932,10 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
       <PffCard className="mt-8 p-5 border border-neon-500/15">
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:justify-between">
           <div className="text-white font-extrabold">Filters</div>
-
           <div className="flex flex-wrap gap-3">
-            <Select
-              label="Status"
-              value={filter.status}
-              onChange={(v) => setFilter((f) => ({ ...f, status: v }))}
-              options={["ALL", "LIVE", "UPCOMING", "ENDED"]}
-            />
-            <Select
-              label="Type"
-              value={filter.type}
-              onChange={(v) => setFilter((f) => ({ ...f, type: v }))}
-              options={["ALL", "lore", "art", "raid", "oracle"]}
-            />
-            <Select
-              label="Difficulty"
-              value={filter.difficulty}
-              onChange={(v) => setFilter((f) => ({ ...f, difficulty: v }))}
-              options={["ALL", "easy", "medium", "hard"]}
-            />
+            <Select label="Status" value={filter.status} onChange={(v) => setFilter((f) => ({ ...f, status: v }))} options={["ALL", "LIVE", "UPCOMING", "ENDED"]} />
+            <Select label="Type" value={filter.type} onChange={(v) => setFilter((f) => ({ ...f, type: v }))} options={["ALL", "lore", "art", "raid", "oracle"]} />
+            <Select label="Difficulty" value={filter.difficulty} onChange={(v) => setFilter((f) => ({ ...f, difficulty: v }))} options={["ALL", "easy", "medium", "hard"]} />
           </div>
         </div>
 
@@ -1259,9 +951,7 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <Badge tone={q.status === "LIVE" ? "good" : q.status === "UPCOMING" ? "warn" : "neutral"}>
-                      {q.status}
-                    </Badge>
+                    <Badge tone={q.status === "LIVE" ? "good" : q.status === "UPCOMING" ? "warn" : "neutral"}>{q.status}</Badge>
                     <Badge>{q.type}</Badge>
                   </div>
                 </div>
@@ -1302,10 +992,7 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
         />
       ) : null}
 
-      {/* Approved proofs (public) */}
       <ApprovedSubmissionsPanel state={approvedState} />
-
-      {/* Local pending (fallback only) */}
       <LocalPendingPanel localSubmissions={localSubmissions} />
     </div>
   );
@@ -1334,17 +1021,11 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
   const [errMsg, setErrMsg] = useState("");
 
   const placeholder =
-    quest.proofType === "image"
-      ? "Paste an image link (upload later)"
-      : quest.proofType === "link"
-      ? "Paste the link(s) to your post/thread"
-      : "Paste your text proof here";
+    quest.proofType === "image" ? "Paste an image link (upload later)" :
+    quest.proofType === "link" ? "Paste the link(s) to your post/thread)" :
+    "Paste your text proof here";
 
-  const scorePreview =
-    typeof calcScorePreview === "function"
-      ? calcScorePreview(quest.type, quest.difficulty)
-      : null;
-
+  const scorePreview = typeof calcScorePreview === "function" ? calcScorePreview(quest.type, quest.difficulty) : null;
   const canSubmit = handle.trim().length > 0 && proof.trim().length > 0 && !submitting;
 
   async function handleSubmit() {
@@ -1353,31 +1034,20 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
     setSubmitting(true);
 
     try {
-      // si onSubmit est async, on attend
-      await onSubmit({
-        handle: handle.trim(),
-        proof: proof.trim(),
-        note: note.trim(),
-      });
+      await onSubmit({ handle: handle.trim(), proof: proof.trim(), note: note.trim() });
     } catch (e) {
       setErrMsg(e?.message || "Submission failed. Please try again.");
       setSubmitting(false);
       return;
     }
 
-    // Si tout est ok, on ferme le modal
     setSubmitting(false);
     onClose?.();
   }
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/70"
-        onClick={() => {
-          if (!submitting) onClose?.();
-        }}
-      />
+      <div className="absolute inset-0 bg-black/70" onClick={() => !submitting && onClose?.()} />
 
       <div className="relative w-full max-w-lg glass rounded-2xl border border-neon-500/20 shadow-[0_0_90px_rgba(0,232,90,.22)]">
         <div className="p-5 border-b border-neon-500/10">
@@ -1391,17 +1061,13 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
               <div className="mt-2 flex flex-wrap gap-2">
                 <Badge>{quest.type}</Badge>
                 <Badge>{quest.difficulty}</Badge>
-                {scorePreview !== null ? (
-                  <Badge tone="good">score: {scorePreview} pts</Badge>
-                ) : null}
+                {scorePreview !== null ? <Badge tone="good">score: {scorePreview} pts</Badge> : null}
               </div>
             </div>
 
             <button
               className="rounded-xl border border-neon-500/15 px-3 py-2 text-white/80 hover:text-white hover:border-neon-500/40 disabled:opacity-50"
-              onClick={() => {
-                if (!submitting) onClose?.();
-              }}
+              onClick={() => !submitting && onClose?.()}
               type="button"
               disabled={submitting}
               aria-label="Close"
@@ -1413,11 +1079,7 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
         </div>
 
         <div className="p-5 space-y-4">
-          {errMsg ? (
-            <div className="rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-              {errMsg}
-            </div>
-          ) : null}
+          {errMsg ? <div className="rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errMsg}</div> : null}
 
           <div>
             <div className="text-xs text-white/60">Your handle (X / TG)</div>
@@ -1441,9 +1103,7 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
               placeholder={placeholder}
               disabled={submitting}
             />
-            <div className="mt-1 text-[11px] text-white/45">
-              Tip: put a direct link to your tweet / thread or a short text proof.
-            </div>
+            <div className="mt-1 text-[11px] text-white/45">Tip: put a direct link to your tweet / thread or a short text proof.</div>
           </div>
 
           <div>
@@ -1460,7 +1120,6 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
 
         <div className="p-5 border-t border-neon-500/10 flex items-center justify-between gap-3">
           <div className="text-xs text-white/55">No spam / no hate / no doxxing.</div>
-
           <button
             className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-extrabold bg-neon-500 text-black shadow-neonStrong hover:bg-neon-400 transition disabled:opacity-40"
             disabled={!canSubmit}
@@ -1533,14 +1192,12 @@ function LocalPendingPanel({ localSubmissions }) {
         ))}
       </div>
 
-      <div className="mt-3 text-xs text-white/50">
-        These are stored locally. Once API + admin is live, we’ll submit to backend + approve/reject.
-      </div>
+      <div className="mt-3 text-xs text-white/50">These are stored locally. Once API + admin is live, we’ll submit to backend + approve/reject.</div>
     </div>
   );
 }
 
-/** ------------ BUYBACK TABLE (DYNAMIC READY) ------------- */
+/** ------------ BUYBACK TABLE ------------- */
 function BuybackThresholdsTable({ rows }) {
   return (
     <div id="thresholds" className="scroll-mt-24">
@@ -1563,7 +1220,7 @@ function BuybackThresholdsTable({ rows }) {
                 <tr key={r.id} className="text-white/85">
                   <td className="px-4 py-3">{r.trigger}</td>
                   <td className="px-4 py-3">
-                    <Badge tone={r.action.toLowerCase().includes("burn") ? "warn" : "good"}>{r.action}</Badge>
+                    <Badge tone={String(r.action).toLowerCase().includes("burn") ? "warn" : "good"}>{r.action}</Badge>
                   </td>
                   <td className="px-4 py-3">{r.amount}</td>
                   <td className="px-4 py-3 text-white/70">{r.execution}</td>
@@ -1576,7 +1233,6 @@ function BuybackThresholdsTable({ rows }) {
           </table>
         </div>
       </PffCard>
-
     </div>
   );
 }
