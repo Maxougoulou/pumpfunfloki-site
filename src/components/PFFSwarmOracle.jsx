@@ -991,7 +991,6 @@ function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
         />
       ) : null}
 
-      <ApprovedSubmissionsPanel state={approvedState} />
       <LocalPendingPanel localSubmissions={localSubmissions} />
     </div>
   );
