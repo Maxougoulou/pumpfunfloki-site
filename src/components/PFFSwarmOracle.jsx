@@ -748,7 +748,15 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
 function LeaderboardPanel({ leaderboard }) {
   return (
     <div id="leaderboard" className="scroll-mt-24">
-      <PffSectionTitle kicker="Ranking" title="Leaderboard" desc="Top Vikings by verified points." right={<Badge tone="good">Top 10</Badge>} />
+      <PffSectionTitle kicker="Ranking" title="Leaderboard" desc="Top Vikings by verified points." right={<span className="inline-flex items-center rounded-full
+          px-4 py-1.5 text-sm font-semibold
+          bg-black/40
+          border border-neon-500/40
+          text-neon-300
+          shadow-[0_0_18px_rgba(0,232,90,.35)]
+          backdrop-blur-sm">
+            Top 10
+        </span>} />
 
       <PffCard className="mt-8 overflow-hidden border border-neon-500/15">
         <div className="p-4 border-b border-neon-500/10 flex items-center justify-between">
@@ -794,7 +802,15 @@ function LeaderboardPanel({ leaderboard }) {
 function ExecutionTimeline({ logs }) {
   return (
     <div id="execution" className="scroll-mt-24">
-      <PffSectionTitle kicker="Transparency" title="Execution Logs" desc="Every action is logged with proof — buybacks, burns, events." right={<Badge tone="good">Public</Badge>} />
+      <PffSectionTitle kicker="Transparency" title="Execution Logs" desc="Every action is logged with proof — buybacks, burns, events." right={<span className="inline-flex items-center rounded-full
+          px-4 py-1.5 text-sm font-semibold
+          bg-black/40
+          border border-neon-500/40
+          text-neon-300
+          shadow-[0_0_18px_rgba(0,232,90,.35)]
+          backdrop-blur-sm">
+            Public
+        </span>} />
 
       <PffCard className="mt-8 p-5 border border-neon-500/15">
         {logs.loading ? (
@@ -912,12 +928,6 @@ function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
         kicker="Engagement"
         title="Quest Board"
         desc="Pick a quest, submit proof, and earn your place in the Horde."
-        right={
-          <div className="flex items-center gap-2">
-            <Badge>Public proofs: OFF</Badge>
-            <Badge>{backendEnabled ? "Backend: ON" : "Backend: OFF"}</Badge>
-          </div>
-        }
       />
 
       {toast ? (
