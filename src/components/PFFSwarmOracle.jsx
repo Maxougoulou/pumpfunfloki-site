@@ -1141,7 +1141,15 @@ function LocalPendingPanel({ localSubmissions }) {
     <div className="mt-10">
       <div className="flex items-center justify-between gap-3">
         <div className="text-2xl md:text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_0_12px_rgba(0,232,90,.25)]">Pending Proofs — Awaiting Judgment</div>
-        <Badge tone="good">Awaiting Judgment</Badge>
+        <span className="inline-flex items-center rounded-full 
+          px-4 py-1.5 text-sm font-semibold
+          bg-black/40 
+          border border-neon-500/40 
+          text-neon-300 
+          shadow-[0_0_18px_rgba(0,232,90,.35)] 
+          backdrop-blur-sm">
+            Awaiting Judgment
+        </span>
       </div>
 
       <div className="mt-4 grid gap-5 md:grid-cols-2">
