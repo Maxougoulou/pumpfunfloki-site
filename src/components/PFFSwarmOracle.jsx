@@ -732,15 +732,6 @@ export default function PFFSwarmOracleHub({
 
         <BuybackThresholdsTable rows={dynamicThresholds} />
 
-        <div className="text-xs text-white/50">
-          Config:{" "}
-          {cfg.error ? (
-            <span className="text-yellow-200">offline (using defaults)</span>
-          ) : (
-            <span className="text-white/70">live</span>
-          )}{" "}
-          • Rules and weights can be edited from admin later.
-        </div>
       </div>
     </section>
   );
@@ -1530,7 +1521,6 @@ function BuybackThresholdsTable({ rows }) {
         </div>
       </PffCard>
 
-      <div className="mt-4 text-xs text-white/50">Tip: later we can pull real-time holders and update everything automatically.</div>
     </div>
   );
 }
