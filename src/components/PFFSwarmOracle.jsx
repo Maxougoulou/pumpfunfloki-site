@@ -608,7 +608,6 @@ export default function PFFSwarmOracleHub({
           quests={questsToShow}
           basePoints={basePoints}
           multipliers={multipliers}
-          approvedState={approved}
           backendEnabled={Boolean(safeJson(settings?.feature_toggles, { use_backend: false })?.use_backend)}
         />
 
@@ -837,7 +836,7 @@ function ExecutionTimeline({ logs }) {
 }
 
 /** ------------ QUEST BOARD ------------- */
-function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEnabled }) {
+function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
   const [localSubmissions, setLocalSubmissions] = useState([]);
   const [filter, setFilter] = useState({ status: "ALL", type: "ALL", difficulty: "ALL" });
   const [selectedQuest, setSelectedQuest] = useState(null);
@@ -915,7 +914,7 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
         desc="Pick a quest, submit proof, and earn your place in the Horde."
         right={
           <div className="flex items-center gap-2">
-            <Badge tone="good">{approvedState?.rows?.length ? `${approvedState.rows.length} approved proofs (latest)` : "Approved proofs: —"}</Badge>
+            <Badge>Public proofs: OFF</Badge>
             <Badge>{backendEnabled ? "Backend: ON" : "Backend: OFF"}</Badge>
           </div>
         }
@@ -1133,6 +1132,7 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
     </div>
   );
 }
+
 
 
 function LocalPendingPanel({ localSubmissions }) {
