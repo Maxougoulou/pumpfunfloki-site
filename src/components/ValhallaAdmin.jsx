@@ -443,123 +443,279 @@ export default function ValhallaAdmin() {
       ) : null}
 
       {tab === "quests" ? (
-        <div className="mt-6 grid gap-5">
-          <Card>
-            <div className="flex items-center justify-between gap-3">
+  <div className="mt-6 grid gap-5">
+    <Card>
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div>
+          <div className="text-white font-extrabold text-xl">Quests</div>
+          <div className="mt-1 text-xs text-white/60">
+            Create & manage quests shown on the Quest Board.
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Btn tone="outline" onClick={loadQuests}>Refresh</Btn>
+        </div>
+      </div>
+
+      {questErr ? <div className="mt-4 text-sm text-red-200">{questErr}</div> : null}
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* FORM */}
+        <div className="rounded-2xl border border-neon-500/10 bg-black/20 p-5">
+          <div className="text-white font-extrabold">Create a quest</div>
+          <div className="mt-1 text-xs text-white/55">
+            Fill the fields below. Use dropdowns to avoid mistakes.
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            {/* ID + STATUS */}
+            <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <div className="text-white font-extrabold">Quests</div>
-                <div className="text-xs text-white/60">Create quests for the Quest Board (stored in Supabase).</div>
+                <div className="text-xs text-white/60">Quest ID (ex: Q-0100)</div>
+                <input
+                  value={questForm.id}
+                  onChange={(e) => setQuestForm((v) => ({ ...v, id: e.target.value }))}
+                  className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                  placeholder="Q-0100"
+                />
+                <div className="mt-1 text-[11px] text-white/45">
+                  Must be unique.
+                </div>
               </div>
-              <Btn tone="outline" onClick={loadQuests}>
-                Refresh
-              </Btn>
+
+              <div>
+                <div className="text-xs text-white/60">Status</div>
+                <select
+                  value={questForm.status}
+                  onChange={(e) => setQuestForm((v) => ({ ...v, status: e.target.value }))}
+                  className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                >
+                  <option className="bg-black" value="LIVE">LIVE</option>
+                  <option className="bg-black" value="UPCOMING">UPCOMING</option>
+                  <option className="bg-black" value="ENDED">ENDED</option>
+                </select>
+              </div>
             </div>
 
-            {questErr ? <div className="mt-4 text-sm text-red-200">{questErr}</div> : null}
-
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <input
-                value={questForm.id}
-                onChange={(e) => setQuestForm((v) => ({ ...v, id: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="id (ex: Q-005)"
-              />
+            {/* TITLE */}
+            <div>
+              <div className="text-xs text-white/60">Title</div>
               <input
                 value={questForm.title}
                 onChange={(e) => setQuestForm((v) => ({ ...v, title: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="title"
+                className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                placeholder="Helmetify a FOG"
               />
+            </div>
 
-              <input
-                value={questForm.type}
-                onChange={(e) => setQuestForm((v) => ({ ...v, type: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="type (lore/art/raid/oracle)"
-              />
-              <input
-                value={questForm.difficulty}
-                onChange={(e) => setQuestForm((v) => ({ ...v, difficulty: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="difficulty (easy/medium/hard)"
-              />
+            {/* TYPE / DIFFICULTY */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <div className="text-xs text-white/60">Type</div>
+                <select
+                  value={questForm.type}
+                  onChange={(e) => setQuestForm((v) => ({ ...v, type: e.target.value }))}
+                  className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                >
+                  <option className="bg-black" value="lore">lore</option>
+                  <option className="bg-black" value="art">art</option>
+                  <option className="bg-black" value="raid">raid</option>
+                  <option className="bg-black" value="oracle">oracle</option>
+                </select>
+              </div>
 
+              <div>
+                <div className="text-xs text-white/60">Difficulty</div>
+                <select
+                  value={questForm.difficulty}
+                  onChange={(e) => setQuestForm((v) => ({ ...v, difficulty: e.target.value }))}
+                  className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                >
+                  <option className="bg-black" value="easy">easy</option>
+                  <option className="bg-black" value="medium">medium</option>
+                  <option className="bg-black" value="hard">hard</option>
+                </select>
+              </div>
+            </div>
+
+            {/* PROOF / WINDOW */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <div className="text-xs text-white/60">Proof type</div>
+                <select
+                  value={questForm.proof_type}
+                  onChange={(e) => setQuestForm((v) => ({ ...v, proof_type: e.target.value }))}
+                  className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                >
+                  <option className="bg-black" value="text">text</option>
+                  <option className="bg-black" value="link">link</option>
+                  <option className="bg-black" value="image">image</option>
+                </select>
+                <div className="mt-1 text-[11px] text-white/45">
+                  What users will submit.
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs text-white/60">Time window</div>
+                <input
+                  value={questForm.time_window}
+                  onChange={(e) => setQuestForm((v) => ({ ...v, time_window: e.target.value }))}
+                  className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                  placeholder="This week / 48h sprint / Next week"
+                />
+              </div>
+            </div>
+
+            {/* REWARD */}
+            <div>
+              <div className="text-xs text-white/60">Reward label</div>
               <input
                 value={questForm.reward}
                 onChange={(e) => setQuestForm((v) => ({ ...v, reward: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="reward"
+                className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                placeholder="Role + bonus vote / Fixed drop / Milestone points"
               />
-              <input
-                value={questForm.proof_type}
-                onChange={(e) => setQuestForm((v) => ({ ...v, proof_type: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="proof_type (text/link/image)"
-              />
+            </div>
 
-              <input
-                value={questForm.time_window}
-                onChange={(e) => setQuestForm((v) => ({ ...v, time_window: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="time_window (ex: This week)"
-              />
-              <input
-                value={questForm.status}
-                onChange={(e) => setQuestForm((v) => ({ ...v, status: e.target.value }))}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
-                placeholder="status (LIVE/UPCOMING/ENDED)"
-              />
-
+            {/* DESCRIPTION */}
+            <div>
+              <div className="text-xs text-white/60">Description</div>
               <textarea
                 value={questForm.description}
                 onChange={(e) => setQuestForm((v) => ({ ...v, description: e.target.value }))}
-                rows={4}
-                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none md:col-span-2"
-                placeholder="description"
+                rows={5}
+                className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                placeholder="Explain the quest clearly (no doxxing / no hate)."
               />
             </div>
 
-            <div className="mt-4 flex gap-3">
+            {/* ACTIONS */}
+            <div className="flex flex-wrap items-center gap-3">
               <Btn onClick={createQuest} disabled={!questForm.id || !questForm.title}>
                 Create quest
               </Btn>
+              <Btn
+                tone="outline"
+                onClick={() =>
+                  setQuestForm({
+                    id: "",
+                    title: "",
+                    description: "",
+                    type: "raid",
+                    difficulty: "easy",
+                    reward: "",
+                    proof_type: "text",
+                    time_window: "",
+                    status: "LIVE",
+                  })
+                }
+              >
+                Clear
+              </Btn>
             </div>
-          </Card>
-
-          <Card>
-            <div className="text-white font-extrabold">Existing quests</div>
-
-            {questsLoading ? (
-              <div className="mt-4 text-white/60">Loading…</div>
-            ) : quests.length === 0 ? (
-              <div className="mt-4 text-white/60">No quests yet.</div>
-            ) : (
-              <div className="mt-5 grid gap-3">
-                {quests.map((q) => (
-                  <div key={q.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-white font-extrabold truncate">
-                          {q.title} <span className="text-white/50 text-xs">({q.id})</span>
-                        </div>
-                        <div className="mt-1 text-xs text-white/60">
-                          {q.status} • {q.type} • {q.difficulty} • {q.proof_type} • {q.time_window}
-                        </div>
-                      </div>
-                      <Btn tone="outline" onClick={() => deleteQuest(q.id)}>
-                        Delete
-                      </Btn>
-                    </div>
-                    {q.description ? (
-                      <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap">{q.description}</div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          </div>
         </div>
-      ) : null}
+
+        {/* PREVIEW */}
+        <div className="rounded-2xl border border-neon-500/10 bg-black/20 p-5">
+          <div className="text-white font-extrabold">Preview</div>
+          <div className="mt-1 text-xs text-white/55">
+            This is how it will look on the Quest Board.
+          </div>
+
+          <div className="mt-5 glass rounded-2xl p-6 border border-neon-500/15">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-white font-extrabold text-lg">
+                  {questForm.title || "Quest title"}
+                </div>
+                <div className="mt-1 text-xs text-white/60">
+                  {(questForm.id || "Q-XXXX")} • {(questForm.time_window || "time window")}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-neon-500/35 text-neon-300 shadow-neon">
+                  {questForm.status || "LIVE"}
+                </span>
+                <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-white/10 text-white/80">
+                  {questForm.type || "type"}
+                </span>
+              </div>
+            </div>
+
+            <p className="mt-3 text-sm text-white/80 leading-relaxed">
+              {questForm.description || "Quest description will appear here."}
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-white/10 text-white/80">
+                {questForm.difficulty || "difficulty"}
+              </span>
+              {questForm.reward ? (
+                <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-neon-500/35 text-neon-300 shadow-neon">
+                  {questForm.reward}
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-neon-500/35 text-neon-300 shadow-neon">
+                  reward
+                </span>
+              )}
+              <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-white/10 text-white/80">
+                proof: {questForm.proof_type || "text"}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-4 text-[11px] text-white/45">
+            Tip: keep title short, description clear, and choose correct proof type.
+          </div>
+        </div>
+      </div>
+    </Card>
+
+    <Card>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-white font-extrabold">Existing quests</div>
+          <div className="mt-1 text-xs text-white/55">
+            Delete quests you don’t want to show anymore.
+          </div>
+        </div>
+        <div className="text-xs text-white/55">{questsLoading ? "Loading…" : `${quests.length} quest(s)`}</div>
+      </div>
+
+      {questsLoading ? (
+        <div className="mt-4 text-white/60">Loading…</div>
+      ) : quests.length === 0 ? (
+        <div className="mt-4 text-white/60">No quests yet.</div>
+      ) : (
+        <div className="mt-5 grid gap-3">
+          {quests.map((q) => (
+            <div key={q.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-white font-extrabold truncate">
+                    {q.title} <span className="text-white/50 text-xs">({q.id})</span>
+                  </div>
+                  <div className="mt-1 text-xs text-white/60">
+                    {q.status} • {q.type} • {q.difficulty} • proof:{q.proof_type} • {q.time_window}
+                  </div>
+                </div>
+                <Btn tone="outline" onClick={() => deleteQuest(q.id)}>
+                  Delete
+                </Btn>
+              </div>
+              {q.description ? (
+                <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap">{q.description}</div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  </div>
+) : null}
     </main>
   );
 }
