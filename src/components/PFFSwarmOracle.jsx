@@ -1140,7 +1140,7 @@ function LocalPendingPanel({ localSubmissions }) {
   return (
     <div className="mt-10">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-white font-extrabold text-lg">Pending Proofs — Awaiting Judgment</div>
+        <div className="mt-4 text-sm text-white/85 drop-shadow-[0_0_6px_rgba(0,232,90,.2)]">Pending Proofs — Awaiting Judgment</div>
         <Badge>Awaiting Judgment</Badge>
       </div>
 
@@ -1152,7 +1152,7 @@ function LocalPendingPanel({ localSubmissions }) {
                 <div className="text-white font-extrabold truncate">{s.handle}</div>
                 <div className="text-xs text-white/60">{new Date(s.createdAt).toLocaleString()}</div>
               </div>
-              <Badge>{s.questId}</Badge>
+              <Badge tone="good">{s.questId}</Badge>
             </div>
             <div className="mt-4 text-sm text-white/85 leading-relaxed line-clamp-4">{s.proof}</div>
             {s.note ? <div className="mt-2 text-xs text-white/60">Note: {s.note}</div> : null}
@@ -1160,7 +1160,7 @@ function LocalPendingPanel({ localSubmissions }) {
         ))}
       </div>
 
-      <div className="mt-3 text-xs text-white/50">Awaiting judgment. The Council will review your proof.</div>
+      <div className="mt-4 text-sm text-white/85 drop-shadow-[0_0_6px_rgba(0,232,90,.2)]">Awaiting judgment. The Council will review your proof.</div>
     </div>
   );
 }
