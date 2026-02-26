@@ -31,6 +31,7 @@ export default async function handler(req, res) {
       proof_type,
       time_window,
       status,
+      points,
     } = req.body || {};
 
     if (!id || !title) return res.status(400).json({ error: "missing-fields" });
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
           proof_type: proof_type ? String(proof_type).slice(0, 20) : null,
           time_window: time_window ? String(time_window).slice(0, 80) : null,
           status: status ? String(status).slice(0, 20) : "LIVE",
+          points: Number.isFinite(Number(points)) ? Number(points) : 0,
         },
       ])
       .select()
@@ -69,6 +71,7 @@ export default async function handler(req, res) {
       proof_type,
       time_window,
       status,
+      points,
     } = req.body || {};
 
     if (!id) return res.status(400).json({ error: "missing-id" });
@@ -82,6 +85,7 @@ export default async function handler(req, res) {
     if (proof_type !== undefined) patch.proof_type = proof_type ? String(proof_type).slice(0, 20) : null;
     if (time_window !== undefined) patch.time_window = time_window ? String(time_window).slice(0, 80) : null;
     if (status !== undefined) patch.status = status ? String(status).slice(0, 20) : null;
+    if (points !== undefined) patch.points = Number.isFinite(Number(points)) ? Number(points) : 0;
 
     const { data, error } = await db
       .from("quests")

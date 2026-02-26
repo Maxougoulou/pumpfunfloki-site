@@ -15,6 +15,25 @@ import { supabase } from "../lib/supabase";
 const LS_KEY = "pff_swarm_submissions_v3";
 
 /** ------------ EDIT DATA HERE ------------- */
+
+const publicQuests = usePublicQuests(45000);
+
+const questsFromDb = (publicQuests.rows || []).map((q) => ({
+  id: q.id,
+  title: q.title,
+  type: q.type,
+  difficulty: q.difficulty,
+  reward: q.reward,
+  window: q.time_window,      // 👈 mapping vers ton UI existante
+  status: q.status,
+  proofType: q.proof_type,    // 👈 mapping
+  desc: q.description,
+  points: q.points || 0,
+}));
+
+const questsToShow = questsFromDb.length ? questsFromDb : quests;
+
+
 const DEFAULT_QUESTS = [
   {
     id: "Q-001",
@@ -392,6 +411,40 @@ function useApprovedSubmissions(refreshMs = 45000) {
       }
     }
 
+    function usePublicQuests(refreshMs = 45000) {
+  const [state, setState] = useState({ loading: true, error: null, rows: [] });
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer;
+
+    async function run() {
+      try {
+        const { data, error } = await supabase
+          .from("quests")
+          .select("id, title, description, type, difficulty, reward, proof_type, time_window, status, points, created_at")
+          .order("created_at", { ascending: false })
+          .limit(200);
+
+        if (error) throw error;
+        if (!cancelled) setState({ loading: false, error: null, rows: data || [] });
+      } catch (e) {
+        if (!cancelled) setState({ loading: false, error: e?.message || "Quests fetch failed", rows: [] });
+      }
+    }
+
+    run();
+    timer = setInterval(run, refreshMs);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+    };
+  }, [refreshMs]);
+
+  return state;
+}
+
     run();
     timer = setInterval(run, refreshMs);
 
@@ -724,7 +777,7 @@ export default function PFFSwarmOracleHub({
         </div>
 
         <QuestBoard
-          quests={quests}
+          quests={questsToShow}
           basePoints={basePoints}
           multipliers={multipliers}
           approvedState={approved}
@@ -1219,7 +1272,9 @@ function QuestBoard({ quests, basePoints, multipliers, approvedState, backendEna
                   <Badge>{q.difficulty}</Badge>
                   <Badge tone="good">{q.reward}</Badge>
                   <Badge>proof: {q.proofType}</Badge>
-                  <Badge tone="good">score: {calcScorePreview(q.type, q.difficulty)} pts</Badge>
+                  <Badge tone="good">
+                    score: {typeof q.points === "number" && q.points > 0 ? q.points : calcScorePreview(q.type, q.difficulty)} pts
+                  </Badge>
                 </div>
               </div>
             </button>

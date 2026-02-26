@@ -608,6 +608,7 @@ export default function ValhallaAdmin() {
                     proof_type: "text",
                     time_window: "",
                     status: "LIVE",
+                    points: 0,
                   })
                 }
               >
@@ -666,6 +667,15 @@ export default function ValhallaAdmin() {
               </span>
             </div>
           </div>
+
+          <div>
+            <div className="text-xs text-white/60">Points (awarded on approval)</div>
+            <input
+                value={questForm.points}
+                onChange={(e) => setQuestForm((v) => ({ ...v, points: e.target.value }))}
+                className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                placeholder="15"/>
+            </div>
 
           <div className="mt-4 text-[11px] text-white/45">
             Tip: keep title short, description clear, and choose correct proof type.
