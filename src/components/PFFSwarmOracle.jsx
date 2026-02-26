@@ -1140,8 +1140,8 @@ function LocalPendingPanel({ localSubmissions }) {
   return (
     <div className="mt-10">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-white font-extrabold text-lg">Your local pending proofs (fallback)</div>
-        <Badge>localStorage</Badge>
+        <div className="text-white font-extrabold text-lg">Pending Proofs — Awaiting Judgment</div>
+        <Badge>Awaiting Judgment</Badge>
       </div>
 
       <div className="mt-4 grid gap-5 md:grid-cols-2">
@@ -1160,7 +1160,7 @@ function LocalPendingPanel({ localSubmissions }) {
         ))}
       </div>
 
-      <div className="mt-3 text-xs text-white/50">These are stored locally. Once API + admin is live, we’ll submit to backend + approve/reject.</div>
+      <div className="mt-3 text-xs text-white/50">Awaiting judgment. The Council will review your proof.</div>
     </div>
   );
 }
