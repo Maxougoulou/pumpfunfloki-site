@@ -226,7 +226,6 @@ export default function ValhallaAdmin() {
       <main className="mx-auto max-w-xl px-4 py-12">
         <Card>
           <div className="text-white font-extrabold text-2xl">Valhalla Admin</div>
-          <div className="mt-2 text-white/70 text-sm">Login (protected by reCAPTCHA v3 + bcrypt hash).</div>
 
           <div className="mt-5">
             <div className="text-xs text-white/60">Admin password</div>
