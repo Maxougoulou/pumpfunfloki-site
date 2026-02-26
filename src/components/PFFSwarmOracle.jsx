@@ -381,6 +381,7 @@ function useApprovedSubmissions(refreshMs = 45000) {
         const { data, error } = await supabase
           .from("submissions")
           .select("id, quest_id, handle, proof, note, status, type, difficulty, points_awarded, created_at")
+          .eq("status", "approved")
           .order("created_at", { ascending: false })
           .limit(12);
         if (error) throw error;
