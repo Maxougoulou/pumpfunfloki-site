@@ -7,8 +7,67 @@ export default async function handler(req, res) {
 
   const db = supabaseAdmin();
 
-  // LIST
+  // LIST — or generate AI quest ideas
   if (req.method === "GET") {
+    // ?action=generate — call OpenAI and return 5 quest suggestions
+    if (req.query?.action === "generate") {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "no-openai-key" });
+
+      const prompt = `Generate 5 varied $PFF community quests for the PumpFunFloki Viking meme coin on Solana. Mix difficulties and types. Each quest must be fun, on-brand (Viking spirit, $PFF, Solana, community energy), and motivate people to post on X or create content.
+
+Return a JSON object: { "quests": [ ...5 items... ] }
+Each item must have exactly these fields:
+- title: string (max 80 chars, engaging and specific)
+- description: string (150-280 chars, clear step-by-step instructions for the user)
+- type: one of "raid" (X post/retweet activity), "art" (meme/creative), "lore" (narrative/writing), "oracle" (prediction/market analysis)
+- difficulty: one of "easy", "medium", "hard"
+- proof_type: one of "link" (X post URL), "image" (screenshot/image upload), "text" (text answer)
+- reward: string (max 60 chars, ex: "PFF Raider badge + airdrop entry")
+- points: integer (easy: 10-15, medium: 16-25, hard: 26-40)
+- time_window: string (ex: "48h sprint", "This week", "3-day raid")
+
+Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/medium/hard.`;
+
+      const oaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a quest designer for $PFF (PumpFunFloki), a Viking-themed meme coin community. You create short, fun, specific community quests. Always return valid JSON.",
+            },
+            { role: "user", content: prompt },
+          ],
+          max_tokens: 1800,
+          temperature: 0.92,
+        }),
+      });
+
+      if (!oaiRes.ok) {
+        const txt = await oaiRes.text();
+        return res.status(500).json({ error: "openai-error", details: txt });
+      }
+
+      const oaiData = await oaiRes.json();
+      const raw = oaiData.choices?.[0]?.message?.content || "{}";
+      let quests;
+      try {
+        quests = JSON.parse(raw).quests || [];
+      } catch {
+        return res.status(500).json({ error: "parse-error", raw });
+      }
+
+      return res.status(200).json({ quests });
+    }
+
     const { data, error } = await db
       .from("quests")
       .select("*")

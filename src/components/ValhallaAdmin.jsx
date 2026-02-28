@@ -618,6 +618,9 @@ export default function ValhallaAdmin() {
     expires_at: "",
   });
   const [questErr, setQuestErr] = useState("");
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiErr, setAiErr] = useState("");
 
   // Auto-calculate points from type × difficulty
   const BASE_PTS = { raid: 10, art: 15, lore: 8, oracle: 12 };
@@ -736,6 +739,17 @@ export default function ValhallaAdmin() {
     }
     setQuests(j?.data || []);
     setQuestsLoading(false);
+  }
+
+  async function generateQuestIdeas() {
+    setAiLoading(true);
+    setAiErr("");
+    setAiSuggestions([]);
+    const r = await fetch("/api/admin-quests?action=generate", { credentials: "include" });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { setAiErr(j?.error || "generation-failed"); setAiLoading(false); return; }
+    setAiSuggestions(j.quests || []);
+    setAiLoading(false);
   }
 
   async function createQuest() {
@@ -1164,11 +1178,67 @@ export default function ValhallaAdmin() {
 
             {questErr ? <div className="mt-4 text-sm text-red-200">{questErr}</div> : null}
 
+            {/* AI Quest Generator */}
+            <div className="mt-6 rounded-2xl border border-neon-500/20 bg-neon-500/[0.04] p-5">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="text-white font-extrabold flex items-center gap-2">
+                    <span>🤖</span> AI Quest Generator
+                  </div>
+                  <div className="mt-1 text-xs text-white/55">Generate 5 quest ideas — click one to pre-fill the form.</div>
+                </div>
+                <Btn onClick={generateQuestIdeas} disabled={aiLoading} tone="outline">
+                  {aiLoading ? "Generating…" : "✨ Generate Ideas"}
+                </Btn>
+              </div>
+
+              {aiErr ? <div className="mt-3 text-sm text-red-300">{aiErr}</div> : null}
+
+              {aiSuggestions.length > 0 && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {aiSuggestions.map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        const diffMap = { easy: 1, medium: 1.5, hard: 2 };
+                        const baseMap = { raid: 10, art: 15, lore: 8, oracle: 12 };
+                        const pts = q.points ?? Math.round((baseMap[q.type] ?? 10) * (diffMap[q.difficulty] ?? 1));
+                        setQuestForm((v) => ({
+                          ...v,
+                          title: q.title || "",
+                          description: q.description || "",
+                          type: q.type || "raid",
+                          difficulty: q.difficulty || "easy",
+                          proof_type: q.proof_type || "link",
+                          reward: q.reward || "",
+                          time_window: q.time_window || "",
+                          points: pts,
+                        }));
+                      }}
+                      className="text-left rounded-xl border border-neon-500/15 bg-black/25 p-4 hover:border-neon-500/45 hover:bg-neon-500/[0.06] transition group"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                          q.difficulty === "hard" ? "text-red-300 border-red-500/30 bg-red-500/10" :
+                          q.difficulty === "medium" ? "text-amber-300 border-amber-500/30 bg-amber-500/10" :
+                          "text-neon-400 border-neon-500/30 bg-neon-500/10"
+                        }`}>{q.difficulty}</span>
+                        <span className="text-[10px] text-white/40 uppercase tracking-widest">{q.type}</span>
+                      </div>
+                      <div className="text-sm font-bold text-white group-hover:text-neon-300 transition leading-snug">{q.title}</div>
+                      <div className="mt-1.5 text-xs text-white/55 leading-relaxed line-clamp-3">{q.description}</div>
+                      <div className="mt-2 text-xs text-neon-400 font-semibold">{q.points} pts</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
               {/* Form */}
               <div className="rounded-2xl border border-neon-500/10 bg-black/20 p-5">
                 <div className="text-white font-extrabold">Create a quest</div>
-                <div className="mt-1 text-xs text-white/55">Fill the fields below.</div>
+                <div className="mt-1 text-xs text-white/55">Fill the fields below or click a suggestion above.</div>
 
                 <div className="mt-5 grid gap-4">
                   <div className="grid gap-3 md:grid-cols-2">
