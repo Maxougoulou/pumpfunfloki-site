@@ -1099,9 +1099,9 @@ function SwarmPage() {
 
 function HelmetPage() {
   return (
-    <div className="min-h-screen bg-[#05070A] flex flex-col">
+    <div className="bg-[#05070A]">
       <SiteHeader />
-      <div className="flex-1 flex flex-col mx-auto w-full max-w-6xl px-4 pt-8 pb-12">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12">
         {/* Header */}
         <div className="mb-6">
           <div className="inline-flex items-center gap-2 mb-2">
@@ -1116,13 +1116,13 @@ function HelmetPage() {
           </p>
         </div>
 
-        {/* iframe */}
-        <div className="flex-1 rounded-2xl overflow-hidden border border-neon-500/20 shadow-[0_0_40px_rgba(0,232,90,.07)] min-h-[600px]">
+        {/* iframe — tall enough so the outer page scrolls, no inner scroll */}
+        <div className="rounded-2xl overflow-hidden border border-neon-500/20 shadow-[0_0_40px_rgba(0,232,90,.07)]">
           <iframe
             src="https://pumpfunfloki-helmet.vercel.app/"
             title="PFF Viking Helmet Generator"
-            className="w-full h-full min-h-[600px]"
-            style={{ border: "none", background: "#05070A" }}
+            className="w-full"
+            style={{ border: "none", background: "#05070A", height: "1200px", overflow: "hidden" }}
             allow="camera"
           />
         </div>
