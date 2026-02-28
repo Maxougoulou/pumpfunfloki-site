@@ -11,21 +11,81 @@ body {
   color: white;
 }
 
-/* Utilities */
+/* ── Animations ─────────────────────────────────────────────────── */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-16px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-10px) rotate(1.5deg); }
+}
+
+@keyframes pulse-neon {
+  0%, 100% { box-shadow: 0 0 28px rgba(0,232,90,.55), 0 0 80px rgba(0,232,90,.18), 0 4px 20px rgba(0,0,0,.4); }
+  50%       { box-shadow: 0 0 55px rgba(0,232,90,.80), 0 0 140px rgba(0,232,90,.32), 0 4px 20px rgba(0,0,0,.4); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes glow-ring {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+/* ── Animation utilities ────────────────────────────────────────── */
+.float      { animation: float 4s ease-in-out infinite; }
+.float-slow { animation: float-slow 5.5s ease-in-out infinite; }
+.btn-cta    { animation: pulse-neon 2.5s ease-in-out infinite; }
+.fade-in-up { animation: fade-in-up 0.5s ease forwards; }
+.spin-slow  { animation: spin-slow 20s linear infinite; }
+.glow-ring  { animation: glow-ring 2s ease-in-out infinite; }
+
+/* ── Glass variants ─────────────────────────────────────────────── */
 @layer utilities {
   .text-glow {
     text-shadow: 0 0 10px rgba(0, 232, 90, 0.35), 0 0 26px rgba(0, 232, 90, 0.18);
   }
 
+  /* Default glass — nav, general cards */
   .glass {
     background: rgba(10, 14, 18, 0.72);
     backdrop-filter: blur(14px);
-    border: 1px solid rgba(0, 232, 90, 0.16);
+    border: 1px solid rgba(0, 232, 90, 0.18);
     box-shadow: 0 12px 60px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Stronger glass — admin panels, featured cards */
+  .glass-strong {
+    background: rgba(10, 15, 21, 0.90);
+    backdrop-filter: blur(22px);
+    border: 1px solid rgba(0, 232, 90, 0.26);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* Subtle glass — inner panels, secondary cards */
+  .glass-inner {
+    background: rgba(0, 0, 0, 0.30);
+    border: 1px solid rgba(0, 232, 90, 0.10);
   }
 }
 
-/* Grain overlay */
+/* ── Grain overlay ──────────────────────────────────────────────── */
 .grain::before {
   content: "";
   position: absolute;
@@ -36,6 +96,22 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
 }
 
+/* ── Neon top-line accent (for premium cards) ───────────────────── */
+.card-accent-top::before {
+  content: "";
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,232,90,0.6), transparent);
+  border-radius: 999px;
+  margin-bottom: 0;
+}
+
+/* ── Status badge colors ────────────────────────────────────────── */
+.badge-pending  { background: rgba(234,179,8,0.12);  border-color: rgba(234,179,8,0.35);  color: #fde68a; }
+.badge-approved { background: rgba(0,232,90,0.12);   border-color: rgba(0,232,90,0.40);   color: #6ee7b7; }
+.badge-rejected { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.35);  color: #fca5a5; }
+
+/* ── Smooth scroll ──────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
 }

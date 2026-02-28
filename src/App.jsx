@@ -56,13 +56,13 @@ const BURN_5_WALLET = "D1PuXuCy2HVri1qBenVEoWURXhcnVThRzBp86kVYAWtN";
 const CREATOR_FEE_WALLET = "5XovpHJKGk8pfF4dKttGRU9zmmV3XahzXhaY2qfP6BxQ";
 const TEMP_REWARDS_WALLET = "D6o72zx1Y8ZRo87C4ZNthfWBJXYKwhrjWEz2HowHPQ9u";
 
-function NeonButton({ href, children, variant = "solid", full = false }) {
+function NeonButton({ href, children, variant = "solid", full = false, className = "" }) {
   const base =
     "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition will-change-transform";
   const solid =
-    "bg-neon-500 text-black shadow-neonStrong hover:translate-y-[-1px] hover:bg-neon-400";
+    "bg-neon-500 text-black shadow-neonStrong hover:translate-y-[-2px] hover:bg-neon-400 active:translate-y-0";
   const outline =
-    "border border-neon-500/40 text-white shadow-neon hover:translate-y-[-1px] hover:border-neon-500/70";
+    "border border-neon-500/50 bg-white/[0.04] text-white/90 hover:bg-neon-500/10 hover:border-neon-500 hover:text-white hover:translate-y-[-2px] active:translate-y-0";
 
   const isExternal = href?.startsWith("http");
 
@@ -71,7 +71,7 @@ function NeonButton({ href, children, variant = "solid", full = false }) {
       href={href}
       className={`${base} ${variant === "solid" ? solid : outline} ${
         full ? "w-full" : ""
-      }`}
+      } ${className}`}
       {...(isExternal && { target: "_blank", rel: "noreferrer" })}
     >
       {children}
@@ -87,9 +87,7 @@ function SectionTitle({ kicker, title, desc }) {
         {kicker ? (
           <div className="inline-flex items-center gap-2 mb-1">
             <span className="h-1.5 w-1.5 rounded-full bg-neon-400 shadow-neon" />
-            <span className="text-sm font-extrabold tracking-widest uppercase text-neon-400 text-glow drop-shadow-[0_0_14px_rgba(0,232,90,.45)]">
-              {kicker}
-            </span>
+            <span className="text-sm font-extrabold tracking-widest uppercase text-neon-400 text-glow drop-shadow-[0_0_14px_rgba(0,232,90,.45)]">{kicker}</span>
           </div>
         ) : null}
 
@@ -147,16 +145,21 @@ function ContractCard() {
   }
 
   return (
-    <div className="glass rounded-2xl p-4">
-      <div className="text-xs text-white/70">Contract</div>
-      <div className="mt-2 flex items-center gap-3">
-        <code className="text-sm text-neon-300 break-all">{CONTRACT}</code>
+    <div className="rounded-2xl border border-neon-500/20 bg-black/40 p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-[11px] font-bold tracking-widest uppercase text-white/40">Official Contract</span>
+        {copied && (
+          <span className="text-[10px] text-neon-400 font-bold animate-fade-in">✓ Copied!</span>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        <code className="flex-1 text-xs text-neon-300/90 break-all leading-relaxed font-mono">{CONTRACT}</code>
         <button
           onClick={copy}
-          className="ml-auto inline-flex items-center gap-2 rounded-xl border border-neon-500/30 px-3 py-2 text-xs hover:border-neon-500/60"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-neon-500/30 bg-neon-500/[0.06] px-3 py-2 text-xs text-white/80 hover:border-neon-500/60 hover:bg-neon-500/12 hover:text-white transition"
         >
-          <Copy size={16} />
-          {copied ? "Copied" : "Copy"}
+          <Copy size={13} />
+          Copy
         </button>
       </div>
     </div>
@@ -165,15 +168,18 @@ function ContractCard() {
 
 function Card({ title, icon, children }) {
   return (
-    <div className="glass rounded-2xl p-6">
-      <div className="flex items-center gap-3">
-        <div className="rounded-xl border border-neon-500/25 p-2 text-neon-300 shadow-neon">
-          {icon}
+    <div className="glass rounded-2xl overflow-hidden group hover:border-neon-500/35 transition-colors duration-300">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-neon-500/50 to-transparent" />
+      <div className="p-6">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-neon-500/30 bg-neon-500/[0.08] p-2.5 text-neon-400 shadow-neon group-hover:bg-neon-500/15 transition-colors">
+            {icon}
+          </div>
+          <h3 className="text-lg font-bold text-white">{title}</h3>
         </div>
-        <h3 className="text-lg font-bold text-white">{title}</h3>
-      </div>
-      <div className="mt-3 text-[15px] md:text-sm text-white/75 leading-relaxed">
-        {children}
+        <div className="mt-4 text-sm text-white/70 leading-relaxed">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -362,53 +368,58 @@ The 10M path represents the first operational phase of a much larger vision. As 
       />
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
-        {roadmap.map((p) => (
-          <div key={p.title} className="glass rounded-2xl p-6">
-            <div className="flex items-center justify-between gap-4">
-              <h3 className="text-lg font-bold text-white">{p.title}</h3>
-              <span className="rounded-full border border-neon-500/25 px-3 py-1 text-xs text-neon-300">
-                {p.range}
-              </span>
-            </div>
-
-            {/* Targets / Focus */}
-            <div className="mt-4 space-y-2 text-sm text-white/75">
-              <div className="flex gap-2">
-                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
-                <span>
-                  <span className="text-white/85 font-semibold">Targets:</span>{" "}
-                  {p.meta?.targets}
-                </span>
-              </div>
-
-              <div className="flex gap-2">
-                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
-                <span>
-                  <span className="text-white/85 font-semibold">Focus:</span>{" "}
-                  {p.meta?.focus}
-                </span>
-              </div>
-            </div>
-
-            {/* Section groups with sub-bullets */}
-            <div className="mt-5 space-y-4 text-sm text-white/75">
-              {(p.sections || []).map((sec) => (
-                <div key={sec.label}>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-neon-500 shadow-neon" />
-                    <span className="text-white/85 font-semibold">{sec.label}</span>
+        {roadmap.map((p, idx) => (
+          <div key={p.title} className="glass rounded-2xl overflow-hidden group hover:border-neon-500/30 transition-colors">
+            {/* Phase header with accent bar */}
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-neon-500/50 to-transparent" />
+            <div className="p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-neon-500/15 border border-neon-500/30 text-neon-400 text-xs font-extrabold">
+                      {idx + 1}
+                    </span>
+                    <span className="text-xs text-white/40 font-bold uppercase tracking-widest">Phase {idx + 1}</span>
                   </div>
-
-                  <ul className="mt-2 ml-5 space-y-2">
-                    {(sec.items || []).map((it) => (
-                      <li key={it} className="flex gap-2">
-                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-white/50" />
-                        <span>{it}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <h3 className="text-base font-extrabold text-white leading-snug">{p.title}</h3>
                 </div>
-              ))}
+                <span className="shrink-0 rounded-full border border-neon-500/30 bg-neon-500/[0.07] px-3 py-1 text-xs font-semibold text-neon-300">
+                  {p.range}
+                </span>
+              </div>
+
+              {/* Targets / Focus */}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-black/25 border border-neon-500/10 px-3 py-2">
+                  <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold mb-0.5">Target</div>
+                  <div className="text-xs text-white/80">{p.meta?.targets}</div>
+                </div>
+                <div className="rounded-xl bg-black/25 border border-neon-500/10 px-3 py-2">
+                  <div className="text-[10px] text-white/40 uppercase tracking-wide font-bold mb-0.5">Focus</div>
+                  <div className="text-xs text-white/80">{p.meta?.focus}</div>
+                </div>
+              </div>
+
+              {/* Section groups */}
+              <div className="mt-5 space-y-3 text-sm text-white/70">
+                {(p.sections || []).map((sec) => (
+                  <div key={sec.label}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="h-px flex-1 bg-neon-500/10" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-neon-400/80">{sec.label}</span>
+                      <span className="h-px flex-1 bg-neon-500/10" />
+                    </div>
+                    <ul className="space-y-1.5 pl-1">
+                      {(sec.items || []).map((it) => (
+                        <li key={it} className="flex gap-2 text-[13px]">
+                          <span className="mt-1.5 h-1 w-1 rounded-full bg-neon-500/60 shrink-0" />
+                          <span>{it}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ))}
@@ -952,31 +963,57 @@ function FAQ() {
   const items = [
     {
       q: "What is PumpFun Floki ($PFF)?",
-      a: "A community-led meme token on Solana, reforged through takeover and built around culture + execution.",
+      a: "A community-led meme token on Solana, reforged through community takeover. Built around culture, execution, and the OG FLOKI spirit — with transparent on-chain structure.",
     },
     {
       q: "Is the project secured against rugs?",
-      a: "Dev supply is locked with verifiable contracts, burn milestones are defined, and treasury rails are transparent.",
+      a: "Dev supply is locked on Streamflow (verifiable on-chain). Burn milestones are predefined and tracked publicly. Treasury rails are transparent. No hidden allocations.",
     },
     {
-      q: "Where can I buy?",
-      a: "Use the official links (Dexscreener / Pump.fun). Always verify the contract before buying.",
+      q: "Where can I buy $PFF?",
+      a: "Use the official links only: Dexscreener, Pumpswap, or Jupiter. Always verify the contract address matches what's on this site before buying.",
+    },
+    {
+      q: "How does the Quest / Swarm system work?",
+      a: "Complete community quests (raids, art, lore), submit proof via this site. Approved submissions earn $PFF points and may receive direct SPL airdrops to your wallet.",
     },
     {
       q: "Is this financial advice?",
-      a: "No. Meme coin culture. High risk. Only spend what you can afford to lose.",
+      a: "No. Meme coin culture — high risk, high volatility. Only use funds you can afford to lose entirely. Do your own research.",
+    },
+    {
+      q: "How do I join the community?",
+      a: "Follow on X (@PumpfunFlokiCTO), join the Telegram army, and follow TikTok for the latest raids and content.",
     },
   ];
+
+  const [open, setOpen] = useState(null);
 
   return (
     <section id="faq" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <SectionTitle kicker="FAQ" title="Frequently Asked Questions" desc="Short answers. Clear vibes." />
 
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
-        {items.map((x) => (
-          <div key={x.q} className="glass rounded-2xl p-6">
-            <div className="font-bold text-white">{x.q}</div>
-            <div className="mt-2 text-sm text-white/75 leading-relaxed">{x.a}</div>
+      <div className="mt-10 space-y-2">
+        {items.map((x, i) => (
+          <div key={x.q} className="glass rounded-2xl overflow-hidden transition-all duration-200 hover:border-neon-500/30">
+            <button
+              onClick={() => setOpen(open === i ? null : i)}
+              className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+            >
+              <span className="font-bold text-white/90 text-sm leading-snug">{x.q}</span>
+              <span
+                className={`shrink-0 w-6 h-6 rounded-full border border-neon-500/30 bg-neon-500/[0.07] flex items-center justify-center text-neon-400 text-lg font-light transition-transform duration-200 ${
+                  open === i ? "rotate-45 bg-neon-500/15" : ""
+                }`}
+              >
+                +
+              </span>
+            </button>
+            {open === i && (
+              <div className="px-5 pb-5 text-sm text-white/65 leading-relaxed border-t border-neon-500/10 pt-4">
+                {x.a}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -984,10 +1021,87 @@ function FAQ() {
   );
 }
 
+function SiteHeader() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const NAV = [
+    ["Tokenomics", "/#tokenomics"],
+    ["Roadmap", "/#roadmap"],
+    ["How to Buy", "/#howtobuy"],
+    ["Creations", "/#gallery"],
+    ["Swarm", "/swarm"],
+    ["FAQ", "/#faq"],
+  ];
+  return (
+    <header className="sticky top-0 z-50 px-4 pt-4">
+      <div className="relative mx-auto max-w-6xl">
+        <nav className="glass-strong flex items-center justify-between rounded-2xl px-4 py-3 shadow-[0_0_40px_rgba(0,0,0,.6)]">
+          <a href="/" className="flex items-center gap-2.5 font-extrabold tracking-tight">
+            <img src={LOGO_SRC} alt="Floki logo" className="h-9 w-9 rounded-xl object-contain drop-shadow-[0_0_16px_rgba(0,232,90,.40)]" />
+            <div className="leading-none">
+              <div className="flex items-center gap-1.5">
+                <span className="text-white font-extrabold">PumpFun Floki</span>
+                <span className="text-xs font-bold text-neon-400 bg-neon-500/10 border border-neon-500/30 rounded-md px-1.5 py-0.5">$PFF</span>
+              </div>
+              <div className="mt-0.5 text-[10px] text-white/40 tracking-wide">The Viking Returns</div>
+            </div>
+          </a>
+
+          <div className="hidden md:flex items-center gap-1">
+            {NAV.map(([label, href]) => (
+              <a key={label} href={href} className="rounded-xl px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] transition">
+                {label}
+              </a>
+            ))}
+            <div className="ml-2">
+              <NeonButton href={BUY_LINK} variant="solid">Buy $PFF</NeonButton>
+            </div>
+          </div>
+
+          <button
+            className="md:hidden inline-flex items-center justify-center rounded-xl border border-neon-500/25 bg-neon-500/[0.06] px-3 py-2 text-white/80 hover:text-white hover:bg-neon-500/12 transition"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </nav>
+
+        {mobileOpen && (
+          <div className="md:hidden absolute left-0 right-0 mt-2 glass-strong rounded-2xl p-4 z-50 shadow-[0_20px_60px_rgba(0,0,0,.7)]">
+            <div className="flex flex-col gap-1">
+              {NAV.map(([label, href]) => (
+                <a key={label} href={href} onClick={() => setMobileOpen(false)}
+                  className="rounded-xl px-4 py-2.5 text-sm text-white/75 hover:text-white hover:bg-white/[0.06] transition"
+                >
+                  {label}
+                </a>
+              ))}
+              <div className="pt-2 border-t border-neon-500/10 mt-1">
+                <NeonButton href={BUY_LINK} full>⚡ Buy $PFF</NeonButton>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
+function SwarmPage() {
+  return (
+    <div className="min-h-screen bg-[#05070A]">
+      <SiteHeader />
+      <PFFSwarmOracleHub contract={CONTRACT} />
+    </div>
+  );
+}
+
 export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
-    const isAdminRoute = window.location.pathname === "/valhalla-admin";
+  const isAdminRoute = window.location.pathname === "/valhalla-admin";
   if (isAdminRoute) return <ValhallaAdmin />;
+  const isSwarmRoute = window.location.pathname === "/swarm";
+  if (isSwarmRoute) return <SwarmPage />;
 
   useEffect(() => {
     const onResize = () => {
@@ -1000,72 +1114,61 @@ export default function App() {
   return (
     <main className="relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0">
-        <div
-          className="absolute inset-0 bg-[url('/assets/hero.jpg')] bg-cover bg-center opacity-55"
-          aria-hidden
-        />
-        <div className="absolute inset-0 bg-noise" aria-hidden />
-        <div
-          className="absolute inset-0 bg-grid [background-size:64px_64px] opacity-25"
-          aria-hidden
-        />
-        <div className="absolute inset-0 grain" aria-hidden />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-bg/70 to-bg" aria-hidden />
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[url('/assets/hero.jpg')] bg-cover bg-center opacity-55 pointer-events-none" aria-hidden />
+        <div className="absolute inset-0 bg-noise pointer-events-none" aria-hidden />
+        <div className="absolute inset-0 bg-grid [background-size:64px_64px] opacity-25 pointer-events-none" aria-hidden />
+        <div className="absolute inset-0 grain pointer-events-none" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-bg/70 to-bg pointer-events-none" aria-hidden />
       </div>
 
       {/* Nav */}
-      <header className="relative mx-auto max-w-6xl px-4 pt-6">
-        <div className="relative">
-          <nav className="glass flex items-center justify-between rounded-2xl px-4 py-3">
-            <a href="#" className="flex items-center gap-3 font-extrabold tracking-tight">
+      <header className="sticky top-0 z-50 px-4 pt-4">
+        <div className="relative mx-auto max-w-6xl">
+          <nav className="glass-strong flex items-center justify-between rounded-2xl px-4 py-3 shadow-[0_0_40px_rgba(0,0,0,.6)]">
+            <a href="#" className="flex items-center gap-2.5 font-extrabold tracking-tight">
               <img
                 src={LOGO_SRC}
                 alt="Floki logo"
-                className="h-9 w-9 rounded-full object-contain drop-shadow-[0_0_18px_rgba(0,232,90,.35)]"
+                className="h-9 w-9 rounded-xl object-contain drop-shadow-[0_0_16px_rgba(0,232,90,.40)]"
               />
               <div className="leading-none">
-                <div className="flex items-center gap-2">
-                  <span className="text-neon-300 text-glow">PumpFun</span>
-                  <span className="text-white">Floki</span>
-                  <span className="text-xs text-white/50">($PFF)</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-white font-extrabold">PumpFun Floki</span>
+                  <span className="text-xs font-bold text-neon-400 bg-neon-500/10 border border-neon-500/30 rounded-md px-1.5 py-0.5">$PFF</span>
                 </div>
-                <div className="mt-1 text-[11px] text-white/55">The Viking Returns</div>
+                <div className="mt-0.5 text-[10px] text-white/40 tracking-wide">The Viking Returns</div>
               </div>
             </a>
 
             {/* Desktop menu */}
-            <div className="hidden md:flex items-center gap-4">
-              <a className="text-sm text-white/70 hover:text-white" href="#tokenomics">
-                Tokenomics
-              </a>
-              <a className="text-sm text-white/70 hover:text-white" href="#roadmap">
-                Roadmap
-              </a>
-              <a className="text-sm text-white/70 hover:text-white" href="#howtobuy">
-                How to Buy
-              </a>
-              <a className="text-sm text-white/70 hover:text-white" href="#gallery">
-                Creations
-              </a>
-              <a className="text-sm text-white/70 hover:text-white" href="#faq">
-                FAQ
-              </a>
-              <a className="text-sm text-white/70 hover:text-white" href="#swarm">
-                Swarm
-              </a>
-              <a className="text-sm text-white/70 hover:text-white" href="#oracle">
-                Oracle
-              </a>
-              <NeonButton href="#howtobuy" variant="outline">
-  How to Buy
-</NeonButton>
-
+            <div className="hidden md:flex items-center gap-1">
+              {[
+                ["Tokenomics", "#tokenomics"],
+                ["Roadmap", "#roadmap"],
+                ["How to Buy", "#howtobuy"],
+                ["Creations", "#gallery"],
+                ["Swarm", "/swarm"],
+                ["FAQ", "#faq"],
+              ].map(([label, href]) => (
+                <a
+                  key={label}
+                  href={href}
+                  className="rounded-xl px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] transition"
+                >
+                  {label}
+                </a>
+              ))}
+              <div className="ml-2">
+                <NeonButton href={BUY_LINK} variant="solid">
+                  Buy $PFF
+                </NeonButton>
+              </div>
             </div>
 
             {/* Mobile burger */}
             <button
-              className="md:hidden inline-flex items-center justify-center rounded-xl border border-neon-500/25 px-3 py-2 text-white/80 hover:text-white"
+              className="md:hidden inline-flex items-center justify-center rounded-xl border border-neon-500/25 bg-neon-500/[0.06] px-3 py-2 text-white/80 hover:text-white hover:bg-neon-500/12 transition"
               onClick={() => setMobileOpen((v) => !v)}
               aria-label="Toggle menu"
             >
@@ -1075,30 +1178,28 @@ export default function App() {
 
           {/* Mobile dropdown */}
           {mobileOpen && (
-            <div className="md:hidden absolute left-0 right-0 mt-3 glass rounded-2xl p-4 z-50">
-              <div className="flex flex-col gap-3">
-                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#tokenomics">
-                  Tokenomics
-                </a>
-                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#roadmap">
-                  Roadmap
-                </a>
-                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#howtobuy">
-                  How to Buy
-                </a>
-                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#oracle">
-                  Oracle
-                </a>
-                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#gallery">
-                  Creations
-                </a>
-                <a onClick={() => setMobileOpen(false)} className="text-sm text-white/80 hover:text-white" href="#faq">
-                  FAQ
-                </a>
-
-                <div className="pt-2">
+            <div className="md:hidden absolute left-0 right-0 mt-2 glass-strong rounded-2xl p-4 z-50 shadow-[0_20px_60px_rgba(0,0,0,.7)]">
+              <div className="flex flex-col gap-1">
+                {[
+                  ["Tokenomics", "#tokenomics"],
+                  ["Roadmap", "#roadmap"],
+                  ["How to Buy", "#howtobuy"],
+                  ["Creations", "#gallery"],
+                  ["Swarm", "/swarm"],
+                  ["FAQ", "#faq"],
+                ].map(([label, href]) => (
+                  <a
+                    key={label}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-xl px-4 py-2.5 text-sm text-white/75 hover:text-white hover:bg-white/[0.06] transition"
+                    href={href}
+                  >
+                    {label}
+                  </a>
+                ))}
+                <div className="pt-2 border-t border-neon-500/10 mt-1">
                   <NeonButton href={BUY_LINK} full>
-                    Buy $PFF
+                    ⚡ Buy $PFF
                   </NeonButton>
                 </div>
               </div>
@@ -1108,83 +1209,117 @@ export default function App() {
       </header>
 
       {/* Hero */}
-      {/* Hero */}
 <section className="relative mx-auto max-w-6xl px-4 pt-12 md:pt-14 pb-10 md:pb-12">
+  {/* Ambient glow orbs */}
+  <div className="pointer-events-none absolute -top-20 left-1/4 w-[500px] h-[500px] rounded-full bg-neon-500/[0.04] blur-[120px]" />
+  <div className="pointer-events-none absolute top-10 right-0 w-[400px] h-[400px] rounded-full bg-neon-500/[0.06] blur-[100px]" />
+
   <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
     {/* LEFT */}
     <div>
-      <motion.h1
-        initial={{ opacity: 0, y: 10 }}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-glow text-white"
       >
-        The Viking Returns.
-        <span className="block text-white/80">On Pump For Fun</span>
-      </motion.h1>
 
-      <p className="mt-4 text-white/70 max-w-xl leading-relaxed">
-        $PFF is PumpFun Floki — a new era of meme coin forged in the wild lands of PumpFun.
-        Inspired by the OG meme FLOKI, the spirit of the Viking lives on: mischievous, fearless,
-        and ready to raid the timeline. Backed by the most powerful meme culture in crypto history,
-        $PFF is not just a coin — it’s a movement.
-      </p>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.08]">
+          The Viking Returns.
+          <span className="block text-neon-400 text-glow">On Pump For Fun</span>
+        </h1>
+      </motion.div>
 
-      {/* MOBILE MASCOT (between text and CTA) */}
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mt-5 text-white/85 max-w-lg leading-relaxed text-[15px]"
+      >
+        $PFF is PumpFun Floki — a new era of meme coin forged in the wild lands of PumpFun. Inspired by the OG meme FLOKI, the spirit of the Viking lives on: mischievous, fearless, and ready to raid the timeline. Backed by the most powerful meme culture in crypto history, $PFF is not just a coin — it's a movement.
+      </motion.p>
+
+      {/* MOBILE MASCOT */}
       <div className="mt-6 lg:hidden">
         <img
           src="/assets/community9.png"
           alt="PumpFun Floki mascot"
-          className="w-full max-w-[360px] mx-auto object-contain drop-shadow-[0_0_35px_rgba(0,232,90,.25)]"
-        />
-        <div
-          className="pointer-events-none mx-auto mt-0 max-w-[360px] rounded-[2rem] blur-2xl opacity-60"
-          style={{ boxShadow: "0 0 220px rgba(0,232,90,.20)" }}
+          className="w-full max-w-[320px] mx-auto object-contain drop-shadow-[0_0_40px_rgba(0,232,90,.30)]"
         />
       </div>
 
-      {/* CTA */}
-      <div className="mt-6 w-full max-w-xl">
-        <NeonButton href="#howtobuy" full>
-          Buy $PFF
+      {/* CTA buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-7 flex flex-col sm:flex-row gap-3 max-w-lg"
+      >
+        <NeonButton href="#howtobuy" full className="btn-cta text-base py-4 font-extrabold">
+          ⚡ Buy $PFF Now
         </NeonButton>
+        <NeonButton href={PUMPFUN_LINK} variant="outline" full className="text-base py-4">
+          Pump.fun
+        </NeonButton>
+      </motion.div>
+
+      {/* Social quick links */}
+      <div className="mt-4 flex items-center gap-3">
+        <a href={X_LINK} target="_blank" rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/60 hover:border-white/25 hover:text-white/90 transition">
+          <img src="/assets/footer/X.png" alt="X" className="w-3.5 h-3.5 object-contain" />
+          Twitter / X
+        </a>
+        <a href={TG_LINK} target="_blank" rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/60 hover:border-white/25 hover:text-white/90 transition">
+          <img src="/assets/footer/telegram.png" alt="TG" className="w-3.5 h-3.5 object-contain" />
+          Telegram
+        </a>
+        <a href={TIKTOK_LINK} target="_blank" rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/60 hover:border-white/25 hover:text-white/90 transition">
+          <img src="/assets/footer/tiktok.png" alt="TikTok" className="w-3.5 h-3.5 object-contain" />
+          TikTok
+        </a>
       </div>
 
       {/* Narrative / Mission */}
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <div className="glass rounded-2xl p-4">
-          <div className="text-xs text-white/60">Narrative</div>
-          <div className="mt-1 font-semibold text-neon-300 text-glow">
-            Born from OG Floki’s spirit and reforged through community takeover, PFF evolves the narrative for the Pump.fun creator era.
-            As meme culture, art tech, and Gen-AI reshape the arena, evolution isn’t optional — it’s the edge. Faster, sharper, built to endure.
+        <div className="rounded-2xl border border-neon-500/15 bg-gradient-to-br from-neon-500/[0.06] to-transparent p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-neon-400 text-base">⚔️</span>
+            <div className="text-xs font-bold tracking-widest uppercase text-neon-400">Narrative</div>
+          </div>
+          <div className="text-sm text-white/75 leading-relaxed">
+            Born from OG Floki’s spirit and reforged through community takeover. Evolution isn’t optional — it’s the edge.
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-4">
-          <div className="text-xs text-white/60">Mission</div>
-          <div className="mt-1 font-semibold text-neon-300 text-glow">
-            To prove that a community-driven meme coin can outlast rugs, outwork noise, and build lasting structure.
-            Powered by next-level art, a battle-tested community, transparent locks, liquidity thickening, and disciplined execution,
-            PFF marches toward Valhalla.
+        <div className="rounded-2xl border border-neon-500/15 bg-gradient-to-br from-neon-500/[0.06] to-transparent p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-neon-400 text-base">🛡️</span>
+            <div className="text-xs font-bold tracking-widest uppercase text-neon-400">Mission</div>
+          </div>
+          <div className="text-sm text-white/75 leading-relaxed">
+            Prove a community coin can outlast rugs, outwork noise, and march toward Valhalla.
           </div>
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-5">
         <ContractCard />
       </div>
     </div>
 
     {/* RIGHT MASCOT (desktop only) */}
-    <div className="relative mx-auto max-w-[520px] lg:max-w-none hidden lg:block">
+    <div className="relative mx-auto max-w-[520px] lg:max-w-none hidden lg:flex items-center justify-center">
+      {/* Glow behind mascot */}
+      <div
+        className="absolute inset-0 -z-10 blur-3xl opacity-50 rounded-full"
+        style={{ background: "radial-gradient(circle at 50% 55%, rgba(0,232,90,.22) 0%, transparent 70%)" }}
+      />
       <img
         src="/assets/community9.png"
         alt="PumpFun Floki mascot"
-        className="w-full object-contain drop-shadow-[0_0_35px_rgba(0,232,90,.25)]"
-      />
-      <div
-        className="pointer-events-none absolute -inset-8 -z-10 rounded-[2rem] blur-2xl opacity-60"
-        style={{ boxShadow: "0 0 220px rgba(0,232,90,.20)" }}
+        className="w-full object-contain drop-shadow-[0_0_50px_rgba(0,232,90,.30)]"
       />
     </div>
   </div>
@@ -1223,9 +1358,6 @@ export default function App() {
 
       <TokenBanner />
 
-      <PFFSwarmOracleHub contract={CONTRACT} />
-
-
       <HowToBuy />
       
 
@@ -1235,63 +1367,66 @@ export default function App() {
       <FAQ />
 
       {/* Footer */}
-      <footer className="relative mx-auto max-w-6xl px-4 pb-14">
-        <div className="glass rounded-2xl p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="font-bold text-white">Join the raid</div>
-            <div className="text-sm text-white/70">
-              X • Telegram • Email:{" "}
-              <a className="text-neon-300 hover:underline" href={`mailto:${EMAIL}`}>
-                {EMAIL}
-              </a>
+      <footer className="relative mx-auto max-w-6xl px-4 pb-14 mt-8">
+        {/* Top separator */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-neon-500/25 to-transparent mb-10" />
+
+        <div className="glass rounded-2xl overflow-hidden">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-neon-500/50 to-transparent" />
+          <div className="p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              {/* Left — brand + tagline */}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <img src={LOGO_SRC} alt="logo" className="w-7 h-7 rounded-full object-contain" />
+                  <span className="font-extrabold text-white">PumpFun Floki</span>
+                  <span className="text-xs text-neon-400 font-bold">$PFF</span>
+                </div>
+                <p className="text-sm text-white/50 max-w-xs">
+                  March toward Valhalla. Community-led, on-chain, unstoppable.
+                </p>
+                <a className="mt-2 inline-block text-xs text-neon-300/70 hover:text-neon-300 transition" href={`mailto:${EMAIL}`}>
+                  {EMAIL}
+                </a>
+              </div>
+
+              {/* Right — social icons */}
+              <div className="flex items-center gap-4">
+                {[
+                  { src: "/assets/footer/X.png", link: X_LINK, alt: "X" },
+                  { src: "/assets/footer/telegram.png", link: TG_LINK, alt: "Telegram" },
+                  { src: "/assets/footer/tiktok.png", link: TIKTOK_LINK, alt: "TikTok" },
+                ].map((item) => (
+                  <a
+                    key={item.alt}
+                    href={item.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group relative w-12 h-12 rounded-2xl
+                               border border-neon-500/25 bg-neon-500/[0.05]
+                               flex items-center justify-center
+                               transition-all duration-300
+                               hover:border-neon-500/70 hover:bg-neon-500/15
+                               hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(0,232,90,.35)]"
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.alt}
+                      className="w-5 h-5 object-contain opacity-70 group-hover:opacity-100 transition"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom row */}
+            <div className="mt-6 pt-5 border-t border-neon-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <p className="text-xs text-white/35">
+                Disclaimer: meme coin. NFA. High risk. Verify links and contract. — PumpFunFloki
+              </p>
+              <p className="text-xs text-white/25">© 2025 PumpFunFloki. All rights reserved.</p>
             </div>
           </div>
-          <div className="flex items-center gap-5">
-
-  {[
-    { src: "/assets/footer/X.png", link: X_LINK, alt: "X" },
-    { src: "/assets/footer/telegram.png", link: TG_LINK, alt: "Telegram" },
-    { src: "/assets/footer/tiktok.png", link: "https://tiktok.com/@pumpfun.floki.off", alt: "TikTok" },
-    { src: "/assets/footer/X.png", link: "https://x.com/i/communities", alt: "X Community" },
-  ].map((item) => (
-    <a
-      key={item.alt}
-      href={item.link}
-      target="_blank"
-      rel="noreferrer"
-      className="group relative w-16 h-16 rounded-full
-                 border border-neon-500/40
-                 bg-gradient-to-br from-black via-black/80 to-black/60
-                 flex items-center justify-center
-                 transition-all duration-300
-                 hover:border-neon-500
-                 hover:shadow-[0_0_40px_rgba(0,232,90,.45)]
-                 hover:-translate-y-2"
-    >
-      {/* Glow ring */}
-      <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100
-                      shadow-[0_0_60px_rgba(0,232,90,.35)]
-                      transition duration-300" />
-
-      <img
-        src={item.src}
-        alt={item.alt}
-        className="relative w-8 h-8 object-contain opacity-90
-                   group-hover:scale-110
-                   group-hover:opacity-100
-                   transition duration-300"
-      />
-    </a>
-  ))}
-
-</div>
-
-
-
-        </div>
-
-        <div className="mt-6 text-xs text-white/45">
-          Disclaimer: meme coin. NFA. High risk. Verify links and contract. — PumpFunFloki
         </div>
       </footer>
     </main>

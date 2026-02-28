@@ -13,6 +13,7 @@ export default async function handler(req, res) {
       handle,
       proof,
       note,
+      wallet_address,
       recaptchaToken,
     } = req.body || {};
 
@@ -35,6 +36,7 @@ export default async function handler(req, res) {
           handle: String(handle).slice(0, 80),
           proof: String(proof).slice(0, 2000),
           note: note ? String(note).slice(0, 300) : null,
+          wallet_address: wallet_address ? String(wallet_address).slice(0, 44) : null,
           status: "pending",
           points_awarded: 0,
         },
@@ -42,7 +44,12 @@ export default async function handler(req, res) {
       .select()
       .single();
 
-    if (error) return res.status(500).json({ error: "db-error", details: error });
+    if (error) {
+      if (error.code === "23505") {
+        return res.status(409).json({ error: "already-submitted", message: "You already submitted this quest with this handle." });
+      }
+      return res.status(500).json({ error: "db-error", details: error });
+    }
 
     return res.status(200).json({ ok: true, submission: data });
   } catch (e) {

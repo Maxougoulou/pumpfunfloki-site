@@ -32,6 +32,7 @@ export default async function handler(req, res) {
       time_window,
       status,
       points,
+      expires_at,
     } = req.body || {};
 
     if (!id || !title) return res.status(400).json({ error: "missing-fields" });
@@ -50,6 +51,7 @@ export default async function handler(req, res) {
           time_window: time_window ? String(time_window).slice(0, 80) : null,
           status: status ? String(status).slice(0, 20) : "LIVE",
           points: Number.isFinite(Number(points)) ? Number(points) : 0,
+          expires_at: expires_at ? new Date(expires_at).toISOString() : null,
         },
       ])
       .select()
@@ -72,6 +74,7 @@ export default async function handler(req, res) {
       time_window,
       status,
       points,
+      expires_at,
     } = req.body || {};
 
     if (!id) return res.status(400).json({ error: "missing-id" });
@@ -86,6 +89,7 @@ export default async function handler(req, res) {
     if (time_window !== undefined) patch.time_window = time_window ? String(time_window).slice(0, 80) : null;
     if (status !== undefined) patch.status = status ? String(status).slice(0, 20) : null;
     if (points !== undefined) patch.points = Number.isFinite(Number(points)) ? Number(points) : 0;
+    if (expires_at !== undefined) patch.expires_at = expires_at ? new Date(expires_at).toISOString() : null;
 
     const { data, error } = await db
       .from("quests")

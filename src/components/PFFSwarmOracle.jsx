@@ -66,11 +66,6 @@ const DEFAULT_MILESTONES = [
   { id: "M-003", label: "Saga Breakout", metric: "Holders", target: 2500, current: 1860, unit: "", reward: "Oracle Week + Quest pack" },
 ];
 
-const DEFAULT_BUYBACK_THRESHOLDS = [
-  { id: "B-001", trigger: "Market Cap ≥ $250k", action: "Buyback", amount: "X% of fees wallet", execution: "Deterministic (manual proof on-chain)", status: "Standby" },
-  { id: "B-002", trigger: "24h Volume ≥ $150k", action: "Burn", amount: "Y tokens", execution: "Deterministic (threshold)", status: "Standby" },
-  { id: "B-003", trigger: "Holders ≥ 2,500", action: "Buyback + Raid Budget", amount: "Z% split", execution: "Deterministic (announced schedule)", status: "Standby" },
-];
 
 /** ------------ HELPERS ------------- */
 async function getRecaptchaToken(siteKey, action) {
@@ -208,7 +203,7 @@ function usePublicLeaderboard(refreshMs = 45000) {
     async function run() {
       try {
         setState((s) => ({ ...s, loading: true, error: null }));
-        const { data, error } = await supabase.from("leaderboard").select("pseudo, points, last_update").order("points", { ascending: false }).limit(10);
+        const { data, error } = await supabase.from("leaderboard").select("pseudo, points, last_update").order("points", { ascending: false }).limit(5);
         if (error) throw error;
         if (!cancelled) setState({ loading: false, error: null, rows: data || [], updatedAt: Date.now() });
       } catch (e) {
@@ -302,7 +297,7 @@ function usePublicQuests(refreshMs = 45000) {
       try {
         const { data, error } = await supabase
           .from("quests")
-          .select("id, title, description, type, difficulty, reward, proof_type, time_window, status, points, created_at")
+          .select("id, title, description, type, difficulty, reward, proof_type, time_window, status, points, created_at, expires_at")
           .order("created_at", { ascending: false })
           .limit(200);
 
@@ -325,6 +320,34 @@ function usePublicQuests(refreshMs = 45000) {
   return state;
 }
 
+function useHordeStats(refreshMs = 60000) {
+  const [stats, setStats] = useState({ vikings: null, quests: null, pts: null });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      try {
+        const [{ count: vikings }, { count: quests }, { data: ptsRows }] = await Promise.all([
+          supabase.from("leaderboard").select("*", { count: "exact", head: true }),
+          supabase.from("submissions").select("*", { count: "exact", head: true }).eq("status", "approved"),
+          supabase.from("leaderboard").select("points"),
+        ]);
+        const pts = (ptsRows || []).reduce((acc, r) => acc + Number(r.points || 0), 0);
+        if (!cancelled) setStats({ vikings: vikings ?? 0, quests: quests ?? 0, pts });
+      } catch {
+        // silently ignore stats errors
+      }
+    }
+
+    run();
+    const t = setInterval(run, refreshMs);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [refreshMs]);
+
+  return stats;
+}
+
 /** ------------ UI PRIMITIVES ------------- */
 function PffSectionTitle({ kicker, title, desc, right }) {
   return (
@@ -339,7 +362,7 @@ function PffSectionTitle({ kicker, title, desc, right }) {
 
         <h2 className="mt-2 text-3xl md:text-4xl font-extrabold tracking-tight text-white text-glow drop-shadow-[0_0_18px_rgba(0,232,90,.25)]">{title}</h2>
 
-        {desc ? <p className="mt-3 text-base text-white/80 drop-shadow-[0_0_10px_rgba(0,0,0,.6)] max-w-3xl leading-relaxed">{desc}</p> : null}
+        {desc ? <p className="mt-3 text-base text-white/90 drop-shadow-[0_0_10px_rgba(0,0,0,.6)] max-w-3xl">{desc}</p> : null}
       </div>
 
       {right ? <div className="shrink-0">{right}</div> : null}
@@ -349,12 +372,12 @@ function PffSectionTitle({ kicker, title, desc, right }) {
 
 function Badge({ children, tone = "neutral" }) {
   const cls =
-    tone === "good" ? "border-neon-500/35 text-neon-300 shadow-neon" :
-    tone === "warn" ? "border-yellow-400/30 text-yellow-200" :
-    tone === "bad" ? "border-red-400/30 text-red-200" :
-    "border-white/10 text-white/80";
+    tone === "good" ? "border-neon-500/40 bg-neon-500/10 text-neon-300 shadow-neon" :
+    tone === "warn" ? "border-yellow-400/40 bg-yellow-400/10 text-yellow-200" :
+    tone === "bad"  ? "border-red-400/40 bg-red-400/10 text-red-200" :
+    "border-white/50 bg-white/[0.15] text-white";
 
-  return <span className={cx("inline-flex items-center gap-2 rounded-full border bg-black/30 px-3 py-1 text-xs", cls)}>{children}</span>;
+  return <span className={cx("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium drop-shadow-[0_0_10px_rgba(0,0,0,.6)]", cls)}>{children}</span>;
 }
 
 function PffCard({ children, className = "" }) {
@@ -394,6 +417,39 @@ function HordeSurgeToast({ hits }) {
               </div>
               <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold bg-neon-500 text-black shadow-neonStrong">LIVE</span>
             </div>
+          </div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+/** ------------ NEW QUEST TOAST ------------- */
+function NewQuestToast({ quest, onDismiss }) {
+  return (
+    <AnimatePresence>
+      {quest ? (
+        <motion.div
+          key={quest.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ duration: 0.3 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[999] w-[92vw] max-w-sm"
+        >
+          <div className="glass rounded-2xl border border-neon-500/30 shadow-[0_0_60px_rgba(0,232,90,.22)] p-4 flex items-start gap-3">
+            <span className="text-xl shrink-0">⚔️</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-white font-extrabold text-sm">New quest available!</div>
+              <div className="text-neon-300 text-xs mt-0.5 truncate">{quest.title}</div>
+            </div>
+            <button
+              onClick={onDismiss}
+              className="shrink-0 text-white/40 hover:text-white text-lg leading-none"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
           </div>
         </motion.div>
       ) : null}
@@ -447,7 +503,7 @@ export default function PFFSwarmOracleHub({
   contract,
   quests = DEFAULT_QUESTS,
   milestones = DEFAULT_MILESTONES,
-  buybackThresholds = DEFAULT_BUYBACK_THRESHOLDS,
+
 }) {
   const dex = useDexScreenerToken(contract, 30000);
   const pair = dex.pair;
@@ -457,11 +513,32 @@ export default function PFFSwarmOracleHub({
   const logs = useExecutionLogs(60000);
   const approved = useApprovedSubmissions(45000);
 
-  // ✅ quests from DB (public)
-  const publicQuests = usePublicQuests(45000);
+  // ✅ quests from DB (public) — poll every 30s for new quest toast
+  const publicQuests = usePublicQuests(30000);
+
+  // new quest toast detection
+  const prevQuestIdsRef = useRef(null);
+  const [newQuestToast, setNewQuestToast] = useState(null);
+  useEffect(() => {
+    if (!publicQuests.rows?.length) return;
+    const currentIds = new Set(publicQuests.rows.map((q) => q.id));
+    if (prevQuestIdsRef.current === null) {
+      prevQuestIdsRef.current = currentIds;
+      return;
+    }
+    const freshQuests = publicQuests.rows.filter((q) => !prevQuestIdsRef.current.has(q.id));
+    if (freshQuests.length) {
+      setNewQuestToast(freshQuests[0]);
+      setTimeout(() => setNewQuestToast(null), 8000);
+    }
+    prevQuestIdsRef.current = currentIds;
+  }, [publicQuests.rows]);
 
   const settings = cfg.settings || null;
   const rules = cfg.rules || null;
+
+  const basePoints = useMemo(() => safeJson(rules?.base_points, { raid: 10, art: 15, lore: 8, oracle: 12 }), [rules]);
+  const multipliers = useMemo(() => safeJson(rules?.difficulty_multipliers, { easy: 1, medium: 1.5, hard: 2 }), [rules]);
 
   const weights = useMemo(() => {
     const w = safeJson(settings?.swarm_score_weights, { milestones: 0.6, activity: 0.4 });
@@ -474,12 +551,13 @@ export default function PFFSwarmOracleHub({
     return { ...norm, activityTargetPoints };
   }, [settings]);
 
-  const basePoints = useMemo(() => safeJson(rules?.base_points, { raid: 10, art: 15, lore: 8, oracle: 12 }), [rules]);
-  const multipliers = useMemo(() => safeJson(rules?.difficulty_multipliers, { easy: 1, medium: 1.5, hard: 2 }), [rules]);
 
-  // map DB quests -> UI quests
+  // map DB quests -> UI quests (filter expired ones out)
   const questsFromDb = useMemo(() => {
-    return (publicQuests.rows || []).map((q) => ({
+    const now = Date.now();
+    return (publicQuests.rows || [])
+      .filter((q) => !q.expires_at || new Date(q.expires_at).getTime() > now)
+      .map((q) => ({
       id: q.id,
       title: q.title,
       type: q.type,
@@ -490,6 +568,7 @@ export default function PFFSwarmOracleHub({
       proofType: q.proof_type,
       desc: q.description,
       points: typeof q.points === "number" ? q.points : Number(q.points || 0),
+      expires_at: q.expires_at || null,
     }));
   }, [publicQuests.rows]);
 
@@ -538,29 +617,7 @@ export default function PFFSwarmOracleHub({
     prevCompletedRef.current = completedNow;
   }, [liveMilestones]);
 
-  // dynamic thresholds
-  const liveStats = useMemo(() => {
-    const mcap = Number(pair?.marketCap || pair?.fdv || 0);
-    const vol24 = Number(pair?.volume?.h24 || 0);
-    const holders = Number((liveMilestones.find((m) => m.metric === "Holders")?.current) ?? 0);
-    return { mcap, vol24, holders };
-  }, [pair, liveMilestones]);
 
-  const dynamicThresholds = useMemo(() => {
-    return buybackThresholds.map((row) => {
-      const trig = (row.trigger || "").toLowerCase();
-      const mcapReady = liveStats.mcap >= 250000;
-      const volReady = liveStats.vol24 >= 150000;
-      const holdersReady = liveStats.holders >= 2500;
-
-      let ready = false;
-      if (trig.includes("market cap")) ready = mcapReady;
-      else if (trig.includes("24h volume")) ready = volReady;
-      else if (trig.includes("holders")) ready = holdersReady;
-
-      return { ...row, status: ready ? "Ready" : "Standby" };
-    });
-  }, [buybackThresholds, liveStats]);
 
   // swarm score
   const milestonesProgress01 = useMemo(() => {
@@ -590,28 +647,29 @@ export default function PFFSwarmOracleHub({
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <HordeSurgeToast hits={justHit} />
+      <NewQuestToast quest={newQuestToast} onDismiss={() => setNewQuestToast(null)} />
 
       <div className="space-y-12">
         <RealtimeSwarmBar dexStatus={dexStatus} swarmScore01={swarmScore01} weights={weights} configLoading={cfg.loading} />
 
-        <TheSwarmSection basePoints={basePoints} multipliers={multipliers} />
         <TheOracleSection />
 
         <MilestonesCounter milestones={liveMilestones} dexStatus={dexStatus} justHit={justHit} />
 
-        <div className="grid gap-5 md:grid-cols-2">
-          <LeaderboardPanel leaderboard={leaderboard} />
-          <ExecutionTimeline logs={logs} />
-        </div>
+        <ExecutionTimeline logs={logs} />
+
+        <TheSwarmSection basePoints={basePoints} multipliers={multipliers} />
 
         <QuestBoard
           quests={questsToShow}
-          basePoints={basePoints}
-          multipliers={multipliers}
           backendEnabled={Boolean(safeJson(settings?.feature_toggles, { use_backend: false })?.use_backend)}
         />
 
-        <BuybackThresholdsTable rows={dynamicThresholds} />
+        <div className="grid gap-5 md:grid-cols-2">
+          <LeaderboardPanel leaderboard={leaderboard} />
+          <HordeLookupSection />
+        </div>
+
       </div>
     </section>
   );
@@ -638,20 +696,15 @@ function TheSwarmSection({ basePoints, multipliers }) {
         <PffCard className="p-4 border border-neon-500/15">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <div className="text-white font-extrabold">Scoring (live rules)</div>
-              <div className="mt-1 text-sm text-white/70">base(type) × multiplier(difficulty) + bonus (admin). Fully configurable.</div>
+              <div className="text-white font-extrabold">Quest Points</div>
+              <div className="mt-1 text-sm text-white/70">Points per type × difficulty multiplier.</div>
             </div>
-
             <div className="flex flex-wrap gap-2">
               {Object.entries(basePoints || {}).map(([k, v]) => (
-                <Badge key={k} tone="good">
-                  {k}: {v} pts
-                </Badge>
+                <Badge key={k} tone="good">{k}: {v} pts</Badge>
               ))}
               {Object.entries(multipliers || {}).map(([k, v]) => (
-                <Badge key={k}>
-                  {k}: ×{v}
-                </Badge>
+                <Badge key={k}>{k}: ×{v}</Badge>
               ))}
             </div>
           </div>
@@ -746,6 +799,22 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
 
 /** ------------ LEADERBOARD ------------- */
 function LeaderboardPanel({ leaderboard }) {
+  const [hovered, setHovered] = useState(null); // { r, tier, rect, questCount }
+
+  async function handleRowEnter(r, e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tier = getTier(Number(r.points || 0));
+    setHovered({ r, tier, rect, questCount: null });
+    const { count } = await supabase
+      .from("submissions")
+      .select("*", { count: "exact", head: true })
+      .ilike("handle", r.pseudo)
+      .eq("status", "approved");
+    setHovered((prev) =>
+      prev?.r.pseudo === r.pseudo ? { ...prev, questCount: count ?? 0 } : prev
+    );
+  }
+
   return (
     <div id="leaderboard" className="scroll-mt-24">
       <PffSectionTitle kicker="Ranking" title="Leaderboard" desc="Top Vikings by verified points." right={<span className="inline-flex items-center rounded-full
@@ -755,7 +824,7 @@ function LeaderboardPanel({ leaderboard }) {
           text-neon-300
           shadow-[0_0_18px_rgba(0,232,90,.35)]
           backdrop-blur-sm">
-            Top 10
+            Top 5
         </span>} />
 
       <PffCard className="mt-8 overflow-hidden border border-neon-500/15">
@@ -766,34 +835,122 @@ function LeaderboardPanel({ leaderboard }) {
 
         <div className="divide-y divide-neon-500/10">
           {(leaderboard.rows || []).length ? (
-            leaderboard.rows.map((r, idx) => (
-              <div key={r.pseudo} className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span
-                    className={cx(
-                      "w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border",
-                      idx === 0 ? "border-neon-500/50 bg-neon-500 text-black" : "border-neon-500/15 bg-black/20 text-white/80"
-                    )}
-                  >
-                    {idx + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-white font-bold truncate">{r.pseudo}</div>
-                    <div className="text-xs text-white/55">{r.last_update ? new Date(r.last_update).toLocaleDateString() : ""}</div>
+            leaderboard.rows.map((r, idx) => {
+              const tier = getTier(Number(r.points || 0));
+              const rankStyle = [
+                "border-yellow-400/70 bg-yellow-400/20 text-yellow-300 shadow-[0_0_10px_rgba(250,204,21,.4)]",
+                "border-slate-300/60 bg-slate-300/10 text-slate-300 shadow-[0_0_8px_rgba(203,213,225,.25)]",
+                "border-orange-400/60 bg-orange-400/10 text-orange-300 shadow-[0_0_8px_rgba(251,146,60,.25)]",
+              ][idx] ?? "border-neon-500/15 bg-black/20 text-white/60";
+              return (
+                <div key={r.pseudo}
+                  className={cx(
+                    "px-4 py-3 flex items-center justify-between transition",
+                    idx === 0 && "border-l-2 border-l-neon-500/60 bg-neon-500/5"
+                  )}
+                  onMouseEnter={(e) => handleRowEnter(r, e)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={cx("w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0", rankStyle)}>
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-white font-bold truncate">{r.pseudo}</div>
+                      <div className={cx("text-xs font-semibold", tier.color)}>{tier.emoji} {tier.label}</div>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <div className={cx("font-extrabold", idx < 3 ? tier.color : "text-white")}>{formatNumber(Number(r.points || 0))}</div>
+                    <div className="text-xs text-white/40">pts</div>
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <div className="text-white font-extrabold">{formatNumber(Number(r.points || 0))}</div>
-                  <div className="text-xs text-white/55">points</div>
-                </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="p-4 text-sm text-white/60">No data yet.</div>
           )}
         </div>
+
+        {/* Tier legend */}
+        <div className="border-t border-neon-500/10 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-widest text-white/30 mb-2.5 font-semibold">Viking Ranks</div>
+          <div className="grid grid-cols-4 gap-2">
+            {[...TIER_THRESHOLDS].reverse().map((t, i) => (
+              <div key={t.label} className={cx(
+                "flex flex-col items-center gap-1 rounded-xl py-2.5 px-1 border",
+                i === 3
+                  ? "border-yellow-400/30 bg-yellow-400/5"
+                  : "border-white/5 bg-black/20"
+              )}>
+                <span className="text-lg leading-none">{t.emoji}</span>
+                <span className={cx("text-[11px] font-bold leading-tight text-center", t.color)}>{t.label}</span>
+                <span className="text-[10px] text-white/35 font-mono">{t.min === 0 ? "0 pts" : `${t.min}+ pts`}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </PffCard>
+
+      {/* Hover popup card — fixed position, outside PffCard to avoid overflow clipping */}
+      <AnimatePresence>
+        {hovered && (() => {
+          const CARD_W = 240;
+          const cenX = hovered.rect.left + hovered.rect.width / 2;
+          const left = Math.max(10, Math.min(cenX - CARD_W / 2, window.innerWidth - CARD_W - 10));
+          const showAbove = hovered.rect.bottom + 200 > window.innerHeight;
+          const top = showAbove ? hovered.rect.top - 8 : hovered.rect.bottom + 8;
+          return (
+            <motion.div
+              key={hovered.r.pseudo}
+              initial={{ opacity: 0, y: showAbove ? 6 : -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              style={{ position: "fixed", left, top, width: CARD_W, zIndex: 200, transform: showAbove ? "translateY(-100%)" : "none" }}
+              className="pointer-events-none"
+            >
+              <div className="glass rounded-2xl border border-neon-500/25 shadow-[0_0_40px_rgba(0,232,90,.22)] p-4">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <span className="text-2xl">{hovered.tier.emoji}</span>
+                  <div>
+                    <div className="text-white font-extrabold leading-tight truncate max-w-[160px]">{hovered.r.pseudo}</div>
+                    <div className={cx("text-xs font-semibold", hovered.tier.color)}>{hovered.tier.label}</div>
+                  </div>
+                </div>
+                <div className="border-t border-neon-500/10 pt-3 flex gap-3">
+                  <div className="flex-1 text-center">
+                    <div className={cx("text-xl font-extrabold", hovered.tier.color)}>{formatNumber(Number(hovered.r.points || 0))}</div>
+                    <div className="text-[10px] text-white/40 uppercase tracking-wider">pts</div>
+                  </div>
+                  <div className="w-px bg-neon-500/10" />
+                  <div className="flex-1 text-center">
+                    <div className="text-xl font-extrabold text-white">{hovered.questCount === null ? "…" : hovered.questCount}</div>
+                    <div className="text-[10px] text-white/40 uppercase tracking-wider">quests</div>
+                  </div>
+                </div>
+                {(() => {
+                  const next = hovered.tier.next;
+                  if (!next) return <div className="mt-3 text-[10px] text-yellow-400 font-bold text-center">👑 Max tier reached</div>;
+                  const pct = Math.min(100, Math.round(((Number(hovered.r.points) - hovered.tier.min) / (next.min - hovered.tier.min)) * 100));
+                  return (
+                    <div className="mt-3">
+                      <div className="flex justify-between text-[10px] text-white/40 mb-1.5">
+                        <span>{hovered.tier.emoji} {hovered.tier.label}</span>
+                        <span className="text-neon-300">{next.min - Number(hovered.r.points)} pts → {next.label}</span>
+                      </div>
+                      <div className="h-1 rounded-full bg-black/40 overflow-hidden border border-neon-500/10">
+                        <div className="h-full bg-neon-500/70 shadow-neon" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }
@@ -852,16 +1009,253 @@ function ExecutionTimeline({ logs }) {
 }
 
 /** ------------ QUEST BOARD ------------- */
-function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
+/** ------------ QUEST COUNTDOWN ------------- */
+function QuestCountdown({ expiresAt }) {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    function calc() {
+      const diff = new Date(expiresAt) - Date.now();
+      if (diff <= 0) { setTimeLeft({ expired: true }); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft({ d, h, m, s, expired: false });
+    }
+    calc();
+    const t = setInterval(calc, 1000);
+    return () => clearInterval(t);
+  }, [expiresAt]);
+
+  if (!expiresAt) return null;
+  if (!timeLeft || timeLeft.expired) return <Badge tone="bad">EXPIRED</Badge>;
+
+  const { d, h, m, s } = timeLeft;
+  const str = d > 0
+    ? `${d}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`
+    : `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-200 drop-shadow-[0_0_10px_rgba(0,0,0,.6)]">
+      ⏳ {str}
+    </span>
+  );
+}
+
+/** ------------ TIER HELPER ------------- */
+const TIER_THRESHOLDS = [
+  { min: 1000, label: "War Chief",     emoji: "👑", color: "text-yellow-400" },
+  { min: 500,  label: "Berserker",     emoji: "⚔️", color: "text-red-400"   },
+  { min: 100,  label: "Shield Bearer", emoji: "🛡️", color: "text-blue-400"  },
+  { min: 0,    label: "Recruit",       emoji: "🪖", color: "text-white/60"   },
+];
+function getTier(points) {
+  const tier = TIER_THRESHOLDS.find((t) => Number(points) >= t.min) || TIER_THRESHOLDS[TIER_THRESHOLDS.length - 1];
+  const idx  = TIER_THRESHOLDS.indexOf(tier);
+  const next = idx > 0 ? TIER_THRESHOLDS[idx - 1] : null;
+  return { ...tier, next };
+}
+
+/** ------------ HALL OF FAME ------------- */
+/** ------------ HORDE LOOKUP + PFF PASSPORT ------------- */
+function HordeLookupSection() {
+  const hordeStats = useHordeStats(60000);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [searched, setSearched] = useState(false);
+
+  async function lookup() {
+    const handle = input.trim();
+    if (!handle) return;
+    setLoading(true);
+    setSearched(true);
+    setResult(null);
+
+    try {
+      // Run user lookup + submissions count in parallel
+      const [{ data: userRows }, { count: subsCount }] = await Promise.all([
+        supabase.from("leaderboard").select("pseudo, points").ilike("pseudo", handle),
+        supabase.from("submissions").select("id", { count: "exact", head: true }).ilike("handle", handle).eq("status", "approved"),
+      ]);
+
+      if (!userRows || userRows.length === 0) {
+        setResult({ found: false, handle });
+        setLoading(false);
+        return;
+      }
+
+      const user = userRows[0];
+      // Count how many users have strictly more points → rank = that count + 1
+      const { count: above } = await supabase
+        .from("leaderboard")
+        .select("*", { count: "exact", head: true })
+        .gt("points", user.points);
+
+      const rank = (above || 0) + 1;
+
+      setResult({ found: true, handle: user.pseudo, rank, points: user.points, quests: subsCount || 0 });
+    } catch {
+      setResult({ found: false, handle });
+    }
+
+    setLoading(false);
+  }
+
+  const tier = result?.found ? getTier(result.points) : null;
+  const shareText = result?.found
+    ? `I'm a ${tier.emoji} ${tier.label} in the $PFF Horde\nRank #${result.rank} | ${Number(result.points).toLocaleString()} pts | ${result.quests} quests\n\nJoin the Horde 👇\npumpfunfloki.com\n\n#PFF #PumpFunFloki $PFF`
+    : "";
+  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+
+  return (
+    <div id="horde-lookup" className="scroll-mt-24">
+      <PffSectionTitle
+        kicker="Your Rank"
+        title="Horde Lookup"
+        desc="Enter your handle to see your rank, points, and tier in the Horde."
+      />
+
+      {/* Horde stats bar */}
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm drop-shadow-[0_0_10px_rgba(0,0,0,.7)]">
+        <span className="text-white/80">🛡️ <span className="font-extrabold text-white">{hordeStats.vikings !== null ? formatNumber(hordeStats.vikings) : "—"}</span> <span className="text-white/60">Vikings</span></span>
+        <span className="text-white/30">·</span>
+        <span className="text-white/80">⚔️ <span className="font-extrabold text-white">{hordeStats.quests !== null ? formatNumber(hordeStats.quests) : "—"}</span> <span className="text-white/60">quests completed</span></span>
+        <span className="text-white/30">·</span>
+        <span className="text-white/80">🪙 <span className="font-extrabold text-neon-300 drop-shadow-[0_0_8px_rgba(0,232,90,.5)]">{hordeStats.pts !== null ? formatNumber(hordeStats.pts) : "—"}</span> <span className="text-white/60">pts distributed</span></span>
+      </div>
+
+      <div className="mt-6 flex gap-3 max-w-lg">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && lookup()}
+          placeholder="Your handle (e.g. VikingX)"
+          className="flex-1 rounded-xl border border-neon-500/40 bg-white/[0.06] px-4 py-3 text-sm font-medium text-white drop-shadow-[0_0_10px_rgba(0,0,0,.6)] placeholder-white/40 outline-none focus:border-neon-500/80 focus:bg-white/[0.09] transition"
+        />
+        <button
+          onClick={lookup}
+          disabled={loading || !input.trim()}
+          className="rounded-xl bg-neon-500 px-5 py-3 text-sm font-extrabold text-black drop-shadow-[0_0_14px_rgba(0,232,90,.5)] hover:bg-neon-400 hover:drop-shadow-[0_0_20px_rgba(0,232,90,.75)] transition disabled:opacity-50"
+        >
+          {loading ? "…" : "Search"}
+        </button>
+      </div>
+
+      {searched && loading && (
+        <div className="mt-6 max-w-lg">
+          <PffCard className="p-5 border border-neon-500/15 flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full border-2 border-neon-500 border-t-transparent animate-spin shrink-0" />
+            <div className="text-white/60 text-sm">Searching the Horde…</div>
+          </PffCard>
+        </div>
+      )}
+
+      {searched && !loading && (
+        <div className="mt-6 max-w-lg space-y-4">
+          {!result?.found ? (
+            <PffCard className="p-5 border border-neon-500/15">
+              <div className="text-white/60 text-sm">Not in the Horde yet — complete a quest to earn your rank!</div>
+            </PffCard>
+          ) : (
+              <PffCard className="p-6 border border-neon-500/40 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-neon-500/[0.05] to-transparent pointer-events-none" />
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neon-500/60 to-transparent" />
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <img src="/assets/logo.png" alt="$PFF" className="w-10 h-10 rounded-xl object-contain drop-shadow-[0_0_12px_rgba(0,232,90,.4)]" />
+                    <div>
+                      <div className="text-xs font-bold tracking-widest uppercase text-neon-400">⚔️ PFF Passport</div>
+                      <div className="text-white font-extrabold text-xl leading-tight mt-0.5">{result.handle}</div>
+                      <div className={`text-sm font-bold ${tier.color}`}>{tier.emoji} {tier.label}</div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-white/50 text-xs uppercase tracking-widest">Rank</div>
+                    <div className="text-neon-400 font-extrabold text-4xl text-glow">#{result.rank}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div className="glass-inner rounded-xl p-3">
+                    <div className="text-white/50 text-xs">Total Points</div>
+                    <div className="text-neon-300 font-extrabold text-xl">{Number(result.points).toLocaleString()}</div>
+                  </div>
+                  <div className="glass-inner rounded-xl p-3">
+                    <div className="text-white/50 text-xs">Quests Done</div>
+                    <div className="text-white font-extrabold text-xl">{result.quests}</div>
+                  </div>
+                </div>
+                {/* Next Tier progress bar */}
+                {tier.next ? (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-1.5 text-xs">
+                      <span className={tier.color}>{tier.emoji} {tier.label}</span>
+                      <span className="text-white/50">{tier.next.emoji} {tier.next.label} — <span className="text-neon-300 font-bold">{tier.next.min - result.points} pts to go</span></span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-black/40 overflow-hidden border border-neon-500/15">
+                      <div
+                        className="h-full bg-neon-500/80 shadow-neon transition-all"
+                        style={{ width: `${Math.round(((result.points - tier.min) / (tier.next.min - tier.min)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4 text-xs font-bold text-yellow-400">👑 Max tier — War Chief</div>
+                )}
+                <div className="text-xs text-white/40 mb-4">
+                  {new Date().toLocaleString("en", { month: "long", year: "numeric" })}
+                </div>
+                <a
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-black px-4 py-2.5 text-sm font-bold text-white hover:border-white/40 hover:bg-white/[0.05] transition"
+                >
+                  <img src="/assets/footer/X.png" alt="X" className="w-3.5 h-3.5 object-contain" />
+                  Share on X
+                </a>
+              </PffCard>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuestBoard({ quests, backendEnabled }) {
   const [localSubmissions, setLocalSubmissions] = useState([]);
   const [filter, setFilter] = useState({ status: "ALL", type: "ALL", difficulty: "ALL" });
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [toast, setToast] = useState(null);
+  const [approvedCount, setApprovedCount] = useState(null);
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
   useEffect(() => {
     setLocalSubmissions(loadSubmissions());
   }, []);
+
+  const submittedQuestIds = useMemo(
+    () => new Set(localSubmissions.map((s) => s.questId)),
+    [localSubmissions]
+  );
+
+  useEffect(() => {
+    supabase
+      .from("submissions")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "approved")
+      .then(({ count }) => { if (count !== null) setApprovedCount(count); });
+  }, []);
+
+  const MILESTONES = [10, 30, 50, 100, 200, 500, 1000];
+  const prevMilestone = approvedCount !== null ? (MILESTONES.filter((m) => m <= approvedCount).pop() ?? 0) : 0;
+  const nextMilestone = approvedCount !== null ? MILESTONES.find((m) => m > approvedCount) : MILESTONES[0];
+  const milestonePct = nextMilestone
+    ? Math.round(((approvedCount - prevMilestone) / (nextMilestone - prevMilestone)) * 100)
+    : 100;
 
   const filtered = useMemo(() => {
     return (quests || []).filter((q) => {
@@ -872,11 +1266,6 @@ function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
     });
   }, [quests, filter]);
 
-  function calcScorePreview(type, difficulty) {
-    const b = Number(basePoints?.[type] ?? 0);
-    const m = Number(multipliers?.[difficulty] ?? 1);
-    return Math.round(b * m);
-  }
 
   async function submit(payload) {
     if (backendEnabled) {
@@ -893,10 +1282,11 @@ function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
 
-        setToast({ tone: "good", msg: "Submitted to backend ✅ (pending review)" });
+        setToast({ tone: "good", msg: "Submitted ✅ (pending review)" });
         setTimeout(() => setToast(null), 2500);
         return true;
       } catch (e) {
+        if (e.message === "already-submitted") throw e; // re-throw → modal affiche l'erreur, pas de fallback local
         setToast({ tone: "warn", msg: `Backend not ready (${e.message}). Saved locally.` });
         setTimeout(() => setToast(null), 3200);
       }
@@ -939,52 +1329,154 @@ function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
       ) : null}
 
       <PffCard className="mt-8 p-5 border border-neon-500/15">
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:justify-between">
-          <div className="text-white font-extrabold">Filters</div>
-          <div className="flex flex-wrap gap-3">
-            <Select label="Status" value={filter.status} onChange={(v) => setFilter((f) => ({ ...f, status: v }))} options={["ALL", "LIVE", "UPCOMING", "ENDED"]} />
-            <Select label="Type" value={filter.type} onChange={(v) => setFilter((f) => ({ ...f, type: v }))} options={["ALL", "lore", "art", "raid", "oracle"]} />
-            <Select label="Difficulty" value={filter.difficulty} onChange={(v) => setFilter((f) => ({ ...f, difficulty: v }))} options={["ALL", "easy", "medium", "hard"]} />
+        {/* Horde progress bar */}
+        {approvedCount !== null && (
+          <div className="mb-5 p-4 rounded-xl bg-black/20 border border-neon-500/10">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-white/60 font-semibold text-xs">⚔️ Horde Progress</span>
+              <span className="text-xs">
+                <span className="text-neon-300 font-extrabold">{approvedCount}</span>
+                <span className="text-white/40"> approved submissions</span>
+              </span>
+            </div>
+
+            {/* Milestone chain */}
+            <div className="flex items-start">
+              {MILESTONES.map((m, i) => {
+                const done = approvedCount >= m;
+                const isNext = !done && (i === 0 || approvedCount >= MILESTONES[i - 1]);
+                const connectorDone = i < MILESTONES.length - 1 && approvedCount >= MILESTONES[i + 1];
+                const connectorPartial = i < MILESTONES.length - 1 && !connectorDone && approvedCount >= m;
+                return (
+                  <React.Fragment key={m}>
+                    <div className="flex flex-col items-center shrink-0">
+                      <div className={cx(
+                        "relative w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-extrabold border-2 transition",
+                        done
+                          ? "border-neon-500 bg-neon-500/25 text-neon-300 shadow-[0_0_12px_rgba(0,232,90,.45)]"
+                          : isNext
+                          ? "border-neon-500/50 bg-black/30 text-neon-300/70"
+                          : "border-white/10 bg-black/20 text-white/20"
+                      )}>
+                        {done
+                          ? <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          : <span>{m >= 1000 ? "1k" : m}</span>
+                        }
+                        {isNext && <span className="absolute inset-0 rounded-full border border-neon-500/40 animate-ping" />}
+                      </div>
+                      <span className={cx("text-[9px] font-mono mt-1", done ? "text-neon-300/60" : isNext ? "text-white/45" : "text-white/15")}>
+                        {m >= 1000 ? "1k" : m}
+                      </span>
+                    </div>
+
+                    {i < MILESTONES.length - 1 && (
+                      <div className="flex-1 relative mt-4 h-0.5 mx-0.5">
+                        <div className="absolute inset-0 rounded-full bg-white/8" />
+                        <motion.div
+                          className="absolute inset-y-0 left-0 rounded-full bg-neon-500/70 shadow-[0_0_6px_rgba(0,232,90,.5)]"
+                          initial={{ width: 0 }}
+                          animate={{ width: connectorDone ? "100%" : connectorPartial ? `${milestonePct}%` : "0%" }}
+                          transition={{ duration: 0.8, ease: "easeOut" }}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {nextMilestone && (
+              <div className="mt-3 text-center text-[11px] text-white/35">
+                <span className="text-neon-300 font-extrabold">{nextMilestone - approvedCount}</span>
+                <span> more to reach </span>
+                <span className="text-white/55 font-semibold">{nextMilestone}</span>
+              </div>
+            )}
           </div>
+        )}
+        {/* Type quick-filter pills */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          {["ALL", "raid", "art", "lore", "oracle"].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setFilter((f) => ({ ...f, type: t }))}
+              className={cx(
+                "rounded-full border px-4 py-1.5 text-xs font-bold transition",
+                filter.type === t
+                  ? "border-neon-500/60 bg-neon-500/20 text-neon-300 shadow-neon"
+                  : "border-white/15 bg-black/20 text-white/60 hover:border-neon-500/30 hover:text-white/85"
+              )}
+            >
+              {t === "ALL" ? "All" : t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
+        {/* Status + Difficulty selects */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <Select label="Status" value={filter.status} onChange={(v) => setFilter((f) => ({ ...f, status: v }))} options={["ALL", "LIVE", "UPCOMING", "ENDED"]} />
+          <Select label="Difficulty" value={filter.difficulty} onChange={(v) => setFilter((f) => ({ ...f, difficulty: v }))} options={["ALL", "easy", "medium", "hard"]} />
         </div>
 
-        <div className="mt-5 grid gap-5 md:grid-cols-2">
+        <div className="mt-5 max-h-[720px] overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-neon-500/20">
+        <div className="grid gap-4 md:grid-cols-3">
           {filtered.map((q) => (
-            <button key={q.id} type="button" className="text-left" onClick={() => setSelectedQuest(q)}>
-              <div className="glass rounded-2xl p-6 border border-neon-500/15 hover:border-neon-500/45 hover:shadow-[0_0_60px_rgba(0,232,90,.18)] transition cursor-pointer">
+            <div key={q.id} role="button" tabIndex={0} className="text-left h-full cursor-pointer"
+              onClick={() => setSelectedQuest(q)}
+              onKeyDown={(e) => e.key === "Enter" && setSelectedQuest(q)}
+            >
+              <div className="glass rounded-2xl p-6 border border-neon-500/15 hover:border-neon-500/45 hover:shadow-[0_0_60px_rgba(0,232,90,.18)] transition h-full flex flex-col">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="text-white font-extrabold text-lg">{q.title}</div>
                     <div className="mt-1 text-xs text-white/60">
                       {q.id} • {q.window}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge tone={q.status === "LIVE" ? "good" : q.status === "UPCOMING" ? "warn" : "neutral"}>{q.status}</Badge>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      {submittedQuestIds.has(q.id) && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-neon-500/40 bg-neon-500/10 text-neon-300">✓ Submitted</span>
+                      )}
+                      <button
+                        type="button"
+                        title="Share on X"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const text = encodeURIComponent(
+                            `⚔️ New quest on $PFF!\n\n"${q.title}"\nEarn ${q.points > 0 ? `${q.points} pts` : "rewards"} 🪙\n\nComplete it here 👇\npumpfunfloki.com/#quests\n\n#PFF #PumpFunFloki $PFF`
+                          );
+                          window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+                        }}
+                        className="flex items-center justify-center w-7 h-7 rounded-full border border-white/20 bg-black/30 text-white/50 hover:border-neon-500/50 hover:text-neon-300 hover:bg-neon-500/10 transition"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.73-8.835L1.254 2.25H8.08l4.261 5.632L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                      </button>
+                      <Badge tone={q.status === "LIVE" ? "good" : q.status === "UPCOMING" ? "warn" : "neutral"}>{q.status}</Badge>
+                    </div>
                     <Badge>{q.type}</Badge>
+                    <QuestCountdown expiresAt={q.expires_at} />
                   </div>
                 </div>
 
                 <p className="mt-3 text-sm text-white/80 leading-relaxed">{q.desc}</p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-auto pt-5 flex flex-wrap gap-2">
                   <Badge>{q.difficulty}</Badge>
                   <Badge tone="good">{q.reward}</Badge>
                   <Badge>proof: {q.proofType}</Badge>
-                  <Badge tone="good">
-                    score: {typeof q.points === "number" && q.points > 0 ? q.points : calcScorePreview(q.type, q.difficulty)} pts
-                  </Badge>
+                  {q.points > 0 && <Badge tone="good">{q.points} pts</Badge>}
                 </div>
               </div>
-            </button>
+            </div>
           ))}
+        </div>
         </div>
       </PffCard>
 
       {selectedQuest ? (
         <SubmitProofModal
           quest={selectedQuest}
-          calcScorePreview={calcScorePreview}
           onClose={() => setSelectedQuest(null)}
           onSubmit={async (payload) => {
             await submit({
@@ -995,6 +1487,7 @@ function QuestBoard({ quests, basePoints, multipliers, backendEnabled }) {
               handle: payload.handle,
               proof: payload.proof,
               note: payload.note,
+              wallet_address: payload.wallet_address,
             });
             setSelectedQuest(null);
           }}
@@ -1021,8 +1514,9 @@ function Select({ label, value, onChange, options }) {
   );
 }
 
-function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
+function SubmitProofModal({ quest, onClose, onSubmit }) {
   const [handle, setHandle] = useState("");
+  const [walletAddress, setWalletAddress] = useState("");
   const [proof, setProof] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1033,7 +1527,6 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
     quest.proofType === "link" ? "Paste the link(s) to your post/thread)" :
     "Paste your text proof here";
 
-  const scorePreview = typeof calcScorePreview === "function" ? calcScorePreview(quest.type, quest.difficulty) : null;
   const canSubmit = handle.trim().length > 0 && proof.trim().length > 0 && !submitting;
 
   async function handleSubmit() {
@@ -1042,9 +1535,12 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
     setSubmitting(true);
 
     try {
-      await onSubmit({ handle: handle.trim(), proof: proof.trim(), note: note.trim() });
+      await onSubmit({ handle: handle.trim(), proof: proof.trim(), note: note.trim(), wallet_address: walletAddress.trim() });
     } catch (e) {
-      setErrMsg(e?.message || "Submission failed. Please try again.");
+      const msg = e?.message === "already-submitted"
+        ? "⚠️ You already submitted this quest."
+        : e?.message || "Submission failed. Please try again.";
+      setErrMsg(msg);
       setSubmitting(false);
       return;
     }
@@ -1069,7 +1565,7 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
               <div className="mt-2 flex flex-wrap gap-2">
                 <Badge>{quest.type}</Badge>
                 <Badge>{quest.difficulty}</Badge>
-                {scorePreview !== null ? <Badge tone="good">score: {scorePreview} pts</Badge> : null}
+                {quest.points > 0 && <Badge tone="good">{quest.points} pts</Badge>}
               </div>
             </div>
 
@@ -1099,6 +1595,18 @@ function SubmitProofModal({ quest, onClose, onSubmit, calcScorePreview }) {
               autoFocus
               disabled={submitting}
             />
+          </div>
+
+          <div>
+            <div className="text-xs text-white/60">Solana wallet address <span className="text-white/40">(optional — for $PFF airdrops)</span></div>
+            <input
+              value={walletAddress}
+              onChange={(e) => setWalletAddress(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40 font-mono"
+              placeholder="Your Solana address (e.g. 9zJc...tV2v)"
+              disabled={submitting}
+            />
+            <div className="mt-1 text-[11px] text-white/45">Used to receive $PFF rewards if your proof is approved.</div>
           </div>
 
           <div>
@@ -1183,42 +1691,3 @@ function LocalPendingPanel({ localSubmissions }) {
   );
 }
 
-/** ------------ BUYBACK TABLE ------------- */
-function BuybackThresholdsTable({ rows }) {
-  return (
-    <div id="thresholds" className="scroll-mt-24">
-      <PffSectionTitle kicker="Rules" title="Buyback Thresholds" desc="Transparent triggers. Deterministic actions. Proof-based execution." />
-
-      <PffCard className="mt-8 overflow-hidden border border-neon-500/15">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-black/30">
-              <tr className="text-left text-white/75">
-                <th className="px-4 py-3 font-extrabold">Trigger</th>
-                <th className="px-4 py-3 font-extrabold">Action</th>
-                <th className="px-4 py-3 font-extrabold">Amount</th>
-                <th className="px-4 py-3 font-extrabold">Execution</th>
-                <th className="px-4 py-3 font-extrabold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neon-500/10">
-              {rows.map((r) => (
-                <tr key={r.id} className="text-white/85">
-                  <td className="px-4 py-3">{r.trigger}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={String(r.action).toLowerCase().includes("burn") ? "warn" : "good"}>{r.action}</Badge>
-                  </td>
-                  <td className="px-4 py-3">{r.amount}</td>
-                  <td className="px-4 py-3 text-white/70">{r.execution}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={r.status === "Ready" ? "good" : "neutral"}>{r.status}</Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </PffCard>
-    </div>
-  );
-}

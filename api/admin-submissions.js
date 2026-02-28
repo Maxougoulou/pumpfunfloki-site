@@ -1,16 +1,6 @@
 import { supabaseAdmin } from "./_supabase.js";
 import { requireAdmin } from "./_session.js";
 
-function computePoints(type, difficulty) {
-  const base = { raid: 10, art: 15, lore: 8, oracle: 12 };
-  const mult = { easy: 1, medium: 1.5, hard: 2 };
-
-  const b = Number(base[String(type || "").toLowerCase()] ?? 0);
-  const m = Number(mult[String(difficulty || "").toLowerCase()] ?? 1);
-
-  return Math.round(b * m);
-}
-
 export default async function handler(req, res) {
   const admin = requireAdmin(req);
   if (!admin) return res.status(401).json({ error: "unauthorized" });
@@ -36,10 +26,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "bad-payload" });
     }
 
-    // Always fetch current row first (needed to compute points & prevent double-credit)
+    // Fetch current submission (needed to get quest_id, handle, prevent double-credit)
     const { data: existing, error: e1 } = await db
       .from("submissions")
-      .select("id, status, handle, type, difficulty, points_awarded")
+      .select("id, status, handle, quest_id, points_awarded")
       .eq("id", id)
       .single();
 
@@ -51,9 +41,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, row: existing, note: "already-approved" });
     }
 
-    // If approving: compute points and credit leaderboard
+    // If approving: fetch quest points and credit leaderboard
     if (status === "approved") {
-      const pts = computePoints(existing.type, existing.difficulty);
+      // Get points from the quest definition
+      const { data: quest } = await db
+        .from("quests")
+        .select("points")
+        .eq("id", existing.quest_id)
+        .maybeSingle();
+      const pts = Math.max(0, Math.round(Number(quest?.points) || 0));
 
       // 1) update submission (status + points_awarded)
       const { data: updated, error: e2 } = await db
