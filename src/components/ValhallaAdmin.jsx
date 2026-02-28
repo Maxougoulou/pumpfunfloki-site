@@ -548,7 +548,7 @@ export default function ValhallaAdmin() {
     setAirdropPreview(null);
     setAirdropResult(null);
     setAirdropErr("");
-    const r = await fetch("/api/admin-airdrop-data", { credentials: "include" });
+    const r = await fetch("/api/admin-submissions?view=airdrop", { credentials: "include" });
     const j = await r.json();
     setAirdropRows(j.data || []);
     setAirdropLoading(false);

@@ -8,6 +8,33 @@ export default async function handler(req, res) {
   const db = supabaseAdmin();
 
   if (req.method === "GET") {
+    // ?view=airdrop — leaderboard + latest wallet per handle
+    if (req.query?.view === "airdrop") {
+      const [{ data: lb, error: e1 }, { data: subs, error: e2 }] = await Promise.all([
+        db.from("leaderboard").select("pseudo, points").order("points", { ascending: false }),
+        db
+          .from("submissions")
+          .select("handle, wallet_address, created_at")
+          .not("wallet_address", "is", null)
+          .neq("wallet_address", "")
+          .eq("status", "approved")
+          .order("created_at", { ascending: false }),
+      ]);
+      if (e1 || e2) return res.status(500).json({ error: "db-error", details: e1 || e2 });
+      const walletMap = {};
+      for (const s of subs || []) {
+        const key = s.handle.toLowerCase();
+        if (!walletMap[key]) walletMap[key] = s.wallet_address;
+      }
+      const data = (lb || []).map((r, i) => ({
+        rank: i + 1,
+        handle: r.pseudo,
+        points: Number(r.points || 0),
+        wallet: walletMap[r.pseudo.toLowerCase()] || null,
+      }));
+      return res.status(200).json({ data });
+    }
+
     const status = (req.query?.status || "pending").toString();
     const { data, error } = await db
       .from("submissions")
