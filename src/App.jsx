@@ -1033,7 +1033,7 @@ function SiteHeader() {
     ["FAQ", "/#faq"],
   ];
   return (
-    <header className="sticky top-0 z-50 px-4 pt-4">
+    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
       <div className="relative mx-auto max-w-6xl">
         <nav className="glass-strong flex items-center justify-between rounded-2xl px-4 py-3 shadow-[0_0_40px_rgba(0,0,0,.6)]">
           <a href="/" className="flex items-center gap-2.5 font-extrabold tracking-tight">
@@ -1090,7 +1090,7 @@ function SiteHeader() {
 
 function SwarmPage() {
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[#05070A] pt-[76px]">
       <SiteHeader />
       <PFFSwarmOracleHub contract={CONTRACT} />
     </div>
@@ -1101,7 +1101,7 @@ function HelmetPage() {
   return (
     <div className="bg-[#05070A]">
       <SiteHeader />
-      <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-[76px] pb-12">
         {/* Header */}
         <div className="mb-6">
           <div className="inline-flex items-center gap-2 mb-2">
@@ -1149,7 +1149,7 @@ export default function App() {
   }, []);
 
   return (
-    <main className="relative overflow-hidden">
+    <main className="relative overflow-hidden pt-[76px]">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[url('/assets/hero.jpg')] bg-cover bg-center opacity-55 pointer-events-none" aria-hidden />
@@ -1160,7 +1160,7 @@ export default function App() {
       </div>
 
       {/* Nav */}
-      <header className="sticky top-0 z-50 px-4 pt-4">
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
         <div className="relative mx-auto max-w-6xl">
           <nav className="glass-strong flex items-center justify-between rounded-2xl px-4 py-3 shadow-[0_0_40px_rgba(0,0,0,.6)]">
             <a href="#" className="flex items-center gap-2.5 font-extrabold tracking-tight">
