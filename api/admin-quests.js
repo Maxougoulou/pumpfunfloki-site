@@ -14,6 +14,13 @@ export default async function handler(req, res) {
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) return res.status(500).json({ error: "no-openai-key" });
 
+      // Fetch existing quest titles so the AI avoids repeating them
+      const { data: existingQuests } = await db.from("quests").select("title").limit(200);
+      const existingTitles = (existingQuests || []).map((q) => `- ${q.title}`).join("\n");
+      const avoidSection = existingTitles
+        ? `\n\nALREADY EXISTING QUESTS (do NOT reproduce or closely paraphrase any of these):\n${existingTitles}`
+        : "";
+
       const prompt = `Generate 5 varied $PFF community quests for the PumpFunFloki Viking meme coin on Solana. Mix difficulties and types. Each quest must be fun, on-brand (Viking spirit, $PFF, Solana, community energy), and motivate people to post on X or create content.
 
 Return a JSON object: { "quests": [ ...5 items... ] }
@@ -27,7 +34,7 @@ Each item must have exactly these fields:
 - points: integer (easy: 10-15, medium: 16-25, hard: 26-40)
 - time_window: string (ex: "48h sprint", "This week", "3-day raid")
 
-Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/medium/hard.`;
+Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/medium/hard.${avoidSection}`;
 
       const oaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
