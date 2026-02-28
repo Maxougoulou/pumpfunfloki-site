@@ -1033,7 +1033,7 @@ function SiteHeader() {
     ["FAQ", "/#faq"],
   ];
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
+    <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 bg-[#05070A]">
       <div className="relative mx-auto max-w-6xl">
         <nav className="glass-strong flex items-center justify-between rounded-2xl px-4 py-3 shadow-[0_0_40px_rgba(0,0,0,.6)]">
           <a href="/" className="flex items-center gap-2.5 font-extrabold tracking-tight">
@@ -1160,7 +1160,7 @@ export default function App() {
       </div>
 
       {/* Nav */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 bg-[#05070A]">
         <div className="relative mx-auto max-w-6xl">
           <nav className="glass-strong flex items-center justify-between rounded-2xl px-4 py-3 shadow-[0_0_40px_rgba(0,0,0,.6)]">
             <a href="#" className="flex items-center gap-2.5 font-extrabold tracking-tight">

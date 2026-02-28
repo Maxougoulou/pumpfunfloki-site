@@ -462,7 +462,7 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
   const scorePct = Math.round(clamp01(swarmScore01) * 100);
 
   return (
-    <div className="sticky top-[76px] md:top-4 z-[50]">
+    <div className="sticky top-[76px] z-[50] bg-[#05070A] pb-2">
       <PffCard className="p-3 md:p-4 border border-neon-500/15 shadow-[0_0_80px_rgba(0,232,90,.12)]">
 
         {/* ── Mobile compact single row ── */}
