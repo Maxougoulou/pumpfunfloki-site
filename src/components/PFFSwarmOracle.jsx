@@ -462,8 +462,7 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
   const scorePct = Math.round(clamp01(swarmScore01) * 100);
 
   return (
-    <div className="sticky top-[76px] z-[50] bg-[#05070A] pb-2">
-      <PffCard className="p-3 md:p-4 border border-neon-500/15 shadow-[0_0_80px_rgba(0,232,90,.12)]">
+    <PffCard className="p-3 md:p-4 border border-neon-500/15 shadow-[0_0_80px_rgba(0,232,90,.12)]">
 
         {/* ── Mobile compact single row ── */}
         <div className="flex md:hidden items-center justify-between gap-2">
@@ -520,7 +519,6 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
         </div>
 
       </PffCard>
-    </div>
   );
 }
 
@@ -671,12 +669,19 @@ export default function PFFSwarmOracleHub({
   ]);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+    <>
       <HordeSurgeToast hits={justHit} />
       <NewQuestToast quest={newQuestToast} onDismiss={() => setNewQuestToast(null)} />
 
+      {/* ── Stats bar: fixed below the fixed header ── */}
+      <div className="fixed top-[76px] left-0 right-0 z-[49] bg-[#05070A] px-4 pb-2">
+        <div className="mx-auto max-w-6xl">
+          <RealtimeSwarmBar dexStatus={dexStatus} swarmScore01={swarmScore01} weights={weights} configLoading={cfg.loading} />
+        </div>
+      </div>
+
+      <section className="mx-auto max-w-6xl px-4 pt-16 pb-12 md:pt-20 md:pb-16">
       <div className="space-y-12">
-        <RealtimeSwarmBar dexStatus={dexStatus} swarmScore01={swarmScore01} weights={weights} configLoading={cfg.loading} />
 
         <TheOracleSection />
 
@@ -698,6 +703,7 @@ export default function PFFSwarmOracleHub({
 
       </div>
     </section>
+    </>
   );
 }
 
