@@ -462,9 +462,37 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
   const scorePct = Math.round(clamp01(swarmScore01) * 100);
 
   return (
-    <div className="sticky top-4 z-[50]">
-      <PffCard className="p-4 border border-neon-500/15 shadow-[0_0_80px_rgba(0,232,90,.12)]">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div className="sticky top-[76px] md:top-4 z-[50]">
+      <PffCard className="p-3 md:p-4 border border-neon-500/15 shadow-[0_0_80px_rgba(0,232,90,.12)]">
+
+        {/* ── Mobile compact single row ── */}
+        <div className="flex md:hidden items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Badge tone={dexStatus?.error ? "warn" : dexStatus?.loading ? "neutral" : "good"} className="flex-shrink-0">
+              {dexStatus?.loading ? "…" : dexStatus?.error ? "offline" : "live"}
+            </Badge>
+            <span className="text-white/80 text-xs font-medium truncate">
+              {dexStatus?.priceUsd ? `$${dexStatus.priceUsd.toFixed(8)}` : "—"}
+            </span>
+            <span className="text-white/50 text-xs whitespace-nowrap hidden xs:inline">
+              {dexStatus?.mcapUsd ? `MC $${formatNumber(Math.round(dexStatus.mcapUsd))}` : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="text-right leading-none">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider">Score</div>
+              <div className="text-white font-extrabold text-sm">
+                {scorePct}<span className="text-white/40 text-[10px]">/100</span>
+              </div>
+            </div>
+            <div className="w-16 h-1.5 rounded-full bg-black/40 overflow-hidden border border-neon-500/15">
+              <div className="h-full bg-neon-500/80 rounded-full shadow-neon" style={{ width: `${scorePct}%` }} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Desktop full row ── */}
+        <div className="hidden md:flex items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={dexStatus?.error ? "warn" : dexStatus?.loading ? "neutral" : "good"}>Dex: {dexStatus?.loading ? "loading…" : dexStatus?.error ? "offline" : "live"}</Badge>
             <Badge>Price: <span className="text-white/90">{dexStatus?.priceUsd ? `$${dexStatus.priceUsd.toFixed(8)}` : "—"}</span></Badge>
@@ -472,19 +500,16 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
             <Badge>Vol 24h: <span className="text-white/90">{dexStatus?.vol24Usd ? `$${formatNumber(Math.round(dexStatus.vol24Usd))}` : "—"}</span></Badge>
             <Badge>Liq: <span className="text-white/90">{dexStatus?.liquidityUsd ? `$${formatNumber(Math.round(dexStatus.liquidityUsd))}` : "—"}</span></Badge>
           </div>
-
           <div className="flex items-center gap-3">
             <div className="text-right">
               <div className="text-xs text-white/60">Swarm Score</div>
               <div className="text-white font-extrabold text-lg">
-                {scorePct}
-                <span className="text-white/50">/100</span>
+                {scorePct}<span className="text-white/50">/100</span>
               </div>
               <div className="text-[11px] text-white/55">
                 {configLoading ? "Loading weights…" : `Milestones ${(weights.milestones * 100).toFixed(0)}% • Activity ${(weights.activity * 100).toFixed(0)}%`}
               </div>
             </div>
-
             <div className="w-44">
               <div className="h-2 rounded-full bg-black/40 overflow-hidden border border-neon-500/15">
                 <div className="h-full bg-neon-500/80 shadow-neon" style={{ width: `${scorePct}%` }} />
@@ -493,6 +518,7 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
             </div>
           </div>
         </div>
+
       </PffCard>
     </div>
   );
