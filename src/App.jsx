@@ -1122,7 +1122,7 @@ function HelmetPage() {
             src="https://pumpfunfloki-helmet.vercel.app/"
             title="PFF Viking Helmet Generator"
             className="w-full"
-            style={{ border: "none", background: "#05070A", height: "1200px", overflow: "hidden" }}
+            style={{ border: "none", background: "#05070A", height: "2200px", overflow: "hidden" }}
             allow="camera"
           />
         </div>
