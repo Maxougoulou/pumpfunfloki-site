@@ -1053,7 +1053,7 @@ function SiteHeader() {
               </a>
             ))}
             <div className="ml-2">
-              <NeonButton href={BUY_LINK} variant="solid">Buy $PFF</NeonButton>
+              <NeonButton href="/#howtobuy" variant="solid">Buy $PFF</NeonButton>
             </div>
           </div>
 
@@ -1077,7 +1077,7 @@ function SiteHeader() {
                 </a>
               ))}
               <div className="pt-2 border-t border-neon-500/10 mt-1">
-                <NeonButton href={BUY_LINK} full>⚡ Buy $PFF</NeonButton>
+                <NeonButton href="/#howtobuy" full>⚡ Buy $PFF</NeonButton>
               </div>
             </div>
           </div>
