@@ -1452,9 +1452,9 @@ export default function ValhallaAdmin() {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto rounded-xl border border-neon-500/10">
+                <div className="overflow-x-auto overflow-y-auto max-h-[420px] rounded-xl border border-neon-500/10">
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="sticky top-0 z-10 bg-[#0d1117]">
                       <tr className="border-b border-neon-500/10 text-left text-xs text-white/40">
                         <th className="px-3 py-2 w-8"></th>
                         <th className="px-3 py-2">#</th>
