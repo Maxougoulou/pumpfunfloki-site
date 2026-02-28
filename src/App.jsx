@@ -1148,7 +1148,6 @@ export default function App() {
                 ["Roadmap", "#roadmap"],
                 ["How to Buy", "#howtobuy"],
                 ["Creations", "#gallery"],
-                ["Swarm", "/swarm"],
                 ["FAQ", "#faq"],
               ].map(([label, href]) => (
                 <a
@@ -1159,6 +1158,12 @@ export default function App() {
                   {label}
                 </a>
               ))}
+              <a
+                href="/swarm"
+                className="ml-1 inline-flex items-center gap-1.5 rounded-xl border border-neon-500/40 bg-neon-500/[0.08] px-3 py-1.5 text-sm font-semibold text-neon-400 hover:bg-neon-500/15 hover:border-neon-500/70 hover:text-neon-300 transition shadow-[0_0_12px_rgba(0,232,90,.12)]"
+              >
+                ⚔️ The Swarm
+              </a>
               <div className="ml-2">
                 <NeonButton href={BUY_LINK} variant="solid">
                   Buy $PFF
@@ -1185,7 +1190,6 @@ export default function App() {
                   ["Roadmap", "#roadmap"],
                   ["How to Buy", "#howtobuy"],
                   ["Creations", "#gallery"],
-                  ["Swarm", "/swarm"],
                   ["FAQ", "#faq"],
                 ].map(([label, href]) => (
                   <a
@@ -1197,6 +1201,13 @@ export default function App() {
                     {label}
                   </a>
                 ))}
+                <a
+                  href="/swarm"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-xl px-4 py-2.5 text-sm font-semibold text-neon-400 border border-neon-500/30 bg-neon-500/[0.06] hover:bg-neon-500/12 hover:border-neon-500/55 transition"
+                >
+                  ⚔️ The Swarm
+                </a>
                 <div className="pt-2 border-t border-neon-500/10 mt-1">
                   <NeonButton href={BUY_LINK} full>
                     ⚡ Buy $PFF
@@ -1365,6 +1376,63 @@ export default function App() {
       <CommunityGallery />
 
       <FAQ />
+
+      {/* Swarm CTA Section */}
+      <section className="mx-auto max-w-6xl px-4 py-14">
+        <div className="relative overflow-hidden rounded-3xl border border-neon-500/25 bg-gradient-to-br from-neon-500/[0.07] via-black/40 to-black/60 p-8 md:p-12 text-center shadow-[0_0_60px_rgba(0,232,90,.08)]">
+          {/* Ambient glow */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="h-64 w-64 rounded-full bg-neon-500/10 blur-[80px]" />
+          </div>
+          {/* Top line */}
+          <div className="h-px w-full absolute top-0 left-0 bg-gradient-to-r from-transparent via-neon-500/50 to-transparent" />
+
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <span className="h-1.5 w-1.5 rounded-full bg-neon-400 shadow-neon" />
+              <span className="text-xs font-extrabold tracking-widest uppercase text-neon-400">PFF Community Hub</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-neon-400 shadow-neon" />
+            </div>
+
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white text-glow drop-shadow-[0_0_18px_rgba(0,232,90,.25)]">
+              Join the Horde.<br />
+              <span className="text-neon-400">Earn your Valhalla.</span>
+            </h2>
+
+            <p className="mt-4 text-white/70 max-w-xl mx-auto text-base leading-relaxed">
+              The Swarm is the $PFF community hub — complete quests, climb the leaderboard, earn your Viking rank, and share your PFF Passport.
+            </p>
+
+            {/* Feature pills */}
+            <div className="mt-7 flex flex-wrap justify-center gap-3">
+              {[
+                ["⚔️", "Quests & Rewards"],
+                ["🏆", "Leaderboard"],
+                ["🏛️", "Hall of Fame"],
+                ["🪖", "Viking Ranks"],
+                ["🪪", "PFF Passport"],
+              ].map(([icon, label]) => (
+                <div
+                  key={label}
+                  className="inline-flex items-center gap-2 rounded-xl border border-neon-500/20 bg-neon-500/[0.06] px-4 py-2 text-sm text-white/80 font-medium"
+                >
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-9">
+              <a
+                href="/swarm"
+                className="inline-flex items-center gap-2.5 rounded-2xl bg-neon-500 px-8 py-4 text-base font-extrabold text-black shadow-neonStrong hover:bg-neon-400 hover:translate-y-[-2px] active:translate-y-0 transition will-change-transform"
+              >
+                ⚔️ Enter the Swarm
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="relative mx-auto max-w-6xl px-4 pb-14 mt-8">
