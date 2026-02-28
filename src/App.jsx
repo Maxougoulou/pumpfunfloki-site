@@ -1029,6 +1029,7 @@ function SiteHeader() {
     ["How to Buy", "/#howtobuy"],
     ["Creations", "/#gallery"],
     ["Swarm", "/swarm"],
+    ["🪖 Helmet", "/helmet"],
     ["FAQ", "/#faq"],
   ];
   return (
@@ -1096,12 +1097,48 @@ function SwarmPage() {
   );
 }
 
+function HelmetPage() {
+  return (
+    <div className="min-h-screen bg-[#05070A] flex flex-col">
+      <SiteHeader />
+      <div className="flex-1 flex flex-col mx-auto w-full max-w-6xl px-4 pt-8 pb-12">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-2 mb-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-neon-400 shadow-neon" />
+            <span className="text-xs font-extrabold tracking-widest uppercase text-neon-400">PFF Community Tool</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white text-glow drop-shadow-[0_0_18px_rgba(0,232,90,.25)]">
+            🪖 Viking Helmet Generator
+          </h1>
+          <p className="mt-2 text-white/60 text-sm max-w-lg">
+            Upload your photo and join the Horde — the PFF Viking helmet is yours to wear. Share your result on X with <span className="text-neon-400">#PFF</span>.
+          </p>
+        </div>
+
+        {/* iframe */}
+        <div className="flex-1 rounded-2xl overflow-hidden border border-neon-500/20 shadow-[0_0_40px_rgba(0,232,90,.07)] min-h-[600px]">
+          <iframe
+            src="https://pumpfunfloki-helmet.vercel.app/"
+            title="PFF Viking Helmet Generator"
+            className="w-full h-full min-h-[600px]"
+            style={{ border: "none", background: "#05070A" }}
+            allow="camera"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAdminRoute = window.location.pathname === "/valhalla-admin";
   if (isAdminRoute) return <ValhallaAdmin />;
   const isSwarmRoute = window.location.pathname === "/swarm";
   if (isSwarmRoute) return <SwarmPage />;
+  const isHelmetRoute = window.location.pathname === "/helmet";
+  if (isHelmetRoute) return <HelmetPage />;
 
   useEffect(() => {
     const onResize = () => {
@@ -1159,6 +1196,12 @@ export default function App() {
                 </a>
               ))}
               <a
+                href="/helmet"
+                className="ml-1 rounded-xl px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] transition"
+              >
+                🪖 Helmet
+              </a>
+              <a
                 href="/swarm"
                 className="ml-1 inline-flex items-center gap-1.5 rounded-xl border border-neon-500/40 bg-neon-500/[0.08] px-3 py-1.5 text-sm font-semibold text-neon-400 hover:bg-neon-500/15 hover:border-neon-500/70 hover:text-neon-300 transition shadow-[0_0_12px_rgba(0,232,90,.12)]"
               >
@@ -1201,6 +1244,13 @@ export default function App() {
                     {label}
                   </a>
                 ))}
+                <a
+                  href="/helmet"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-xl px-4 py-2.5 text-sm text-white/75 hover:text-white hover:bg-white/[0.06] transition"
+                >
+                  🪖 Helmet
+                </a>
                 <a
                   href="/swarm"
                   onClick={() => setMobileOpen(false)}
