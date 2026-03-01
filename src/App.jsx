@@ -855,6 +855,73 @@ function HowToBuy() {
 
 
 
+function HelmetGallery() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const r = await fetch("https://pumpfunfloki-helmet.vercel.app/api/feed?limit=12");
+      const j = await r.json();
+      setItems(j.items || []);
+    } catch {
+      setItems([]);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <div className="flex items-end justify-between gap-4 mb-8">
+        <SectionTitle
+          kicker="Helmet Generator"
+          title="Community Generations"
+          desc="Vikings helmetified by the community. Upload yours and join the Horde."
+        />
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={load}
+            className="glass rounded-xl px-3 py-2 text-xs text-white/60 hover:text-white border border-neon-500/20 hover:border-neon-500/50 transition"
+          >
+            ↻ refresh
+          </button>
+          <NeonButton href="/helmet" variant="outline">🪖 Helmetify yourself</NeonButton>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="aspect-square rounded-2xl bg-white/[0.04] border border-white/5 animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {!loading && items.length === 0 && (
+        <div className="text-center py-16 text-white/30 text-sm">No generations yet — be the first!</div>
+      )}
+
+      {!loading && items.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {items.map((item) => (
+            <div key={item.id} className="group aspect-square rounded-2xl overflow-hidden border border-white/10 bg-black/40 hover:border-neon-500/40 transition">
+              <img
+                src={item.image_url}
+                alt="Community helmet generation"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CommunityGallery() {
   const images = [
     "/assets/gallery/community1.png",
@@ -1424,6 +1491,8 @@ export default function App() {
 
 
       <CommunityGallery />
+
+      <HelmetGallery />
 
       <FAQ />
 
