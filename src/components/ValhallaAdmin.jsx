@@ -645,7 +645,7 @@ export default function ValhallaAdmin() {
   // ── Auth ───────────────────────────────────────────────────────
   async function refreshMe() {
     setMe({ loading: true, admin: false });
-    const r = await fetch("/api/admin-me", { credentials: "include" });
+    const r = await fetch("/api/admin-session", { credentials: "include" });
     const j = await r.json();
     setMe({ loading: false, admin: !!j.admin });
   }
@@ -656,7 +656,7 @@ export default function ValhallaAdmin() {
     try {
       setErr("");
       const recaptchaToken = await getRecaptchaToken(siteKey, "admin_login");
-      const r = await fetch("/api/admin-login", {
+      const r = await fetch("/api/admin-session", {
         method: "POST",
         headers: { "content-type": "application/json" },
         credentials: "include",
@@ -671,7 +671,7 @@ export default function ValhallaAdmin() {
   }
 
   async function logout() {
-    await fetch("/api/admin-logout", { method: "POST", credentials: "include" });
+    await fetch("/api/admin-session", { method: "DELETE", credentials: "include" });
     await refreshMe();
   }
 
