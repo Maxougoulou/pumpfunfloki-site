@@ -944,6 +944,7 @@ export default function ValhallaAdmin() {
     ["actions", "⚡ Actions"],
     ["airdrop", "💰 Airdrop"],
     ["milestones", "🏆 Milestones"],
+    ["telegram", "📣 Telegram"],
   ];
 
   return (
@@ -1873,7 +1874,116 @@ export default function ValhallaAdmin() {
         </div>
       )}
 
+      {/* ── Telegram tab ────────────────────────────────────────── */}
+      {tab === "telegram" && <TelegramTab />}
+
       </div>{/* /max-w-6xl */}
     </main>
+  );
+}
+
+// ── Telegram announce tab ──────────────────────────────────────────
+function TelegramTab() {
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState(null); // null | "sending" | "ok" | "err"
+
+  const QUICK = [
+    { label: "🗡️ New Quest", text: "⚔️ <b>New quest available!</b>\n\nA new quest has just been added to the Horde Engine.\n\nComplete it and earn points 👇\nhttps://pumpfunfloki.com/swarm" },
+    { label: "🔥 Burn", text: "🔥 <b>$PFF Burn incoming.</b>\n\nThe treasury feeds the fire.\n\nWatch the supply drop → https://pumpfunfloki.com" },
+    { label: "🏆 Leaderboard", text: "🏆 <b>Leaderboard update!</b>\n\nThe Horde rankings have shifted. Check your position 👇\nhttps://pumpfunfloki.com/swarm" },
+    { label: "💰 Airdrop", text: "💰 <b>Airdrop incoming for the Horde!</b>\n\nApproved Vikings — rewards are on their way.\n\nKeep grinding → https://pumpfunfloki.com/swarm" },
+  ];
+
+  async function send() {
+    if (!text.trim()) return;
+    setStatus("sending");
+    try {
+      const r = await fetch("/api/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "announce", text: text.trim() }),
+        credentials: "include",
+      });
+      setStatus(r.ok ? "ok" : "err");
+    } catch {
+      setStatus("err");
+    }
+    setTimeout(() => setStatus(null), 3000);
+  }
+
+  return (
+    <div className="mt-6 grid gap-5">
+      <div className="glass rounded-2xl border border-neon-500/15 p-6 grid gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-neon-400 text-lg">📣</span>
+          <h3 className="font-extrabold text-white">Send to Telegram Group</h3>
+          <span className="ml-auto text-xs text-white/30">Supports HTML tags: &lt;b&gt; &lt;i&gt; &lt;a&gt;</span>
+        </div>
+
+        {/* Quick templates */}
+        <div>
+          <div className="text-xs text-white/40 uppercase tracking-widest mb-2">Quick Templates</div>
+          <div className="flex flex-wrap gap-2">
+            {QUICK.map((q) => (
+              <button
+                key={q.label}
+                onClick={() => setText(q.text)}
+                className="rounded-xl border border-neon-500/20 bg-neon-500/[0.06] px-3 py-1.5 text-xs text-neon-400 hover:bg-neon-500/12 hover:border-neon-500/40 transition"
+              >
+                {q.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Message textarea */}
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={6}
+          placeholder={"Write your message here...\nSupports HTML: <b>bold</b>, <i>italic</i>, <a href='...'>link</a>"}
+          className="w-full rounded-xl bg-white/[0.04] border border-white/10 px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-neon-500/40 resize-none font-mono"
+        />
+
+        {/* Preview */}
+        {text.trim() && (
+          <div>
+            <div className="text-xs text-white/40 uppercase tracking-widest mb-2">Preview</div>
+            <div
+              className="rounded-xl bg-[#17212b] border border-white/10 px-4 py-3 text-sm text-white leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, "<br/>") }}
+            />
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={send}
+            disabled={!text.trim() || status === "sending"}
+            className="rounded-xl bg-neon-500 text-black px-5 py-2 text-sm font-extrabold shadow-neon hover:bg-neon-400 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {status === "sending" ? "Sending…" : "📣 Send to Group"}
+          </button>
+          {status === "ok" && <span className="text-neon-400 text-sm">✓ Sent!</span>}
+          {status === "err" && <span className="text-red-400 text-sm">✗ Error — check token/chat ID</span>}
+          <button
+            onClick={() => setText("")}
+            className="ml-auto text-xs text-white/30 hover:text-white/60 transition"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {/* Setup instructions */}
+      <div className="glass rounded-2xl border border-white/5 p-5 grid gap-2 text-xs text-white/50">
+        <div className="text-white/70 font-bold text-sm mb-1">⚙️ Webhook Setup</div>
+        <p>After deploying, activate the webhook once by visiting this URL in your browser:</p>
+        <code className="block bg-white/[0.04] rounded-lg px-3 py-2 text-neon-400 break-all">
+          https://api.telegram.org/bot[TOKEN]/setWebhook?url=https://pumpfunfloki.vercel.app/api/telegram
+        </code>
+        <p className="mt-1">Replace <b>[TOKEN]</b> with your <code>TELEGRAM_BOT_TOKEN</code>. Only needs to be done once.</p>
+      </div>
+    </div>
   );
 }
