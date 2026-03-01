@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Routes, Route, Link } from "react-router-dom";
 import PFFSwarmOracleHub from "./components/PFFSwarmOracle";
 import ValhallaAdmin from "./components/ValhallaAdmin";
 
@@ -1171,11 +1172,17 @@ function SiteHeader() {
           </a>
 
           <div className="hidden md:flex items-center gap-1">
-            {NAV.map(([label, href]) => (
-              <a key={label} href={href} className="rounded-xl px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] transition">
-                {label}
-              </a>
-            ))}
+            {NAV.map(([label, href]) =>
+              href.startsWith("/#") ? (
+                <a key={label} href={href} className="rounded-xl px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] transition">
+                  {label}
+                </a>
+              ) : (
+                <Link key={label} to={href} className="rounded-xl px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] transition">
+                  {label}
+                </Link>
+              )
+            )}
             <div className="ml-2">
               <NeonButton href="/#howtobuy" variant="solid">Buy $PFF</NeonButton>
             </div>
@@ -1193,13 +1200,21 @@ function SiteHeader() {
         {mobileOpen && (
           <div className="md:hidden absolute left-0 right-0 mt-2 glass-strong rounded-2xl p-4 z-50 shadow-[0_20px_60px_rgba(0,0,0,.7)]">
             <div className="flex flex-col gap-1">
-              {NAV.map(([label, href]) => (
-                <a key={label} href={href} onClick={() => setMobileOpen(false)}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white/75 hover:text-white hover:bg-white/[0.06] transition"
-                >
-                  {label}
-                </a>
-              ))}
+              {NAV.map(([label, href]) =>
+                href.startsWith("/#") ? (
+                  <a key={label} href={href} onClick={() => setMobileOpen(false)}
+                    className="rounded-xl px-4 py-2.5 text-sm text-white/75 hover:text-white hover:bg-white/[0.06] transition"
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  <Link key={label} to={href} onClick={() => setMobileOpen(false)}
+                    className="rounded-xl px-4 py-2.5 text-sm text-white/75 hover:text-white hover:bg-white/[0.06] transition"
+                  >
+                    {label}
+                  </Link>
+                )
+              )}
               <div className="pt-2 border-t border-neon-500/10 mt-1">
                 <NeonButton href="/#howtobuy" full>⚡ Buy $PFF</NeonButton>
               </div>
@@ -1254,14 +1269,8 @@ function HelmetPage() {
   );
 }
 
-export default function App() {
+function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isAdminRoute = window.location.pathname === "/valhalla-admin";
-  if (isAdminRoute) return <ValhallaAdmin />;
-  const isSwarmRoute = window.location.pathname === "/swarm";
-  if (isSwarmRoute) return <SwarmPage />;
-  const isHelmetRoute = window.location.pathname === "/helmet";
-  if (isHelmetRoute) return <HelmetPage />;
 
   useEffect(() => {
     const onResize = () => {
@@ -1318,18 +1327,18 @@ export default function App() {
                   {label}
                 </a>
               ))}
-              <a
-                href="/helmet"
+              <Link
+                to="/helmet"
                 className="ml-1 rounded-xl px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] transition"
               >
                 🪖 Helmet
-              </a>
-              <a
-                href="/swarm"
+              </Link>
+              <Link
+                to="/swarm"
                 className="ml-1 inline-flex items-center gap-1.5 rounded-xl border border-neon-500/40 bg-neon-500/[0.08] px-3 py-1.5 text-sm font-semibold text-neon-400 hover:bg-neon-500/15 hover:border-neon-500/70 hover:text-neon-300 transition shadow-[0_0_12px_rgba(0,232,90,.12)]"
               >
                 ⚔️ Horde Engine
-              </a>
+              </Link>
               <div className="ml-2">
                 <NeonButton href={BUY_LINK} variant="solid">
                   Buy $PFF
@@ -1367,20 +1376,20 @@ export default function App() {
                     {label}
                   </a>
                 ))}
-                <a
-                  href="/helmet"
+                <Link
+                  to="/helmet"
                   onClick={() => setMobileOpen(false)}
                   className="rounded-xl px-4 py-2.5 text-sm text-white/75 hover:text-white hover:bg-white/[0.06] transition"
                 >
                   🪖 Helmet
-                </a>
-                <a
-                  href="/swarm"
+                </Link>
+                <Link
+                  to="/swarm"
                   onClick={() => setMobileOpen(false)}
                   className="rounded-xl px-4 py-2.5 text-sm font-semibold text-neon-400 border border-neon-500/30 bg-neon-500/[0.06] hover:bg-neon-500/12 hover:border-neon-500/55 transition"
                 >
                   ⚔️ Horde Engine
-                </a>
+                </Link>
                 <div className="pt-2 border-t border-neon-500/10 mt-1">
                   <NeonButton href={BUY_LINK} full>
                     ⚡ Buy $PFF
@@ -1673,5 +1682,16 @@ export default function App() {
         </div>
       </footer>
     </main>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/valhalla-admin" element={<ValhallaAdmin />} />
+      <Route path="/swarm" element={<SwarmPage />} />
+      <Route path="/helmet" element={<HelmetPage />} />
+      <Route path="/" element={<HomePage />} />
+    </Routes>
   );
 }
