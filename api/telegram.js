@@ -47,25 +47,25 @@ export default async function handler(req, res) {
     const command = cmd.toLowerCase();
     const db = supabaseAdmin();
 
-    // /start  /help
-    if (command === "/start" || command === "/help") {
+    // /start  /pffhelp
+    if (command === "/start" || command === "/pffhelp") {
       await tgSend(chatId,
         `⚔️ <b>PFF Horde Oracle</b>\n\n` +
         `Commands:\n` +
-        `/rank &lt;handle&gt; — Your rank &amp; tier\n` +
-        `/top — Top 5 Vikings\n` +
-        `/quests — Active quests\n` +
-        `/stats — $PFF price &amp; market cap\n` +
-        `/help — This message\n\n` +
+        `/pffrank &lt;handle&gt; — Your rank &amp; tier\n` +
+        `/pfftop — Top 5 Vikings\n` +
+        `/pffquests — Active quests\n` +
+        `/pffstats — $PFF price &amp; market cap\n` +
+        `/pffhelp — This message\n\n` +
         `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
       );
     }
 
-    // /rank <handle>
-    else if (command === "/rank") {
+    // /pffrank <handle>
+    else if (command === "/pffrank") {
       const handle = args[0]?.replace(/^@/, "");
       if (!handle) {
-        await tgSend(chatId, "Usage: /rank &lt;handle&gt;");
+        await tgSend(chatId, "Usage: /pffrank &lt;handle&gt;");
       } else {
         const { data: lb } = await db
           .from("leaderboard")
@@ -92,8 +92,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // /top
-    else if (command === "/top") {
+    // /pfftop
+    else if (command === "/pfftop") {
       const { data: lb } = await db
         .from("leaderboard")
         .select("pseudo, points")
@@ -111,8 +111,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // /quests
-    else if (command === "/quests") {
+    // /pffquests
+    else if (command === "/pffquests") {
       const { data: quests } = await db
         .from("quests")
         .select("title, points, type")
@@ -130,8 +130,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // /stats
-    else if (command === "/stats") {
+    // /pffstats
+    else if (command === "/pffstats") {
       try {
         const r = await fetch(
           `https://api.dexscreener.com/latest/dex/tokens/${CONTRACT}`,
