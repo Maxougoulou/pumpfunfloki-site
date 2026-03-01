@@ -874,7 +874,7 @@ function HelmetGallery() {
   useEffect(() => { load(); }, []);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+    <section className="relative mx-auto max-w-6xl px-4 py-12 md:py-16">
       <div className="flex items-end justify-between gap-4 mb-8">
         <SectionTitle
           kicker="Helmet Generator"
