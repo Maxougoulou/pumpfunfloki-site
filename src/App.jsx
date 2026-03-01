@@ -858,6 +858,7 @@ function HowToBuy() {
 function HelmetGallery() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lightbox, setLightbox] = useState(null); // image_url or null
 
   async function load() {
     setLoading(true);
@@ -871,10 +872,53 @@ function HelmetGallery() {
     setLoading(false);
   }
 
+  async function downloadImg(url) {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "pff-helmet.png";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
   useEffect(() => { load(); }, []);
+
+  // Close lightbox on Escape
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => { if (e.key === "Escape") setLightbox(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
 
   return (
     <section className="relative mx-auto max-w-6xl px-4 py-12 md:py-16">
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox}
+            alt="Helmet enlarged"
+            className="max-h-[85vh] max-w-[85vw] rounded-3xl shadow-[0_0_80px_rgba(0,232,90,.25)] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex items-end justify-between gap-4 mb-8">
         <SectionTitle
           kicker="Helmet Generator"
@@ -907,13 +951,25 @@ function HelmetGallery() {
       {!loading && items.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {items.map((item) => (
-            <div key={item.id} className="group aspect-square rounded-2xl overflow-hidden border border-white/10 bg-black/40 hover:border-neon-500/40 transition">
+            <div
+              key={item.id}
+              className="group relative aspect-square rounded-2xl overflow-hidden border border-white/10 bg-black/40 hover:border-neon-500/40 transition cursor-zoom-in"
+              onClick={() => setLightbox(item.image_url)}
+            >
               <img
                 src={item.image_url}
                 alt="Community helmet generation"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
+              {/* Download button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); downloadImg(item.image_url); }}
+                className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2.5 py-1 text-xs font-semibold text-white opacity-0 group-hover:opacity-100 transition backdrop-blur-sm ring-1 ring-white/20 hover:bg-black/90"
+                title="Download"
+              >
+                ⬇
+              </button>
             </div>
           ))}
         </div>
