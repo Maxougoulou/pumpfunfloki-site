@@ -116,7 +116,6 @@ export default async function handler(req, res) {
       const { data: quests } = await db
         .from("quests")
         .select("title, points, type")
-        .eq("active", true)
         .order("points", { ascending: false })
         .limit(8);
 
