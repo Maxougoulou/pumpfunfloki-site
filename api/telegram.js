@@ -47,16 +47,23 @@ export default async function handler(req, res) {
     const command = cmd.toLowerCase();
     const db = supabaseAdmin();
 
+    const SEP = "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄";
+
     // /start  /pffhelp
     if (command === "/start" || command === "/pffhelp") {
       await tgSend(chatId,
-        `⚔️ <b>PFF Horde Oracle</b>\n\n` +
-        `Commands:\n` +
-        `/pffrank &lt;handle&gt; — Your rank &amp; tier\n` +
-        `/pfftop — Top 5 Vikings\n` +
-        `/pffquests — Active quests\n` +
-        `/pffstats — $PFF price &amp; market cap\n` +
-        `/pffhelp — This message\n\n` +
+        `⚔️ <b>PFF Horde Oracle</b>\n` +
+        `<i>The Viking watches. The Horde grows.</i>\n` +
+        `${SEP}\n` +
+        `🪓 /pffrank &lt;handle&gt;\n` +
+        `   Your rank, points &amp; tier\n\n` +
+        `🏆 /pfftop\n` +
+        `   Top 5 Vikings of the Horde\n\n` +
+        `📜 /pffquests\n` +
+        `   Active quests &amp; rewards\n\n` +
+        `📊 /pffstats\n` +
+        `   $PFF price &amp; market cap\n` +
+        `${SEP}\n` +
         `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
       );
     }
@@ -65,7 +72,10 @@ export default async function handler(req, res) {
     else if (command === "/pffrank") {
       const handle = args[0]?.replace(/^@/, "");
       if (!handle) {
-        await tgSend(chatId, "Usage: /pffrank &lt;handle&gt;");
+        await tgSend(chatId,
+          `⚔️ Usage: <code>/pffrank YourHandle</code>\n` +
+          `Example: <code>/pffrank Leszibs</code>`
+        );
       } else {
         const { data: lb } = await db
           .from("leaderboard")
@@ -78,15 +88,23 @@ export default async function handler(req, res) {
 
         if (idx === -1) {
           await tgSend(chatId,
-            `❓ <b>${handle}</b> not found in the Horde.\n\nComplete a quest → pumpfunfloki.com/swarm`
+            `❓ <b>${handle}</b> is not in the Horde yet.\n\n` +
+            `Complete a quest to claim your rank 👇\n` +
+            `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
           );
         } else {
           const row = lb[idx];
+          const rank = idx + 1;
+          const t = tier(Number(row.points));
+          const total = lb.length;
           await tgSend(chatId,
-            `🏆 <b>${row.pseudo}</b>\n\n` +
-            `Rank: <b>#${idx + 1}</b>\n` +
-            `Points: <b>${Number(row.points).toLocaleString()}</b>\n` +
-            `Tier: ${tier(Number(row.points))}`
+            `${t}\n` +
+            `<b>${row.pseudo}</b>\n` +
+            `${SEP}\n` +
+            `🏅 Rank  <b>#${rank}</b> / ${total}\n` +
+            `⚡ Points  <b>${Number(row.points).toLocaleString()}</b>\n` +
+            `${SEP}\n` +
+            `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
           );
         }
       }
@@ -101,13 +119,20 @@ export default async function handler(req, res) {
         .limit(5);
 
       if (!lb?.length) {
-        await tgSend(chatId, "No Vikings in the Horde yet.");
+        await tgSend(chatId, "No Vikings in the Horde yet. Be the first ⚔️");
       } else {
         const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
         const lines = lb.map((r, i) =>
-          `${medals[i]} <b>${r.pseudo}</b> — ${Number(r.points).toLocaleString()} pts  ${tier(Number(r.points))}`
+          `${medals[i]} <b>${r.pseudo}</b>\n` +
+          `    ${Number(r.points).toLocaleString()} pts · ${tier(Number(r.points))}`
         );
-        await tgSend(chatId, `⚔️ <b>Top Vikings</b>\n\n${lines.join("\n")}`);
+        await tgSend(chatId,
+          `⚔️ <b>Top Vikings of the Horde</b>\n` +
+          `${SEP}\n` +
+          `${lines.join("\n\n")}\n` +
+          `${SEP}\n` +
+          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+        );
       }
     }
 
@@ -120,11 +145,19 @@ export default async function handler(req, res) {
         .limit(8);
 
       if (!quests?.length) {
-        await tgSend(chatId, "No active quests right now. Check back soon ⚔️");
-      } else {
-        const lines = quests.map((q) => `• <b>${q.title}</b> — ${q.points} pts`);
         await tgSend(chatId,
-          `📜 <b>Active Quests</b>\n\n${lines.join("\n")}\n\n` +
+          `📜 <b>No active quests right now.</b>\n\nCheck back soon — the Oracle is preparing new missions ⚔️`
+        );
+      } else {
+        const lines = quests.map((q) =>
+          `⚡ <b>${q.title}</b>\n    🎯 ${q.points} pts`
+        );
+        await tgSend(chatId,
+          `📜 <b>Active Quests</b>\n` +
+          `${SEP}\n` +
+          `${lines.join("\n\n")}\n` +
+          `${SEP}\n` +
+          `Complete them at 👇\n` +
           `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
         );
       }
@@ -141,23 +174,25 @@ export default async function handler(req, res) {
         const pair = j?.pairs?.[0];
         if (!pair) throw new Error("no pair");
 
-        const price  = Number(pair.priceUsd || 0).toFixed(8);
-        const mcap   = pair.fdv     ? `$${(pair.fdv / 1_000).toFixed(0)}K`          : "N/A";
-        const vol    = pair.volume?.h24 ? `$${(pair.volume.h24 / 1_000).toFixed(0)}K` : "N/A";
-        const ch24   = pair.priceChange?.h24;
-        const chStr  = ch24 !== undefined ? `${ch24 > 0 ? "+" : ""}${Number(ch24).toFixed(2)}%` : "N/A";
-        const emoji  = ch24 > 0 ? "📈" : ch24 < 0 ? "📉" : "➡️";
+        const price = Number(pair.priceUsd || 0).toFixed(8);
+        const mcap  = pair.fdv          ? `$${(pair.fdv / 1_000).toFixed(1)}K`          : "N/A";
+        const vol   = pair.volume?.h24  ? `$${(pair.volume.h24 / 1_000).toFixed(1)}K`   : "N/A";
+        const ch24  = pair.priceChange?.h24;
+        const chStr = ch24 !== undefined ? `${ch24 > 0 ? "+" : ""}${Number(ch24).toFixed(2)}%` : "N/A";
+        const arrow = ch24 > 0 ? "📈" : ch24 < 0 ? "📉" : "➡️";
 
         await tgSend(chatId,
-          `📊 <b>$PFF Stats</b>\n\n` +
-          `Price: <b>$${price}</b>\n` +
-          `Market Cap: <b>${mcap}</b>\n` +
-          `Volume 24h: <b>${vol}</b>\n` +
-          `Change 24h: <b>${chStr}</b> ${emoji}\n\n` +
-          `<a href="https://dexscreener.com/solana/${CONTRACT}">DexScreener ↗</a>`
+          `📊 <b>$PFF — Live Stats</b>\n` +
+          `${SEP}\n` +
+          `💰 Price       <b>$${price}</b>\n` +
+          `🏦 Market Cap  <b>${mcap}</b>\n` +
+          `📦 Vol 24h     <b>${vol}</b>\n` +
+          `${arrow} Change 24h  <b>${chStr}</b>\n` +
+          `${SEP}\n` +
+          `<a href="https://dexscreener.com/solana/${CONTRACT}">📈 DexScreener</a>  ·  <a href="https://pumpfunfloki.com">🌐 Site</a>`
         );
       } catch {
-        await tgSend(chatId, "Stats unavailable right now. Try again in a moment.");
+        await tgSend(chatId, "⚠️ Stats unavailable right now. Try again in a moment.");
       }
     }
 
