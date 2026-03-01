@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "./_supabase.js";
 import { requireAdmin } from "./_session.js";
+import { tgNotify } from "./_telegram.js";
 
 export default async function handler(req, res) {
   const admin = requireAdmin(req);
@@ -126,6 +127,19 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
       .single();
 
     if (error) return res.status(500).json({ error: "db-error", details: error });
+
+    // Notify Telegram group
+    const pts = Number(data.points || 0);
+    await tgNotify(
+      `⚔️ <b>New Quest Available!</b>\n` +
+      `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+      `📜 <b>${data.title}</b>\n` +
+      `🎯 Reward: <b>${pts} pts</b>\n` +
+      `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+      `Complete it at 👇\n` +
+      `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+    );
+
     return res.status(200).json({ ok: true, row: data });
   }
 
