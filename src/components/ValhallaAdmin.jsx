@@ -1854,26 +1854,6 @@ export default function ValhallaAdmin() {
               </div>
             )}
 
-            <div className="mt-4 text-xs text-white/30 border-t border-white/5 pt-4">
-              ⚠️ SQL required in Supabase before using this tab:
-              <pre className="mt-2 text-[10px] text-white/40 overflow-x-auto whitespace-pre-wrap">{`CREATE TABLE IF NOT EXISTS milestones (
-  id TEXT PRIMARY KEY,
-  label TEXT NOT NULL,
-  description TEXT,
-  detail TEXT,
-  metric TEXT,
-  target NUMERIC DEFAULT 0,
-  current NUMERIC DEFAULT 0,
-  unit TEXT DEFAULT '',
-  reward TEXT,
-  action TEXT DEFAULT 'custom',
-  burn_amount NUMERIC,
-  sort_order INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE quests ADD COLUMN IF NOT EXISTS milestone_id TEXT;`}</pre>
-            </div>
           </Card>
         </div>
       )}
