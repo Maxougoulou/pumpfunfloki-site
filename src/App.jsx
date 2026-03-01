@@ -974,7 +974,7 @@ function FAQ() {
       a: "Use the official links only: Dexscreener, Pumpswap, or Jupiter. Always verify the contract address matches what's on this site before buying.",
     },
     {
-      q: "How does the Quest / Swarm system work?",
+      q: "How does the Quest / Horde Engine work?",
       a: "Complete community quests (raids, art, lore), submit proof via this site. Approved submissions earn $PFF points and may receive direct SPL airdrops to your wallet.",
     },
     {
@@ -1028,7 +1028,7 @@ function SiteHeader() {
     ["Roadmap", "/#roadmap"],
     ["How to Buy", "/#howtobuy"],
     ["Creations", "/#gallery"],
-    ["Swarm", "/swarm"],
+    ["Horde Engine", "/swarm"],
     ["🪖 Helmet", "/helmet"],
     ["FAQ", "/#faq"],
   ];
@@ -1205,7 +1205,7 @@ export default function App() {
                 href="/swarm"
                 className="ml-1 inline-flex items-center gap-1.5 rounded-xl border border-neon-500/40 bg-neon-500/[0.08] px-3 py-1.5 text-sm font-semibold text-neon-400 hover:bg-neon-500/15 hover:border-neon-500/70 hover:text-neon-300 transition shadow-[0_0_12px_rgba(0,232,90,.12)]"
               >
-                ⚔️ The Swarm
+                ⚔️ Horde Engine
               </a>
               <div className="ml-2">
                 <NeonButton href={BUY_LINK} variant="solid">
@@ -1256,7 +1256,7 @@ export default function App() {
                   onClick={() => setMobileOpen(false)}
                   className="rounded-xl px-4 py-2.5 text-sm font-semibold text-neon-400 border border-neon-500/30 bg-neon-500/[0.06] hover:bg-neon-500/12 hover:border-neon-500/55 transition"
                 >
-                  ⚔️ The Swarm
+                  ⚔️ Horde Engine
                 </a>
                 <div className="pt-2 border-t border-neon-500/10 mt-1">
                   <NeonButton href={BUY_LINK} full>
@@ -1450,7 +1450,7 @@ export default function App() {
             </h2>
 
             <p className="mt-4 text-white/70 max-w-xl mx-auto text-base leading-relaxed">
-              The Swarm is the $PFF community hub — complete quests, climb the leaderboard, earn your Viking rank, and share your PFF Passport.
+              The Horde Engine is the $PFF community hub — complete quests, climb the leaderboard, earn your Viking rank, and share your PFF Passport.
             </p>
 
             {/* Feature pills */}
@@ -1477,7 +1477,7 @@ export default function App() {
                 href="/swarm"
                 className="inline-flex items-center gap-2.5 rounded-2xl bg-neon-500 px-8 py-4 text-base font-extrabold text-black shadow-neonStrong hover:bg-neon-400 hover:translate-y-[-2px] active:translate-y-0 transition will-change-transform"
               >
-                ⚔️ Enter the Swarm
+                ⚔️ Enter the Horde Engine
               </a>
             </div>
           </div>

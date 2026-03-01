@@ -39,6 +39,7 @@ import {
 import {
   PublicKey,
   Transaction,
+  SystemProgram,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
 
@@ -51,7 +52,8 @@ export default async function handler(req, res) {
   const admin = requireAdmin(req);
   if (!admin) return res.status(401).json({ error: "unauthorized" });
 
-  const { entries, amount_per_wallet, dry_run = false } = req.body || {};
+  const { entries, amount_per_wallet, dry_run = false, token_type = "pff" } = req.body || {};
+  const isSol = token_type === "sol";
 
   // ── Validation ─────────────────────────────────────────────────
   if (!Array.isArray(entries) || entries.length === 0)
@@ -61,12 +63,14 @@ export default async function handler(req, res) {
   if (!amount || isNaN(amount) || amount <= 0)
     return res.status(400).json({ error: "invalid-amount" });
 
-  if (amount > AIRDROP_MAX_PER_WALLET)
+  if (!isSol && amount > AIRDROP_MAX_PER_WALLET)
     return res.status(400).json({
       error: "amount-exceeds-cap",
       cap: AIRDROP_MAX_PER_WALLET,
       message: `Max ${AIRDROP_MAX_PER_WALLET.toLocaleString()} $PFF per wallet per drop`,
     });
+  if (isSol && amount > 1)
+    return res.status(400).json({ error: "amount-exceeds-cap", message: "Max 1 SOL per wallet per drop" });
 
   // ── Validate wallet addresses ───────────────────────────────────
   const validEntries = [];
@@ -90,9 +94,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       dry_run: true,
+      token_type,
       valid_count: validEntries.length,
       invalid_count: invalidEntries.length,
-      total_pff: validEntries.length * amount,
+      total_pff: isSol ? undefined : validEntries.length * amount,
+      total_sol: isSol ? validEntries.length * amount : undefined,
       invalid_entries: invalidEntries,
       entries: validEntries,
     });
@@ -105,93 +111,87 @@ export default async function handler(req, res) {
   try {
     const connection = getSolanaConnection();
     const payer = getRewardsKeypair();
-    const mint = getPffMint();
-    const rawAmount = toRawAmount(amount);
-
-    // Source ATA (rewards wallet)
-    const sourceAta = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      mint,
-      payer.publicKey
-    );
 
     const results = [];
     const errors = [];
 
-    // Split into chunks
-    for (let i = 0; i < validEntries.length; i += CHUNK_SIZE) {
-      const chunk = validEntries.slice(i, i + CHUNK_SIZE);
-      const tx = new Transaction();
-      const chunkMeta = [];
-
-      for (const entry of chunk) {
-        try {
-          const recipientPubkey = new PublicKey(entry.wallet_address);
-          const recipientAta = await getOrCreateAssociatedTokenAccount(
-            connection,
-            payer, // payer for ATA creation (costs ~0.002 SOL if new)
-            mint,
-            recipientPubkey
-          );
-
-          tx.add(
-            createTransferInstruction(
-              sourceAta.address,
-              recipientAta.address,
-              payer.publicKey,
-              rawAmount,
-              [],
-              TOKEN_PROGRAM_ID
-            )
-          );
-
-          chunkMeta.push({
-            ...entry,
-            recipientAta: recipientAta.address.toBase58(),
-          });
-        } catch (e) {
-          errors.push({ wallet: entry.wallet_address, error: e?.message });
+    if (isSol) {
+      // ── SOL transfer ─────────────────────────────────────────────
+      const lamports = Math.round(amount * 1e9);
+      for (let i = 0; i < validEntries.length; i += CHUNK_SIZE) {
+        const chunk = validEntries.slice(i, i + CHUNK_SIZE);
+        const tx = new Transaction();
+        const chunkMeta = [];
+        for (const entry of chunk) {
+          try {
+            const recipientPubkey = new PublicKey(entry.wallet_address);
+            tx.add(SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: recipientPubkey, lamports }));
+            chunkMeta.push(entry);
+          } catch (e) {
+            errors.push({ wallet: entry.wallet_address, error: e?.message });
+          }
         }
-      }
-
-      if (tx.instructions.length === 0) continue;
-
-      const sig = await sendAndConfirmTransaction(connection, tx, [payer], {
-        commitment: "confirmed",
-      });
-
-      // ── Mark submissions as airdropped in DB ───────────────────
-      const db = supabaseAdmin();
-      for (const meta of chunkMeta) {
-        if (meta.submission_id) {
-          await db
-            .from("submissions")
-            .update({
-              airdrop_tx: sig,
-              airdrop_amount: amount,
-            })
-            .eq("id", meta.submission_id);
+        if (tx.instructions.length === 0) continue;
+        const sig = await sendAndConfirmTransaction(connection, tx, [payer], { commitment: "confirmed" });
+        const db = supabaseAdmin();
+        for (const meta of chunkMeta) {
+          if (meta.submission_id) {
+            await db.from("submissions").update({ airdrop_tx: sig, airdrop_amount: amount }).eq("id", meta.submission_id);
+          }
         }
+        results.push({ tx_signature: sig, solscan: `https://solscan.io/tx/${sig}`, wallets: chunkMeta.map(m => m.wallet_address), count: chunkMeta.length });
       }
+    } else {
+      // ── PFF SPL transfer ─────────────────────────────────────────
+      const mint = getPffMint();
+      const rawAmount = toRawAmount(amount);
+      const sourceAta = await getOrCreateAssociatedTokenAccount(connection, payer, mint, payer.publicKey);
+      for (let i = 0; i < validEntries.length; i += CHUNK_SIZE) {
+        const chunk = validEntries.slice(i, i + CHUNK_SIZE);
+        const tx = new Transaction();
+        const chunkMeta = [];
 
-      results.push({
-        tx_signature: sig,
-        solscan: `https://solscan.io/tx/${sig}`,
-        wallets: chunkMeta.map((m) => m.wallet_address),
-        count: chunkMeta.length,
-      });
-    }
+        for (const entry of chunk) {
+          try {
+            const recipientPubkey = new PublicKey(entry.wallet_address);
+            const recipientAta = await getOrCreateAssociatedTokenAccount(
+              connection,
+              payer,
+              mint,
+              recipientPubkey
+            );
+            tx.add(
+              createTransferInstruction(sourceAta.address, recipientAta.address, payer.publicKey, rawAmount, [], TOKEN_PROGRAM_ID)
+            );
+            chunkMeta.push({ ...entry, recipientAta: recipientAta.address.toBase58() });
+          } catch (e) {
+            errors.push({ wallet: entry.wallet_address, error: e?.message });
+          }
+        }
+
+        if (tx.instructions.length === 0) continue;
+
+        const sig = await sendAndConfirmTransaction(connection, tx, [payer], { commitment: "confirmed" });
+        const db = supabaseAdmin();
+        for (const meta of chunkMeta) {
+          if (meta.submission_id) {
+            await db.from("submissions").update({ airdrop_tx: sig, airdrop_amount: amount }).eq("id", meta.submission_id);
+          }
+        }
+        results.push({ tx_signature: sig, solscan: `https://solscan.io/tx/${sig}`, wallets: chunkMeta.map(m => m.wallet_address), count: chunkMeta.length });
+      }
+    } // end PFF branch
 
     // ── Auto-log to Execution Logs (public) ────────────────────────
     const db = supabaseAdmin();
     if (results.length > 0) {
       const totalSent = results.reduce((acc, r) => acc + r.count, 0);
+      const tokenLabel = isSol ? `${amount} SOL` : `${amount.toLocaleString()} $PFF`;
       await db.from("execution_logs").insert([
         {
-          title: `Airdrop: ${totalSent} × ${amount.toLocaleString()} $PFF`,
+          title: `Airdrop: ${totalSent} × ${tokenLabel}`,
           description:
-            `Batch airdrop distributed to ${totalSent} approved community members.\n` +
+            `Batch ${isSol ? "SOL" : "$PFF"} airdrop distributed to ${totalSent} community members.\n` +
             `Transactions: ${results.map((r) => r.tx_signature).join(", ")}`,
           type: "event",
           proof_link: results[0]?.solscan || null,

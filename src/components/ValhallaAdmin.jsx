@@ -205,7 +205,7 @@ function AirdropModal({ subs, selectedIds, onClose }) {
                 onClick={handleDryRun}
                 disabled={sending || !amount || eligibleSubs.length === 0}
               >
-                Dry Run (Preview)
+                Preview
               </Btn>
               <Btn
                 onClick={handleSend}
@@ -329,7 +329,7 @@ function BurnModal({ prefillAmount = "", prefillReason = "", onClose, onSuccess 
           {!result && (
             <>
               <Btn tone="outline" onClick={handleDryRun} disabled={sending || !amount}>
-                Dry Run (Preview)
+                Preview
               </Btn>
               <Btn tone="danger" onClick={handleBurn} disabled={sending || !dryRun || !amount}>
                 {sending ? "Burning…" : "Confirm Burn"}
@@ -537,6 +537,7 @@ export default function ValhallaAdmin() {
   const [airdropLoading, setAirdropLoading] = useState(false);
   const [airdropSelected, setAirdropSelected] = useState(new Set());
   const [airdropAmount, setAirdropAmount] = useState("200000");
+  const [airdropTokenType, setAirdropTokenType] = useState("pff");
   const [airdropOnlyWallets, setAirdropOnlyWallets] = useState(false);
   const [airdropPreview, setAirdropPreview] = useState(null);
   const [airdropResult, setAirdropResult] = useState(null);
@@ -565,7 +566,7 @@ export default function ValhallaAdmin() {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ entries, amount_per_wallet: Number(airdropAmount), dry_run: true }),
+      body: JSON.stringify({ entries, amount_per_wallet: Number(airdropAmount), dry_run: true, token_type: airdropTokenType }),
     });
     const j = await r.json();
     if (!r.ok) { setAirdropErr(j?.message || j?.error || "Error"); return; }
@@ -583,7 +584,7 @@ export default function ValhallaAdmin() {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ entries, amount_per_wallet: Number(airdropAmount), dry_run: false }),
+      body: JSON.stringify({ entries, amount_per_wallet: Number(airdropAmount), dry_run: false, token_type: airdropTokenType }),
     });
     const j = await r.json();
     if (!r.ok) { setAirdropErr(j?.message || j?.error || "Error"); setAirdropSending(false); return; }
@@ -601,11 +602,19 @@ export default function ValhallaAdmin() {
     type: "event",
   });
 
+  // ── Milestones ─────────────────────────────────────────────────
+  const [milestones, setMilestones] = useState([]);
+  const [milestonesLoading, setMilestonesLoading] = useState(false);
+  const [milestoneForm, setMilestoneForm] = useState({
+    label: "", description: "", detail: "", metric: "", target: "", current: "", unit: "", reward: "", action: "custom", burn_amount: "", sort_order: "0",
+  });
+  const [milestoneErr, setMilestoneErr] = useState("");
+  const [milestoneSuccess, setMilestoneSuccess] = useState("");
+
   // ── Quests ─────────────────────────────────────────────────────
   const [quests, setQuests] = useState([]);
   const [questsLoading, setQuestsLoading] = useState(false);
   const [questForm, setQuestForm] = useState({
-    id: "",
     title: "",
     description: "",
     type: "raid",
@@ -616,8 +625,10 @@ export default function ValhallaAdmin() {
     status: "LIVE",
     points: 0,
     expires_at: "",
+    milestone_id: "",
   });
   const [questErr, setQuestErr] = useState("");
+  const [questSuccess, setQuestSuccess] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiErr, setAiErr] = useState("");
@@ -725,6 +736,42 @@ export default function ValhallaAdmin() {
     }
   }
 
+  // ── Milestones ─────────────────────────────────────────────────
+  async function loadMilestones() {
+    setMilestonesLoading(true);
+    const r = await fetch("/api/admin-milestones", { credentials: "include" });
+    const j = await r.json().catch(() => ({}));
+    setMilestones(j?.data || []);
+    setMilestonesLoading(false);
+  }
+
+  async function createMilestone() {
+    setMilestoneErr("");
+    const autoId = "M-" + Date.now().toString(36).toUpperCase().slice(-5);
+    const r = await fetch("/api/admin-milestones", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ ...milestoneForm, id: autoId }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { setMilestoneErr(j?.error || "failed"); return; }
+    setMilestoneForm({ label: "", description: "", detail: "", metric: "", target: "", current: "", unit: "", reward: "", action: "custom", burn_amount: "", sort_order: "0" });
+    setMilestoneSuccess(`Milestone ${autoId} created ✓`);
+    setTimeout(() => setMilestoneSuccess(""), 5000);
+    await loadMilestones();
+  }
+
+  async function deleteMilestone(id) {
+    await fetch("/api/admin-milestones", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id }),
+    });
+    await loadMilestones();
+  }
+
   // ── Quests ─────────────────────────────────────────────────────
   async function loadQuests() {
     setQuestsLoading(true);
@@ -754,18 +801,22 @@ export default function ValhallaAdmin() {
 
   async function createQuest() {
     setQuestErr("");
+    setQuestSuccess("");
+    const autoId = "Q-" + Date.now().toString(36).toUpperCase().slice(-5);
     const r = await fetch("/api/admin-quests", {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(questForm),
+      body: JSON.stringify({ ...questForm, id: autoId }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { setQuestErr(j?.error || "failed-to-create-quest"); return; }
     setQuestForm({
-      id: "", title: "", description: "", type: "raid", difficulty: "easy",
-      reward: "", proof_type: "text", time_window: "", status: "LIVE", points: 0, expires_at: "",
+      title: "", description: "", type: "raid", difficulty: "easy",
+      reward: "", proof_type: "text", time_window: "", status: "LIVE", points: 0, expires_at: "", milestone_id: "",
     });
+    setQuestSuccess(`Quest ${autoId} created ✓`);
+    setTimeout(() => setQuestSuccess(""), 5000);
     await loadQuests();
   }
 
@@ -786,7 +837,8 @@ export default function ValhallaAdmin() {
     if (!me.admin) return;
     if (tab === "submissions") loadSubmissions();
     if (tab === "logs") loadLogs();
-    if (tab === "quests") loadQuests();
+    if (tab === "quests") { loadQuests(); loadMilestones(); }
+    if (tab === "milestones") loadMilestones();
     // "actions" tab is self-loading via ActionsTab component
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.admin, tab, subStatus]);
@@ -879,6 +931,7 @@ export default function ValhallaAdmin() {
     ["quests", "⚔️ Quests"],
     ["actions", "⚡ Actions"],
     ["airdrop", "💰 Airdrop"],
+    ["milestones", "🏆 Milestones"],
   ];
 
   return (
@@ -1203,8 +1256,10 @@ export default function ValhallaAdmin() {
                         const diffMap = { easy: 1, medium: 1.5, hard: 2 };
                         const baseMap = { raid: 10, art: 15, lore: 8, oracle: 12 };
                         const pts = q.points ?? Math.round((baseMap[q.type] ?? 10) * (diffMap[q.difficulty] ?? 1));
+                        const autoId = "Q-" + Date.now().toString(36).toUpperCase().slice(-5);
                         setQuestForm((v) => ({
                           ...v,
+                          id: autoId,
                           title: q.title || "",
                           description: q.description || "",
                           type: q.type || "raid",
@@ -1240,17 +1295,14 @@ export default function ValhallaAdmin() {
                 <div className="text-white font-extrabold">Create a quest</div>
                 <div className="mt-1 text-xs text-white/55">Fill the fields below or click a suggestion above.</div>
 
+                {questSuccess && (
+                  <div className="mt-4 rounded-xl bg-neon-500/10 border border-neon-500/30 px-4 py-2.5 text-sm text-neon-300 font-semibold">
+                    ✓ {questSuccess}
+                  </div>
+                )}
+
                 <div className="mt-5 grid gap-4">
                   <div className="grid gap-3 md:grid-cols-2">
-                    <div>
-                      <div className="text-xs text-white/60">Quest ID (ex: Q-0100)</div>
-                      <input
-                        value={questForm.id}
-                        onChange={(e) => setQuestForm((v) => ({ ...v, id: e.target.value }))}
-                        className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-                        placeholder="Q-0100"
-                      />
-                    </div>
                     <div>
                       <div className="text-xs text-white/60">Status</div>
                       <select
@@ -1368,17 +1420,31 @@ export default function ValhallaAdmin() {
                     />
                   </div>
 
+                  <div>
+                    <div className="text-xs text-white/60">Linked milestone <span className="text-white/30">(optional)</span></div>
+                    <select
+                      value={questForm.milestone_id}
+                      onChange={(e) => setQuestForm((v) => ({ ...v, milestone_id: e.target.value }))}
+                      className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                    >
+                      <option className="bg-black" value="">— None —</option>
+                      {milestones.map((m) => (
+                        <option key={m.id} className="bg-black" value={m.id}>{m.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="flex flex-wrap gap-3">
-                    <Btn onClick={createQuest} disabled={!questForm.id || !questForm.title}>
+                    <Btn onClick={createQuest} disabled={!questForm.title}>
                       Create quest
                     </Btn>
                     <Btn
                       tone="outline"
                       onClick={() =>
                         setQuestForm({
-                          id: "", title: "", description: "", type: "raid",
+                          title: "", description: "", type: "raid",
                           difficulty: "easy", reward: "", proof_type: "text",
-                          time_window: "", status: "LIVE", points: 0,
+                          time_window: "", status: "LIVE", points: 0, expires_at: "", milestone_id: "",
                         })
                       }
                     >
@@ -1585,16 +1651,35 @@ export default function ValhallaAdmin() {
             <Card>
               <div className="text-white font-extrabold mb-4">🚀 Send Airdrop</div>
 
+              {/* Token type toggle */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => { setAirdropTokenType("pff"); setAirdropPreview(null); setAirdropAmount("200000"); }}
+                  className={`rounded-xl px-4 py-2 text-sm font-bold transition border ${airdropTokenType === "pff" ? "bg-neon-500 text-black border-neon-500" : "border-neon-500/25 text-white/60 hover:border-neon-500/50"}`}
+                >
+                  $PFF
+                </button>
+                <button
+                  onClick={() => { setAirdropTokenType("sol"); setAirdropPreview(null); setAirdropAmount("0.05"); }}
+                  className={`rounded-xl px-4 py-2 text-sm font-bold transition border ${airdropTokenType === "sol" ? "bg-amber-400 text-black border-amber-400" : "border-white/20 text-white/60 hover:border-white/40"}`}
+                >
+                  SOL
+                </button>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <div className="text-xs text-white/60 mb-1.5">Amount per wallet ($PFF)</div>
+                  <div className="text-xs text-white/60 mb-1.5">
+                    Amount per wallet ({airdropTokenType === "sol" ? "SOL" : "$PFF"})
+                  </div>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
+                    step={airdropTokenType === "sol" ? "0.001" : "1"}
                     value={airdropAmount}
                     onChange={(e) => { setAirdropAmount(e.target.value); setAirdropPreview(null); }}
                     className="w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-                    placeholder="200000"
+                    placeholder={airdropTokenType === "sol" ? "0.05" : "200000"}
                   />
                 </div>
                 <div className="flex flex-col justify-end">
@@ -1602,7 +1687,7 @@ export default function ValhallaAdmin() {
                     {airdropSelected.size} selected ·{" "}
                     {airdropRows.filter((r) => airdropSelected.has(r.handle) && r.wallet).length} with wallet ·{" "}
                     <span className="text-neon-300 font-bold">
-                      {(airdropRows.filter((r) => airdropSelected.has(r.handle) && r.wallet).length * Number(airdropAmount || 0)).toLocaleString()} $PFF total
+                      {(airdropRows.filter((r) => airdropSelected.has(r.handle) && r.wallet).length * Number(airdropAmount || 0)).toLocaleString()} {airdropTokenType === "sol" ? "SOL" : "$PFF"} total
                     </span>
                   </div>
                 </div>
@@ -1618,12 +1703,15 @@ export default function ValhallaAdmin() {
                   <div className="text-neon-300 font-extrabold mb-2">Preview</div>
                   <div className="grid gap-1 text-white/80">
                     <div>Valid wallets: <span className="text-white font-bold">{airdropPreview.valid_count}</span></div>
-                    <div>Total $PFF: <span className="text-neon-300 font-bold">{airdropPreview.total_pff?.toLocaleString()}</span></div>
+                    {airdropTokenType === "sol"
+                      ? <div>Total SOL: <span className="text-amber-300 font-bold">{airdropPreview.total_sol?.toFixed(4) ?? (airdropPreview.valid_count * Number(airdropAmount)).toFixed(4)}</span></div>
+                      : <div>Total $PFF: <span className="text-neon-300 font-bold">{airdropPreview.total_pff?.toLocaleString()}</span></div>
+                    }
                     {airdropPreview.invalid_count > 0 && (
                       <div className="text-yellow-300">⚠️ {airdropPreview.invalid_count} invalid wallet(s) will be skipped</div>
                     )}
                   </div>
-                  <div className="mt-2 text-xs text-white/35">Ensure rewards wallet has sufficient $PFF and SOL for fees.</div>
+                  <div className="mt-2 text-xs text-white/35">Ensure rewards wallet has sufficient {airdropTokenType === "sol" ? "SOL" : "$PFF and SOL for fees"}.</div>
                 </div>
               )}
 
@@ -1644,7 +1732,7 @@ export default function ValhallaAdmin() {
 
               <div className="flex gap-3">
                 <Btn tone="outline" onClick={handleAirdropDryRun} disabled={airdropSending || airdropSelected.size === 0}>
-                  🔍 Dry Run
+                  🔍 Preview
                 </Btn>
                 <Btn
                   tone="solid"
@@ -1656,6 +1744,137 @@ export default function ValhallaAdmin() {
               </div>
             </Card>
           )}
+        </div>
+      )}
+
+      {/* ── Milestones tab ─────────────────────────────────────── */}
+      {tab === "milestones" && (
+        <div className="mt-6 grid gap-5">
+          <Card>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-white font-extrabold text-xl">🏆 Public Milestones</div>
+                <div className="mt-1 text-xs text-white/55">
+                  Displayed on the Horde Engine page. Clickable cards with details.
+                </div>
+              </div>
+              <Btn tone="outline" onClick={loadMilestones}>Refresh</Btn>
+            </div>
+
+            {milestoneSuccess && (
+              <div className="mt-3 rounded-xl bg-neon-500/10 border border-neon-500/30 px-4 py-2.5 text-sm text-neon-300 font-semibold">✓ {milestoneSuccess}</div>
+            )}
+            {milestoneErr && (
+              <div className="mt-3 rounded-xl bg-red-500/10 border border-red-400/25 px-4 py-2.5 text-sm text-red-200">{milestoneErr}</div>
+            )}
+
+            {/* Create form */}
+            <div className="mt-5 rounded-2xl border border-neon-500/10 bg-black/20 p-5">
+              <div className="text-white font-extrabold mb-4">Add Milestone</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <div className="text-xs text-white/60">Label</div>
+                  <input value={milestoneForm.label} onChange={(e) => setMilestoneForm(v => ({ ...v, label: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="Horde Awakening" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/60">Metric (e.g. Market Cap)</div>
+                  <input value={milestoneForm.metric} onChange={(e) => setMilestoneForm(v => ({ ...v, metric: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="Market Cap" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/60">Target value</div>
+                  <input type="number" value={milestoneForm.target} onChange={(e) => setMilestoneForm(v => ({ ...v, target: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="250000" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/60">Unit prefix (e.g. $, empty for holders)</div>
+                  <input value={milestoneForm.unit} onChange={(e) => setMilestoneForm(v => ({ ...v, unit: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="$" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/60">Reward label</div>
+                  <input value={milestoneForm.reward} onChange={(e) => setMilestoneForm(v => ({ ...v, reward: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="Buyback #1 + Horde boost" />
+                </div>
+                <div>
+                  <div className="text-xs text-white/60">Sort order (0 = first)</div>
+                  <input type="number" value={milestoneForm.sort_order} onChange={(e) => setMilestoneForm(v => ({ ...v, sort_order: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="0" />
+                </div>
+                <div className="md:col-span-2">
+                  <div className="text-xs text-white/60">Short description (shown in card)</div>
+                  <input value={milestoneForm.description} onChange={(e) => setMilestoneForm(v => ({ ...v, description: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="Short description" />
+                </div>
+                <div className="md:col-span-2">
+                  <div className="text-xs text-white/60">Detail (shown in modal when card clicked)</div>
+                  <textarea value={milestoneForm.detail} onChange={(e) => setMilestoneForm(v => ({ ...v, detail: e.target.value }))}
+                    rows={3}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                    placeholder="Full explanation of what happens when this milestone is triggered…" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Btn onClick={createMilestone} disabled={!milestoneForm.label || milestonesLoading}>
+                  + Add Milestone
+                </Btn>
+              </div>
+            </div>
+
+            {/* Existing milestones */}
+            {milestonesLoading ? (
+              <div className="mt-4 text-white/60">Loading…</div>
+            ) : milestones.length === 0 ? (
+              <div className="mt-4 text-white/60 text-sm">
+                No milestones in DB yet. Add one above, or{" "}
+                <span className="text-neon-300">the site falls back to the hardcoded defaults.</span>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3">
+                {milestones.map((m) => (
+                  <div key={m.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-white font-extrabold">{m.label} <span className="text-white/40 text-xs font-normal">({m.id})</span></div>
+                        <div className="mt-1 text-xs text-white/55">{m.metric} • Target: {m.unit}{Number(m.target).toLocaleString()} • Reward: {m.reward}</div>
+                        {m.detail && <div className="mt-1 text-xs text-white/40 italic">{m.detail.slice(0, 100)}{m.detail.length > 100 ? "…" : ""}</div>}
+                      </div>
+                      <Btn tone="danger" onClick={() => deleteMilestone(m.id)}>Delete</Btn>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 text-xs text-white/30 border-t border-white/5 pt-4">
+              ⚠️ SQL required in Supabase before using this tab:
+              <pre className="mt-2 text-[10px] text-white/40 overflow-x-auto whitespace-pre-wrap">{`CREATE TABLE IF NOT EXISTS milestones (
+  id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  description TEXT,
+  detail TEXT,
+  metric TEXT,
+  target NUMERIC DEFAULT 0,
+  current NUMERIC DEFAULT 0,
+  unit TEXT DEFAULT '',
+  reward TEXT,
+  action TEXT DEFAULT 'custom',
+  burn_amount NUMERIC,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE quests ADD COLUMN IF NOT EXISTS milestone_id TEXT;`}</pre>
+            </div>
+          </Card>
         </div>
       )}
 

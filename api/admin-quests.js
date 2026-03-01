@@ -99,6 +99,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
       status,
       points,
       expires_at,
+      milestone_id,
     } = req.body || {};
 
     if (!id || !title) return res.status(400).json({ error: "missing-fields" });
@@ -118,6 +119,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
           status: status ? String(status).slice(0, 20) : "LIVE",
           points: Number.isFinite(Number(points)) ? Number(points) : 0,
           expires_at: expires_at ? new Date(expires_at).toISOString() : null,
+          milestone_id: milestone_id ? String(milestone_id).slice(0, 32) : null,
         },
       ])
       .select()
@@ -156,6 +158,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
     if (status !== undefined) patch.status = status ? String(status).slice(0, 20) : null;
     if (points !== undefined) patch.points = Number.isFinite(Number(points)) ? Number(points) : 0;
     if (expires_at !== undefined) patch.expires_at = expires_at ? new Date(expires_at).toISOString() : null;
+    if (req.body?.milestone_id !== undefined) patch.milestone_id = req.body.milestone_id ? String(req.body.milestone_id).slice(0, 32) : null;
 
     const { data, error } = await db
       .from("quests")

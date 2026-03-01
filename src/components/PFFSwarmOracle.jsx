@@ -61,9 +61,9 @@ const DEFAULT_QUESTS = [
 ];
 
 const DEFAULT_MILESTONES = [
-  { id: "M-001", label: "Horde Awakening", metric: "Market Cap", target: 250000, current: 172000, unit: "$", reward: "Buyback #1 + Swarm boost" },
-  { id: "M-002", label: "Raid Season", metric: "24h Volume", target: 150000, current: 62000, unit: "$", reward: "Burn #1 (threshold)" },
-  { id: "M-003", label: "Saga Breakout", metric: "Holders", target: 2500, current: 1860, unit: "", reward: "Oracle Week + Quest pack" },
+  { id: "M-001", label: "Horde Awakening", metric: "Market Cap", target: 250000, current: 172000, unit: "$", reward: "Buyback #1 + Horde boost", detail: "First market milestone. When market cap hits $250K, a buyback is triggered and the Horde gets a score boost." },
+  { id: "M-002", label: "Raid Season", metric: "24h Volume", target: 150000, current: 62000, unit: "$", reward: "Burn #1 (threshold)", detail: "When 24h volume reaches $150K, the Burn #1 threshold is triggered — tokens are permanently destroyed as a deflationary event." },
+  { id: "M-003", label: "Saga Breakout", metric: "Holders", target: 2500, current: 1860, unit: "", reward: "Oracle Week + Quest pack", detail: "Reaching 2,500 holders unlocks Oracle Week — a special quest pack with exclusive rewards for the most active Horde members." },
 ];
 
 
@@ -297,7 +297,7 @@ function usePublicQuests(refreshMs = 45000) {
       try {
         const { data, error } = await supabase
           .from("quests")
-          .select("id, title, description, type, difficulty, reward, proof_type, time_window, status, points, created_at, expires_at")
+          .select("id, title, description, type, difficulty, reward, proof_type, time_window, status, points, created_at, expires_at, milestone_id")
           .order("created_at", { ascending: false })
           .limit(200);
 
@@ -375,7 +375,7 @@ function Badge({ children, tone = "neutral" }) {
     tone === "good" ? "border-neon-500/40 bg-neon-500/10 text-neon-300 shadow-neon" :
     tone === "warn" ? "border-yellow-400/40 bg-yellow-400/10 text-yellow-200" :
     tone === "bad"  ? "border-red-400/40 bg-red-400/10 text-red-200" :
-    "border-white/50 bg-white/[0.15] text-white";
+    "border-white/15 bg-white/[0.06] text-white/80";
 
   return <span className={cx("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium drop-shadow-[0_0_10px_rgba(0,0,0,.6)]", cls)}>{children}</span>;
 }
@@ -501,7 +501,7 @@ function RealtimeSwarmBar({ dexStatus, swarmScore01, weights, configLoading }) {
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-xs text-white/60">Swarm Score</div>
+              <div className="text-xs text-white/60">Horde Score</div>
               <div className="text-white font-extrabold text-lg">
                 {scorePct}<span className="text-white/50">/100</span>
               </div>
@@ -593,6 +593,7 @@ export default function PFFSwarmOracleHub({
       desc: q.description,
       points: typeof q.points === "number" ? q.points : Number(q.points || 0),
       expires_at: q.expires_at || null,
+      milestone_id: q.milestone_id || null,
     }));
   }, [publicQuests.rows]);
 
@@ -693,6 +694,7 @@ export default function PFFSwarmOracleHub({
 
         <QuestBoard
           quests={questsToShow}
+          milestones={liveMilestones}
           backendEnabled={Boolean(safeJson(settings?.feature_toggles, { use_backend: false })?.use_backend)}
         />
 
@@ -713,7 +715,7 @@ function TheSwarmSection({ basePoints, multipliers }) {
     <div id="swarm" className="scroll-mt-24">
       <PffSectionTitle
         kicker="Protocol"
-        title="The Swarm"
+        title="The Horde Engine"
         desc="A predictable quest engine. No RNG. No glitches. Fixed rewards, optional community-voted bonuses. Discipline > noise."
         right={
           <div className="flex flex-wrap gap-2 justify-start md:justify-end">
@@ -759,17 +761,53 @@ function TheOracleSection() {
   );
 }
 
+/** ------------ MILESTONE DETAIL MODAL ------------- */
+function MilestoneDetailModal({ milestone, onClose }) {
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative w-full max-w-md glass rounded-2xl border border-neon-500/30 shadow-[0_0_90px_rgba(0,232,90,.22)] p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-extrabold tracking-widest uppercase text-neon-400 mb-1">Milestone</div>
+            <div className="text-white font-extrabold text-xl">{milestone.label}</div>
+            <div className="mt-1 text-xs text-white/55">{milestone.metric} • Target {milestone.unit}{formatNumber(Number(milestone.target ?? 0))}</div>
+          </div>
+          <button onClick={onClose} className="text-white/50 hover:text-white text-xl leading-none shrink-0">✕</button>
+        </div>
+        <div className="mt-5 space-y-3">
+          <div className="rounded-xl bg-neon-500/[0.06] border border-neon-500/20 p-4">
+            <div className="text-xs text-white/50 mb-1">Reward when triggered</div>
+            <div className="text-neon-300 font-bold">{milestone.reward}</div>
+          </div>
+          {milestone.detail && (
+            <div className="rounded-xl bg-black/30 border border-white/10 p-4">
+              <div className="text-xs text-white/50 mb-1">What happens</div>
+              <div className="text-white/80 text-sm leading-relaxed">{milestone.detail}</div>
+            </div>
+          )}
+          <div className="text-xs text-white/35 text-center">All milestones are deterministic — no discretion, no delays.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** ------------ MILESTONES ------------- */
 function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
   const total = milestones.length;
   const completed = milestones.filter((m) => (m.current ?? 0) >= (m.target ?? 0)).length;
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
 
   return (
     <div id="milestones" className="scroll-mt-24">
+      {selectedMilestone && (
+        <MilestoneDetailModal milestone={selectedMilestone} onClose={() => setSelectedMilestone(null)} />
+      )}
       <PffSectionTitle
         kicker="Tracking"
         title="Milestones"
-        desc="Live progress toward deterministic triggers."
+        desc="Live progress toward deterministic triggers. Click any card for details."
         right={
           <div className="flex flex-wrap items-center gap-2 justify-start md:justify-end">
             <Badge tone={completed === total ? "good" : "neutral"}>
@@ -795,32 +833,41 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
               animate={isJustHit ? { scale: [1, 1.02, 1], boxShadow: "0 0 90px rgba(0,232,90,.28)" } : { scale: 1, boxShadow: "0 0 0 rgba(0,0,0,0)" }}
               transition={{ duration: 0.7 }}
             >
-              <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/35 transition">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-white font-extrabold text-lg">{m.label}</div>
-                    <div className="mt-1 text-xs text-white/60">
-                      {m.metric} • Target {m.unit}
-                      {formatNumber(target)}
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => setSelectedMilestone(m)}
+              >
+                <PffCard className="p-6 border border-neon-500/15 hover:border-neon-500/45 hover:shadow-[0_0_40px_rgba(0,232,90,.12)] transition cursor-pointer">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-white font-extrabold text-lg">{m.label}</div>
+                      <div className="mt-1 text-xs text-white/60">
+                        {m.metric} • Target {m.unit}
+                        {formatNumber(target)}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      {done ? <Badge tone="good">DONE</Badge> : <Badge tone="neutral">IN PROGRESS</Badge>}
+                      <span className="text-[10px] text-white/30 font-medium">click for details →</span>
                     </div>
                   </div>
-                  {done ? <Badge tone="good">DONE</Badge> : <Badge tone="neutral">IN PROGRESS</Badge>}
-                </div>
 
-                <div className="mt-5">
-                  <ProgressBar value01={v} />
-                  <div className="mt-3 text-sm text-white/80">
-                    Current:{" "}
-                    <span className="font-extrabold text-neon-300 text-glow">
-                      {m.unit}
-                      {formatNumber(current)}
-                    </span>
+                  <div className="mt-5">
+                    <ProgressBar value01={v} />
+                    <div className="mt-3 text-sm text-white/80">
+                      Current:{" "}
+                      <span className="font-extrabold text-neon-300 text-glow">
+                        {m.unit}
+                        {formatNumber(current)}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs text-white/70">
+                      Reward: <span className="text-white/85">{m.reward}</span>
+                    </div>
                   </div>
-                  <div className="mt-2 text-xs text-white/70">
-                    Reward: <span className="text-white/85">{m.reward}</span>
-                  </div>
-                </div>
-              </PffCard>
+                </PffCard>
+              </button>
             </motion.div>
           );
         })}
@@ -1257,7 +1304,7 @@ function HordeLookupSection() {
   );
 }
 
-function QuestBoard({ quests, backendEnabled }) {
+function QuestBoard({ quests, milestones = [], backendEnabled }) {
   const [localSubmissions, setLocalSubmissions] = useState([]);
   const [filter, setFilter] = useState({ status: "ALL", type: "ALL", difficulty: "ALL" });
   const [selectedQuest, setSelectedQuest] = useState(null);
@@ -1498,6 +1545,14 @@ function QuestBoard({ quests, backendEnabled }) {
                   <Badge tone="good">{q.reward}</Badge>
                   <Badge>proof: {q.proofType}</Badge>
                   {q.points > 0 && <Badge tone="good">{q.points} pts</Badge>}
+                  {q.milestone_id && (() => {
+                    const ms = milestones.find((m) => m.id === q.milestone_id);
+                    return ms ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-neon-500/25 bg-neon-500/[0.06] px-2.5 py-0.5 text-[10px] font-semibold text-neon-400/80">
+                        → {ms.label}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             </div>
