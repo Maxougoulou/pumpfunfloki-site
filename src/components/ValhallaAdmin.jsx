@@ -592,6 +592,18 @@ export default function ValhallaAdmin() {
     setAirdropSending(false);
   }
 
+  function exportAirdropCSV() {
+    const rows = airdropRows.filter((r) => !airdropOnlyWallets || r.wallet);
+    const lines = ["Rank,Handle,Points,Wallet", ...rows.map((r) => `${r.rank},${r.handle},${r.points},${r.wallet || ""}`)];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pff-airdrop-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ── Logs ───────────────────────────────────────────────────────
   const [logs, setLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -1560,6 +1572,9 @@ export default function ValhallaAdmin() {
                   />
                   Wallets only
                 </label>
+                {airdropRows.length > 0 && (
+                  <Btn tone="outline" onClick={exportAirdropCSV}>📥 CSV</Btn>
+                )}
                 <Btn tone="outline" onClick={loadAirdropData} disabled={airdropLoading}>
                   {airdropLoading ? "Loading…" : "↻ Refresh"}
                 </Btn>
