@@ -1101,7 +1101,7 @@ function HelmetPage() {
   return (
     <div className="bg-[#05070A]">
       <SiteHeader />
-      <div className="mx-auto w-full max-w-6xl px-4 pt-[76px] pb-12">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-[104px] pb-12">
         {/* Header */}
         <div className="mb-6">
           <div className="inline-flex items-center gap-2 mb-2">
