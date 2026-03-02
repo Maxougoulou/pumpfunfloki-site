@@ -843,7 +843,9 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
 
                 {/* Proof */}
                 <p className="text-xs text-white/70 leading-relaxed line-clamp-3 break-all">
-                  {sub.proof}
+                  {/^https?:\/\//i.test(sub.proof)
+                    ? <a href={sub.proof} target="_blank" rel="noopener noreferrer" className="text-neon-400 underline underline-offset-2 hover:text-neon-300">{sub.proof}</a>
+                    : sub.proof}
                 </p>
 
                 {/* Vote threshold progress */}
