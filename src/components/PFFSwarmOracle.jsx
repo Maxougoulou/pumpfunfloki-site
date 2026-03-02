@@ -625,6 +625,9 @@ export default function PFFSwarmOracleHub({
       milestone_id: q.milestone_id || null,
       fixed_reward_amount: Number(q.fixed_reward_amount || 0),
       fixed_reward_token: q.fixed_reward_token || "pff",
+      vote_threshold: Number(q.vote_threshold || 0),
+      vote_bonus_amount: Number(q.vote_bonus_amount || 0),
+      vote_bonus_token: q.vote_bonus_token || "pff",
     }));
   }, [publicQuests.rows]);
 
@@ -730,7 +733,7 @@ export default function PFFSwarmOracleHub({
           backendEnabled={Boolean(safeJson(settings?.feature_toggles, { use_backend: false })?.use_backend)}
         />
 
-        <VotingSection submissions={approved.rows} loading={approved.loading} />
+        <VotingSection submissions={approved.rows} loading={approved.loading} quests={questsToShow} />
 
         <div className="grid gap-5 md:grid-cols-2">
           <LeaderboardPanel leaderboard={leaderboard} />
@@ -744,7 +747,7 @@ export default function PFFSwarmOracleHub({
 }
 
 /** ------------ VOTING SECTION ------------- */
-function VotingSection({ submissions = [], loading }) {
+function VotingSection({ submissions = [], loading, quests = [] }) {
   const [votingId, setVotingId] = useState(null);
   const [voterHandle, setVoterHandle] = useState("");
   const [localVotes, setLocalVotes] = useState({});
@@ -799,6 +802,12 @@ function VotingSection({ submissions = [], loading }) {
           {submissions.map((sub) => {
             const voteCount = localVotes[sub.id] ?? (sub.vote_count || 0);
             const isVoting = votingId === sub.id;
+            const quest = quests.find((q) => q.id === sub.quest_id);
+            const threshold = Number(quest?.vote_threshold || 0);
+            const bonusAmount = Number(quest?.vote_bonus_amount || 0);
+            const bonusToken = (quest?.vote_bonus_token || "pff").toUpperCase();
+            const thresholdPct = threshold > 0 ? Math.min(100, Math.round((voteCount / threshold) * 100)) : 0;
+            const bonusReached = threshold > 0 && voteCount >= threshold;
             return (
               <div key={sub.id} className="glass rounded-2xl border border-neon-500/15 p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">
@@ -814,6 +823,23 @@ function VotingSection({ submissions = [], loading }) {
                 <p className="text-xs text-white/70 leading-relaxed line-clamp-3 break-all">
                   {sub.proof}
                 </p>
+
+                {threshold > 0 && bonusAmount > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] text-purple-300/80">
+                        {bonusReached ? `✅ Bonus unlocked!` : `🗳️ ${voteCount}/${threshold} votes → ${bonusAmount.toLocaleString()} $${bonusToken}`}
+                      </span>
+                      <span className="text-[11px] text-white/40">{thresholdPct}%</span>
+                    </div>
+                    <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${bonusReached ? "bg-yellow-400" : "bg-purple-500/70"}`}
+                        style={{ width: `${thresholdPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-auto flex items-center justify-between gap-2">
                   <span className="text-xs text-white/40">{voteCount} vote{voteCount !== 1 ? "s" : ""}</span>
@@ -1702,6 +1728,11 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
                   {q.fixed_reward_amount > 0 && (
                     <span className="inline-flex items-center rounded-full border bg-black/30 px-2.5 py-0.5 text-xs border-yellow-400/40 text-yellow-300">
                       {Number(q.fixed_reward_amount).toLocaleString()} ${(q.fixed_reward_token || "pff").toUpperCase()}
+                    </span>
+                  )}
+                  {q.vote_threshold > 0 && q.vote_bonus_amount > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full border bg-black/30 px-2.5 py-0.5 text-xs border-purple-400/40 text-purple-300">
+                      🗳️ {q.vote_threshold} votes → {Number(q.vote_bonus_amount).toLocaleString()} ${(q.vote_bonus_token || "pff").toUpperCase()}
                     </span>
                   )}
                   {q.milestone_id && (() => {

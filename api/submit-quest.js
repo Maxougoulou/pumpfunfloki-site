@@ -1,5 +1,9 @@
 import { supabaseAdmin } from "./_supabase.js";
 import { verifyRecaptcha } from "./_recaptcha.js";
+import { tgNotify } from "./_telegram.js";
+import { getSolanaConnection, getRewardsKeypair, getPffMint, toRawAmount } from "./_solana.js";
+import { getOrCreateAssociatedTokenAccount, createTransferInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } from "@solana/web3.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "method-not-allowed" });
@@ -24,14 +28,78 @@ export default async function handler(req, res) {
 
     const { data: sub } = await db
       .from("submissions")
-      .select("vote_count")
+      .select("vote_count, wallet_address, vote_bonus_sent, quest_id")
       .eq("id", String(submission_id))
       .single();
 
     const newCount = (Number(sub?.vote_count) || 0) + 1;
     await db.from("submissions").update({ vote_count: newCount }).eq("id", String(submission_id));
 
-    return res.status(200).json({ ok: true, vote_count: newCount });
+    // ── Check vote threshold bonus ──────────────────────────────
+    let bonusTx = null;
+    if (sub && !sub.vote_bonus_sent && sub.wallet_address && sub.quest_id) {
+      const { data: quest } = await db
+        .from("quests")
+        .select("vote_threshold, vote_bonus_amount, vote_bonus_token, title")
+        .eq("id", sub.quest_id)
+        .maybeSingle();
+
+      const threshold = Number(quest?.vote_threshold || 0);
+      const bonusAmount = Number(quest?.vote_bonus_amount || 0);
+
+      if (threshold > 0 && bonusAmount > 0 && newCount >= threshold) {
+        // Optimistic lock: only proceed if we are the one to flip vote_bonus_sent to true
+        const { data: claimed } = await db
+          .from("submissions")
+          .update({ vote_bonus_sent: true })
+          .eq("id", String(submission_id))
+          .eq("vote_bonus_sent", false)
+          .select("id");
+
+        if (claimed && claimed.length > 0) {
+          try {
+            const bonusToken = quest.vote_bonus_token === "sol" ? "sol" : "pff";
+            const connection = getSolanaConnection();
+            const payer = getRewardsKeypair();
+            const recipientPubkey = new PublicKey(sub.wallet_address);
+
+            if (bonusToken === "sol") {
+              const lamports = Math.round(bonusAmount * 1e9);
+              const tx = new Transaction().add(
+                SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: recipientPubkey, lamports })
+              );
+              bonusTx = await sendAndConfirmTransaction(connection, tx, [payer], { commitment: "processed" });
+            } else {
+              const mint = getPffMint();
+              const rawAmount = toRawAmount(bonusAmount);
+              const sourceAta = await getOrCreateAssociatedTokenAccount(connection, payer, mint, payer.publicKey);
+              const recipientAta = await getOrCreateAssociatedTokenAccount(connection, payer, mint, recipientPubkey);
+              const tx = new Transaction().add(
+                createTransferInstruction(sourceAta.address, recipientAta.address, payer.publicKey, rawAmount, [], TOKEN_PROGRAM_ID)
+              );
+              bonusTx = await sendAndConfirmTransaction(connection, tx, [payer], { commitment: "processed" });
+            }
+
+            if (bonusTx) {
+              await db.from("submissions").update({ vote_bonus_tx: bonusTx }).eq("id", String(submission_id));
+              await tgNotify(
+                `🗳️ <b>Vote Milestone!</b>\n` +
+                `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+                `⚔️ <b>${threshold} votes</b> reached on a submission\n` +
+                (quest.title ? `📜 Quest: <i>${quest.title}</i>\n` : ``) +
+                `💰 Bonus: <b>${bonusAmount.toLocaleString()} $${(quest.vote_bonus_token || "pff").toUpperCase()}</b> sent\n` +
+                `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+                `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+              );
+            }
+          } catch (bonusErr) {
+            console.error("[vote-bonus]", bonusErr?.message);
+          }
+        }
+      }
+    }
+
+    return res.status(200).json({ ok: true, vote_count: newCount, bonus_triggered: !!bonusTx });
   }
 
   try {

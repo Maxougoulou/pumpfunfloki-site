@@ -103,6 +103,9 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
       milestone_id,
       fixed_reward_amount,
       fixed_reward_token,
+      vote_threshold,
+      vote_bonus_amount,
+      vote_bonus_token,
     } = req.body || {};
 
     if (!id || !title) return res.status(400).json({ error: "missing-fields" });
@@ -125,6 +128,9 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
           milestone_id: milestone_id ? String(milestone_id).slice(0, 32) : null,
           fixed_reward_amount: Number(fixed_reward_amount) || 0,
           fixed_reward_token: fixed_reward_token === "sol" ? "sol" : "pff",
+          vote_threshold: Number(vote_threshold) || 0,
+          vote_bonus_amount: Number(vote_bonus_amount) || 0,
+          vote_bonus_token: vote_bonus_token === "sol" ? "sol" : "pff",
         },
       ])
       .select()
@@ -182,6 +188,9 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
     if (req.body?.milestone_id !== undefined) patch.milestone_id = req.body.milestone_id ? String(req.body.milestone_id).slice(0, 32) : null;
     if (req.body?.fixed_reward_amount !== undefined) patch.fixed_reward_amount = Number(req.body.fixed_reward_amount) || 0;
     if (req.body?.fixed_reward_token !== undefined) patch.fixed_reward_token = req.body.fixed_reward_token === "sol" ? "sol" : "pff";
+    if (req.body?.vote_threshold !== undefined) patch.vote_threshold = Number(req.body.vote_threshold) || 0;
+    if (req.body?.vote_bonus_amount !== undefined) patch.vote_bonus_amount = Number(req.body.vote_bonus_amount) || 0;
+    if (req.body?.vote_bonus_token !== undefined) patch.vote_bonus_token = req.body.vote_bonus_token === "sol" ? "sol" : "pff";
 
     const { data, error } = await db
       .from("quests")

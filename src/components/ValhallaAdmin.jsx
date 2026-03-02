@@ -642,6 +642,9 @@ export default function ValhallaAdmin() {
     milestone_id: "",
     fixed_reward_amount: "0",
     fixed_reward_token: "pff",
+    vote_threshold: "0",
+    vote_bonus_amount: "0",
+    vote_bonus_token: "pff",
   });
   const [questErr, setQuestErr] = useState("");
   const [questSuccess, setQuestSuccess] = useState("");
@@ -882,6 +885,7 @@ export default function ValhallaAdmin() {
       title: "", description: "", type: "raid", difficulty: "easy",
       reward: "", proof_type: "text", time_window: "", status: "LIVE", points: 0, expires_at: "", milestone_id: "",
       fixed_reward_amount: "0", fixed_reward_token: "pff",
+      vote_threshold: "0", vote_bonus_amount: "0", vote_bonus_token: "pff",
     });
     setQuestSuccess(`Quest ${autoId} created ✓`);
     setTimeout(() => setQuestSuccess(""), 5000);
@@ -1484,6 +1488,42 @@ export default function ValhallaAdmin() {
                       <select
                         value={questForm.fixed_reward_token}
                         onChange={(e) => setQuestForm((v) => ({ ...v, fixed_reward_token: e.target.value }))}
+                        className="mt-2 rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                      >
+                        <option className="bg-black" value="pff">$PFF</option>
+                        <option className="bg-black" value="sol">SOL</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <div className="text-xs text-white/60">Vote threshold <span className="text-white/30">(0 = no bonus)</span></div>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={questForm.vote_threshold}
+                        onChange={(e) => setQuestForm((v) => ({ ...v, vote_threshold: e.target.value }))}
+                        className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs text-white/60">Bonus amount</div>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={questForm.vote_bonus_amount}
+                        onChange={(e) => setQuestForm((v) => ({ ...v, vote_bonus_amount: e.target.value }))}
+                        className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-white/60">Token</div>
+                      <select
+                        value={questForm.vote_bonus_token}
+                        onChange={(e) => setQuestForm((v) => ({ ...v, vote_bonus_token: e.target.value }))}
                         className="mt-2 rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
                       >
                         <option className="bg-black" value="pff">$PFF</option>
