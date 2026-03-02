@@ -49,6 +49,7 @@ function TxLink({ sig }) {
 // ── Airdrop modal ──────────────────────────────────────────────────
 function AirdropModal({ subs, selectedIds, onClose }) {
   const [amount, setAmount] = useState("50000");
+  const [token, setToken] = useState("pff");
   const [dryRun, setDryRun] = useState(null);
   const [result, setResult] = useState(null);
   const [sending, setSending] = useState(false);
@@ -73,7 +74,7 @@ function AirdropModal({ subs, selectedIds, onClose }) {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ entries, amount_per_wallet: Number(amount), dry_run: true }),
+      body: JSON.stringify({ entries, amount_per_wallet: Number(amount), dry_run: true, token_type: token }),
     });
     const j = await r.json();
     if (!r.ok) { setErr(j?.message || j?.error || "error"); return; }
@@ -93,7 +94,7 @@ function AirdropModal({ subs, selectedIds, onClose }) {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ entries, amount_per_wallet: Number(amount), dry_run: false }),
+      body: JSON.stringify({ entries, amount_per_wallet: Number(amount), dry_run: false, token_type: token }),
     });
     const j = await r.json();
     if (!r.ok) { setErr(j?.message || j?.error || "error"); setSending(false); return; }
@@ -136,20 +137,31 @@ function AirdropModal({ subs, selectedIds, onClose }) {
           </div>
         )}
 
-        {/* Amount input */}
+        {/* Amount + token input */}
         {!result && (
           <div className="mt-5">
-            <div className="text-xs text-white/60">Amount per wallet ($PFF)</div>
-            <input
-              value={amount}
-              onChange={(e) => { setAmount(e.target.value); setDryRun(null); }}
-              type="number"
-              min="1"
-              className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-              placeholder="50000"
-            />
+            <div className="text-xs text-white/60">Amount per wallet</div>
+            <div className="mt-2 flex gap-2">
+              <input
+                value={amount}
+                onChange={(e) => { setAmount(e.target.value); setDryRun(null); }}
+                type="number"
+                min="1"
+                step={token === "sol" ? "0.001" : "1"}
+                className="flex-1 rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                placeholder={token === "sol" ? "0.01" : "50000"}
+              />
+              <select
+                value={token}
+                onChange={(e) => { setToken(e.target.value); setAmount(e.target.value === "sol" ? "0.01" : "50000"); setDryRun(null); }}
+                className="rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+              >
+                <option value="pff">$PFF</option>
+                <option value="sol">SOL</option>
+              </select>
+            </div>
             <div className="mt-1 text-[11px] text-white/40">
-              Total: {(eligibleSubs.length * Number(amount || 0)).toLocaleString()} $PFF
+              Total: {(eligibleSubs.length * Number(amount || 0)).toLocaleString()} {token === "sol" ? "SOL" : "$PFF"}
             </div>
           </div>
         )}
@@ -160,7 +172,10 @@ function AirdropModal({ subs, selectedIds, onClose }) {
             <div className="text-neon-300 font-extrabold mb-2">Preview</div>
             <div className="grid gap-1 text-white/80">
               <div>Valid wallets: <span className="text-white font-bold">{dryRun.valid_count}</span></div>
-              <div>Total $PFF: <span className="text-white font-bold">{dryRun.total_pff?.toLocaleString()}</span></div>
+              {token === "sol"
+                ? <div>Total SOL: <span className="text-white font-bold">{dryRun.total_sol ?? (dryRun.valid_count * Number(amount)).toFixed(4)}</span></div>
+                : <div>Total $PFF: <span className="text-white font-bold">{dryRun.total_pff?.toLocaleString()}</span></div>
+              }
               {dryRun.invalid_count > 0 && (
                 <div className="text-yellow-200">Skipped (invalid pubkey): {dryRun.invalid_count}</div>
               )}
