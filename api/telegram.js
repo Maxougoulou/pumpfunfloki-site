@@ -36,6 +36,47 @@ export default async function handler(req, res) {
   // ── Telegram webhook ───────────────────────────────────────────────
   if (req.method === "POST") {
     const update = req.body;
+
+    // ── Inline button callback (vote) ────────────────────────────────
+    const cbq = update?.callback_query;
+    if (cbq) {
+      const data = cbq.data || "";
+      const db = supabaseAdmin();
+
+      if (data.startsWith("vote:")) {
+        const submissionId = data.slice(5);
+        const voterHandle = `tg_${cbq.from.id}`;
+
+        const { error: voteErr } = await db
+          .from("votes")
+          .insert([{ submission_id: submissionId, voter_handle: voterHandle }]);
+
+        let toast;
+        if (voteErr?.code === "23505") {
+          toast = "⚠️ Already voted!";
+        } else if (voteErr) {
+          toast = "❌ Vote failed, try again.";
+        } else {
+          const { data: sub } = await db
+            .from("submissions")
+            .select("vote_count, handle")
+            .eq("id", submissionId)
+            .single();
+          const newCount = (Number(sub?.vote_count) || 0) + 1;
+          await db.from("submissions").update({ vote_count: newCount }).eq("id", submissionId);
+          toast = `🗡️ Voted for ${sub?.handle}! (${newCount} vote${newCount !== 1 ? "s" : ""})`;
+        }
+
+        await fetch(`https://api.telegram.org/bot${TOKEN}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: cbq.id, text: toast, show_alert: true }),
+        });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
     const msg = update?.message || update?.edited_message;
     if (!msg?.text) return res.status(200).json({ ok: true });
 
