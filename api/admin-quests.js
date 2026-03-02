@@ -134,6 +134,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
       `⚔️ <b>New Quest Available!</b>\n` +
       `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
       `📜 <b>${data.title}</b>\n` +
+      (data.description ? `<i>${data.description}</i>\n` : ``) +
       `🎯 Reward: <b>${pts} pts</b>\n` +
       `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
       `Complete it at 👇\n` +

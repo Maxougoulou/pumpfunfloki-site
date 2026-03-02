@@ -24,6 +24,7 @@
 
 import { requireAdmin } from "./_session.js";
 import { supabaseAdmin } from "./_supabase.js";
+import { tgNotify } from "./_telegram.js";
 import {
   getSolanaConnection,
   getRewardsKeypair,
@@ -197,6 +198,14 @@ export default async function handler(req, res) {
           proof_link: results[0]?.solscan || null,
         },
       ]);
+      await tgNotify(
+        `🪓 <b>Airdrop Executed!</b>\n` +
+        `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+        `⚡ <b>${totalSent}</b> Vikings received <b>${tokenLabel}</b> each\n` +
+        `💰 Total: <b>${(totalSent * amount).toLocaleString()} ${isSol ? "SOL" : "$PFF"}</b>\n` +
+        `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+        `<a href="${results[0].solscan}">🔗 View on Solscan</a>`
+      );
     }
 
     return res.status(200).json({

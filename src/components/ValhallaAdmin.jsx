@@ -618,8 +618,10 @@ export default function ValhallaAdmin() {
   const [milestones, setMilestones] = useState([]);
   const [milestonesLoading, setMilestonesLoading] = useState(false);
   const [milestoneForm, setMilestoneForm] = useState({
-    label: "", description: "", detail: "", metric: "", target: "", current: "", unit: "", reward: "", action: "custom", burn_amount: "", sort_order: "0",
+    label: "", description: "", detail: "", metric: "Market Cap", target: "", current: "", unit: "$", reward: "",
+    action: "custom", burn_amount: "", airdrop_amount_per_wallet: "", airdrop_top_n: "0", sort_order: "0",
   });
+  const [milestoneAirdropPreview, setMilestoneAirdropPreview] = useState(null); // { milestone, entries }
   const [milestoneErr, setMilestoneErr] = useState("");
   const [milestoneSuccess, setMilestoneSuccess] = useState("");
 
@@ -757,6 +759,11 @@ export default function ValhallaAdmin() {
     setMilestonesLoading(false);
   }
 
+  const BLANK_MILESTONE_FORM = {
+    label: "", description: "", detail: "", metric: "Market Cap", target: "", current: "", unit: "$", reward: "",
+    action: "custom", burn_amount: "", airdrop_amount_per_wallet: "", airdrop_top_n: "0", sort_order: "0",
+  };
+
   async function createMilestone() {
     setMilestoneErr("");
     const autoId = "M-" + Date.now().toString(36).toUpperCase().slice(-5);
@@ -768,7 +775,7 @@ export default function ValhallaAdmin() {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { setMilestoneErr(j?.error || "failed"); return; }
-    setMilestoneForm({ label: "", description: "", detail: "", metric: "", target: "", current: "", unit: "", reward: "", action: "custom", burn_amount: "", sort_order: "0" });
+    setMilestoneForm(BLANK_MILESTONE_FORM);
     setMilestoneSuccess(`Milestone ${autoId} created ✓`);
     setTimeout(() => setMilestoneSuccess(""), 5000);
     await loadMilestones();
@@ -782,6 +789,52 @@ export default function ValhallaAdmin() {
       body: JSON.stringify({ id }),
     });
     await loadMilestones();
+  }
+
+  async function notifyMilestone(id) {
+    const r = await fetch("/api/admin-milestones?action=notify", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id }),
+    });
+    if (r.ok) {
+      setMilestoneSuccess("TG notification sent ✓");
+      setTimeout(() => setMilestoneSuccess(""), 4000);
+    }
+  }
+
+  async function executeMilestoneAirdrop(m, confirmed = false) {
+    // Fetch top N from leaderboard with wallets
+    const r = await fetch("/api/admin-submissions?view=airdrop", { credentials: "include" });
+    const j = await r.json().catch(() => ({}));
+    const topN = (j?.data || []).filter(e => e.wallet).slice(0, Number(m.airdrop_top_n) || 10);
+    const entries = topN.map(e => ({ wallet_address: e.wallet, handle: e.handle }));
+
+    if (!confirmed) {
+      setMilestoneAirdropPreview({ milestone: m, entries });
+      return;
+    }
+
+    // Execute airdrop
+    const res = await fetch("/api/airdrop-batch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        entries,
+        amount_per_wallet: Number(m.airdrop_amount_per_wallet),
+        dry_run: false,
+      }),
+    });
+    const result = await res.json().catch(() => ({}));
+    setMilestoneAirdropPreview(null);
+    if (res.ok) {
+      setMilestoneSuccess(`Airdrop executed — ${result.total_sent} wallets ✓`);
+      setTimeout(() => setMilestoneSuccess(""), 6000);
+    } else {
+      setMilestoneErr(result?.message || result?.error || "Airdrop failed");
+    }
   }
 
   // ── Quests ─────────────────────────────────────────────────────
@@ -1766,6 +1819,32 @@ export default function ValhallaAdmin() {
       {/* ── Milestones tab ─────────────────────────────────────── */}
       {tab === "milestones" && (
         <div className="mt-6 grid gap-5">
+          {/* Airdrop preview modal */}
+          {milestoneAirdropPreview && (
+            <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/70">
+              <div className="glass-strong rounded-2xl p-6 max-w-md w-full">
+                <div className="text-white font-extrabold text-lg mb-1">⚡ Confirm Airdrop</div>
+                <div className="text-xs text-white/55 mb-4">
+                  {Number(milestoneAirdropPreview.milestone.airdrop_amount_per_wallet).toLocaleString()} $PFF × {milestoneAirdropPreview.entries.length} wallets
+                </div>
+                <div className="max-h-48 overflow-y-auto rounded-xl bg-black/30 border border-neon-500/10 p-3 text-xs text-white/70 space-y-1">
+                  {milestoneAirdropPreview.entries.length === 0
+                    ? <div className="text-red-300">No wallets found in leaderboard.</div>
+                    : milestoneAirdropPreview.entries.map((e, i) => (
+                        <div key={i}><span className="text-neon-400">#{i + 1}</span> {e.handle} — <span className="text-white/40 font-mono text-[10px]">{e.wallet_address?.slice(0, 12)}…</span></div>
+                      ))
+                  }
+                </div>
+                <div className="mt-4 flex gap-3">
+                  <Btn onClick={() => executeMilestoneAirdrop(milestoneAirdropPreview.milestone, true)} disabled={milestoneAirdropPreview.entries.length === 0}>
+                    ✓ Confirm & Send
+                  </Btn>
+                  <Btn tone="outline" onClick={() => setMilestoneAirdropPreview(null)}>Cancel</Btn>
+                </div>
+              </div>
+            </div>
+          )}
+
           <Card>
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -1788,48 +1867,107 @@ export default function ValhallaAdmin() {
             <div className="mt-5 rounded-2xl border border-neon-500/10 bg-black/20 p-5">
               <div className="text-white font-extrabold mb-4">Add Milestone</div>
               <div className="grid gap-3 md:grid-cols-2">
+                {/* Label */}
                 <div>
                   <div className="text-xs text-white/60">Label</div>
                   <input value={milestoneForm.label} onChange={(e) => setMilestoneForm(v => ({ ...v, label: e.target.value }))}
                     className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
                     placeholder="Horde Awakening" />
                 </div>
+                {/* Metric */}
                 <div>
-                  <div className="text-xs text-white/60">Metric (e.g. Market Cap)</div>
-                  <input value={milestoneForm.metric} onChange={(e) => setMilestoneForm(v => ({ ...v, metric: e.target.value }))}
+                  <div className="text-xs text-white/60">Metric</div>
+                  <select
+                    value={milestoneForm.metric}
+                    onChange={(e) => {
+                      const metric = e.target.value;
+                      const unit = metric === "Market Cap" || metric === "24h Volume" ? "$" : "";
+                      setMilestoneForm(v => ({ ...v, metric, unit }));
+                    }}
                     className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-                    placeholder="Market Cap" />
+                  >
+                    <option value="Market Cap">Market Cap</option>
+                    <option value="24h Volume">24h Volume</option>
+                    <option value="Holders">Holders</option>
+                    <option value="Submission Count">Submission Count</option>
+                  </select>
                 </div>
+                {/* Target */}
                 <div>
                   <div className="text-xs text-white/60">Target value</div>
                   <input type="number" value={milestoneForm.target} onChange={(e) => setMilestoneForm(v => ({ ...v, target: e.target.value }))}
                     className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-                    placeholder="250000" />
+                    placeholder={milestoneForm.metric === "Market Cap" ? "250000" : milestoneForm.metric === "Holders" ? "2500" : "50"} />
                 </div>
-                <div>
-                  <div className="text-xs text-white/60">Unit prefix (e.g. $, empty for holders)</div>
-                  <input value={milestoneForm.unit} onChange={(e) => setMilestoneForm(v => ({ ...v, unit: e.target.value }))}
-                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-                    placeholder="$" />
-                </div>
+                {/* Current — only for Holders (manual) */}
+                {milestoneForm.metric === "Holders" && (
+                  <div>
+                    <div className="text-xs text-white/60">Current value <span className="text-white/30">(manual update)</span></div>
+                    <input type="number" value={milestoneForm.current} onChange={(e) => setMilestoneForm(v => ({ ...v, current: e.target.value }))}
+                      className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      placeholder="1860" />
+                  </div>
+                )}
+                {/* Reward */}
                 <div>
                   <div className="text-xs text-white/60">Reward label</div>
                   <input value={milestoneForm.reward} onChange={(e) => setMilestoneForm(v => ({ ...v, reward: e.target.value }))}
                     className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
                     placeholder="Buyback #1 + Horde boost" />
                 </div>
+                {/* Sort order */}
                 <div>
                   <div className="text-xs text-white/60">Sort order (0 = first)</div>
                   <input type="number" value={milestoneForm.sort_order} onChange={(e) => setMilestoneForm(v => ({ ...v, sort_order: e.target.value }))}
                     className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
                     placeholder="0" />
                 </div>
+                {/* Action */}
+                <div>
+                  <div className="text-xs text-white/60">Action when triggered</div>
+                  <select
+                    value={milestoneForm.action}
+                    onChange={(e) => setMilestoneForm(v => ({ ...v, action: e.target.value }))}
+                    className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                  >
+                    <option value="custom">Custom (announce only)</option>
+                    <option value="burn">Burn $PFF</option>
+                    <option value="airdrop">Airdrop $PFF</option>
+                    <option value="buyback">Buyback</option>
+                  </select>
+                </div>
+                {/* Burn amount */}
+                {milestoneForm.action === "burn" && (
+                  <div>
+                    <div className="text-xs text-white/60">Burn amount ($PFF)</div>
+                    <input type="number" value={milestoneForm.burn_amount} onChange={(e) => setMilestoneForm(v => ({ ...v, burn_amount: e.target.value }))}
+                      className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      placeholder="500000" />
+                  </div>
+                )}
+                {/* Airdrop config */}
+                {milestoneForm.action === "airdrop" && (<>
+                  <div>
+                    <div className="text-xs text-white/60">Amount per wallet ($PFF)</div>
+                    <input type="number" value={milestoneForm.airdrop_amount_per_wallet} onChange={(e) => setMilestoneForm(v => ({ ...v, airdrop_amount_per_wallet: e.target.value }))}
+                      className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      placeholder="50000" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-white/60">Top N recipients (leaderboard)</div>
+                    <input type="number" value={milestoneForm.airdrop_top_n} onChange={(e) => setMilestoneForm(v => ({ ...v, airdrop_top_n: e.target.value }))}
+                      className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      placeholder="10" />
+                  </div>
+                </>)}
+                {/* Description */}
                 <div className="md:col-span-2">
                   <div className="text-xs text-white/60">Short description (shown in card)</div>
                   <input value={milestoneForm.description} onChange={(e) => setMilestoneForm(v => ({ ...v, description: e.target.value }))}
                     className="mt-1.5 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
                     placeholder="Short description" />
                 </div>
+                {/* Detail */}
                 <div className="md:col-span-2">
                   <div className="text-xs text-white/60">Detail (shown in modal when card clicked)</div>
                   <textarea value={milestoneForm.detail} onChange={(e) => setMilestoneForm(v => ({ ...v, detail: e.target.value }))}
@@ -1855,18 +1993,45 @@ export default function ValhallaAdmin() {
               </div>
             ) : (
               <div className="mt-5 grid gap-3">
-                {milestones.map((m) => (
-                  <div key={m.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-white font-extrabold">{m.label} <span className="text-white/40 text-xs font-normal">({m.id})</span></div>
-                        <div className="mt-1 text-xs text-white/55">{m.metric} • Target: {m.unit}{Number(m.target).toLocaleString()} • Reward: {m.reward}</div>
-                        {m.detail && <div className="mt-1 text-xs text-white/40 italic">{m.detail.slice(0, 100)}{m.detail.length > 100 ? "…" : ""}</div>}
+                {milestones.map((m) => {
+                  const actionColor = m.action === "burn" ? "text-red-300 border-red-400/30 bg-red-500/10"
+                    : m.action === "airdrop" ? "text-neon-300 border-neon-500/30 bg-neon-500/10"
+                    : m.action === "buyback" ? "text-yellow-300 border-yellow-400/30 bg-yellow-500/10"
+                    : "text-white/50 border-white/10 bg-white/5";
+                  return (
+                    <div key={m.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white font-extrabold">{m.label}</span>
+                            <span className="text-white/40 text-xs font-normal">({m.id})</span>
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${actionColor}`}>
+                              {m.action || "custom"}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs text-white/55">
+                            {m.metric} • Target: {m.unit}{Number(m.target).toLocaleString()}
+                            {m.metric === "Holders" && m.current ? ` • Current: ${Number(m.current).toLocaleString()}` : ""}
+                            {" "}• Reward: {m.reward}
+                          </div>
+                          {m.action === "burn" && m.burn_amount && (
+                            <div className="mt-1 text-xs text-red-300/70">🔥 Burn {Number(m.burn_amount).toLocaleString()} $PFF</div>
+                          )}
+                          {m.action === "airdrop" && m.airdrop_amount_per_wallet && (
+                            <div className="mt-1 text-xs text-neon-300/70">🪓 {Number(m.airdrop_amount_per_wallet).toLocaleString()} $PFF × top {m.airdrop_top_n || "?"}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Btn tone="outline" onClick={() => notifyMilestone(m.id)}>🔔 Notify TG</Btn>
+                          {m.action === "airdrop" && (
+                            <Btn onClick={() => executeMilestoneAirdrop(m)}>⚡ Execute Airdrop</Btn>
+                          )}
+                          <Btn tone="danger" onClick={() => deleteMilestone(m.id)}>Delete</Btn>
+                        </div>
                       </div>
-                      <Btn tone="danger" onClick={() => deleteMilestone(m.id)}>Delete</Btn>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

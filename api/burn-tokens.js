@@ -18,6 +18,7 @@
 
 import { requireAdmin } from "./_session.js";
 import { supabaseAdmin } from "./_supabase.js";
+import { tgNotify } from "./_telegram.js";
 import {
   getSolanaConnection,
   getRewardsKeypair,
@@ -115,6 +116,15 @@ export default async function handler(req, res) {
         proof_link: solscanUrl,
       },
     ]);
+
+    await tgNotify(
+      `🔥 <b>Oracle Burn Executed!</b>\n` +
+      `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+      `💀 <b>${numAmount.toLocaleString()} $PFF</b> burned forever\n` +
+      (reason ? `<i>${reason}</i>\n` : ``) +
+      `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
+      `<a href="${solscanUrl}">🔗 View on Solscan</a>`
+    );
 
     return res.status(200).json({
       ok: true,

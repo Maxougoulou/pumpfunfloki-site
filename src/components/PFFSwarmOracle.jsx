@@ -286,6 +286,31 @@ function useApprovedSubmissions(refreshMs = 45000) {
   return state;
 }
 
+function usePublicMilestones(refreshMs = 60000) {
+  const [state, setState] = useState({ loading: true, rows: [] });
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer;
+
+    async function run() {
+      try {
+        const r = await fetch("/api/admin-milestones");
+        const j = await r.json();
+        if (!cancelled) setState({ loading: false, rows: j?.data || [] });
+      } catch {
+        if (!cancelled) setState({ loading: false, rows: [] });
+      }
+    }
+
+    run();
+    timer = setInterval(run, refreshMs);
+    return () => { cancelled = true; if (timer) clearInterval(timer); };
+  }, [refreshMs]);
+
+  return state;
+}
+
 function usePublicQuests(refreshMs = 45000) {
   const [state, setState] = useState({ loading: true, error: null, rows: [], updatedAt: null });
 
@@ -527,10 +552,14 @@ export default function PFFSwarmOracleHub({
   contract,
   quests = DEFAULT_QUESTS,
   milestones = DEFAULT_MILESTONES,
-
 }) {
   const dex = useDexScreenerToken(contract, 30000);
   const pair = dex.pair;
+
+  // milestones from DB — fallback to hardcoded defaults if DB is empty
+  const publicMilestones = usePublicMilestones(60000);
+  const hordeStats = useHordeStats(60000);
+  const milestonesToUse = publicMilestones.rows.length > 0 ? publicMilestones.rows : milestones;
 
   const cfg = usePffConfig(60000);
   const leaderboard = usePublicLeaderboard(45000);
@@ -606,12 +635,13 @@ export default function PFFSwarmOracleHub({
   const livePrice = Number(pair?.priceUsd || 0);
 
   const liveMilestones = useMemo(() => {
-    return milestones.map((m) => {
+    return milestonesToUse.map((m) => {
       if (m.metric === "Market Cap") return { ...m, current: liveMcap || m.current };
       if (m.metric === "24h Volume") return { ...m, current: liveVol24h || m.current };
+      if (m.metric === "Submission Count") return { ...m, current: hordeStats.quests ?? m.current };
       return m;
     });
-  }, [milestones, liveMcap, liveVol24h]);
+  }, [milestonesToUse, liveMcap, liveVol24h, hordeStats.quests]);
 
   const dexStatus = useMemo(
     () => ({

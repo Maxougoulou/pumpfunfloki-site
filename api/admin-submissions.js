@@ -1,5 +1,7 @@
 import { supabaseAdmin } from "./_supabase.js";
 import { requireAdmin } from "./_session.js";
+import { tgNotify } from "./_telegram.js";
+
 
 export default async function handler(req, res) {
   const admin = requireAdmin(req);
@@ -112,6 +114,33 @@ export default async function handler(req, res) {
             .eq("id", lb.id);
           if (e5) return res.status(500).json({ error: "db-error", details: e5 });
         }
+      }
+
+      // Check if a milestone was just reached (reads from DB milestones with metric="Submission Count")
+      const [{ count: newCount }, { data: dbMilestones }] = await Promise.all([
+        db.from("submissions").select("id", { count: "exact", head: true }).eq("status", "approved"),
+        db.from("milestones").select("*").eq("metric", "Submission Count"),
+      ]);
+      const milestone = (dbMilestones || []).find((m) => Number(m.target) === newCount);
+      if (milestone) {
+        const SEP = "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄";
+        let actionLine = "";
+        if (milestone.action === "burn" && milestone.burn_amount) {
+          actionLine = `🔥 Trigger: Burn <b>${Number(milestone.burn_amount).toLocaleString()} $PFF</b>\n`;
+        } else if (milestone.action === "airdrop" && milestone.airdrop_amount_per_wallet) {
+          actionLine = `🪓 Trigger: Airdrop <b>${Number(milestone.airdrop_amount_per_wallet).toLocaleString()} $PFF</b> × top <b>${milestone.airdrop_top_n || "?"}</b>\n`;
+        }
+        await tgNotify(
+          `🏆 <b>Milestone Reached!</b>\n` +
+          `${SEP}\n` +
+          `⚔️ <b>${milestone.label}</b>\n` +
+          (milestone.description ? `<i>${milestone.description}</i>\n` : ``) +
+          `📊 <b>${newCount} quests</b> completed by the Horde\n` +
+          `🎯 Reward: <b>${milestone.reward || "TBD"}</b>\n` +
+          actionLine +
+          `${SEP}\n` +
+          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+        );
       }
 
       return res.status(200).json({ ok: true, row: updated, points_awarded: pts });
