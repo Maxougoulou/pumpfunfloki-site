@@ -184,6 +184,20 @@ export default async function handler(req, res) {
         }
       }
 
+      // 5) Notify TG group to vote for this submission
+      const SEP = "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄";
+      await tgNotify(
+        `✅ <b>Submission Approved!</b>\n` +
+        `${SEP}\n` +
+        `🗡️ <b>${existing.handle}</b>\n` +
+        (updated.quest_title ? `📜 ${updated.quest_title}\n` : ``) +
+        `⚡ +${pts} pts\n` +
+        `${SEP}\n` +
+        `Vote for them 👇\n` +
+        `<code>/pffvote ${existing.handle}</code>\n` +
+        `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+      );
+
       return res.status(200).json({ ok: true, row: updated, points_awarded: pts, reward_tx: rewardTx });
     }
 
