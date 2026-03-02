@@ -61,6 +61,10 @@ export default async function handler(req, res) {
         `   Top 5 Vikings of the Horde\n\n` +
         `📜 /pffquests\n` +
         `   Active quests &amp; rewards\n\n` +
+        `🗳️ /pffvotes\n` +
+        `   Community submissions feed\n\n` +
+        `🗡️ /pffvote &lt;handle&gt;\n` +
+        `   Vote for a submission\n\n` +
         `📊 /pffstats\n` +
         `   $PFF price &amp; market cap\n` +
         `${SEP}\n` +
@@ -160,6 +164,91 @@ export default async function handler(req, res) {
           `Complete them at 👇\n` +
           `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
         );
+      }
+    }
+
+    // /pffvotes — feed des submissions approuvées avec leurs votes
+    else if (command === "/pffvotes") {
+      const { data: subs } = await db
+        .from("submissions")
+        .select("id, handle, quest_title, vote_count")
+        .eq("status", "approved")
+        .order("vote_count", { ascending: false })
+        .limit(8);
+
+      if (!subs?.length) {
+        await tgSend(chatId,
+          `🗳️ No approved submissions yet.\nComplete a quest to be the first ⚔️\n` +
+          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+        );
+      } else {
+        const lines = subs.map((s, i) =>
+          `${i + 1}. <b>${s.handle}</b> — ${s.quest_title || "Quest"}\n` +
+          `   🗳️ ${s.vote_count || 0} vote${(s.vote_count || 0) !== 1 ? "s" : ""}`
+        );
+        await tgSend(chatId,
+          `🗳️ <b>Horde Feed — Top Submissions</b>\n` +
+          `${SEP}\n` +
+          `${lines.join("\n\n")}\n` +
+          `${SEP}\n` +
+          `Vote with: <code>/pffvote &lt;handle&gt;</code>\n` +
+          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+        );
+      }
+    }
+
+    // /pffvote <handle> — vote pour la dernière submission approuvée de ce handle
+    else if (command === "/pffvote") {
+      const targetHandle = args[0]?.replace(/^@/, "");
+      if (!targetHandle) {
+        await tgSend(chatId,
+          `⚔️ Usage: <code>/pffvote &lt;handle&gt;</code>\n` +
+          `Example: <code>/pffvote Leszibs</code>\n\n` +
+          `See submissions: /pffvotes`
+        );
+      } else {
+        const { data: sub } = await db
+          .from("submissions")
+          .select("id, handle, quest_title, vote_count")
+          .eq("status", "approved")
+          .ilike("handle", targetHandle)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!sub) {
+          await tgSend(chatId,
+            `❓ No approved submission found for <b>${targetHandle}</b>.\n\n` +
+            `Check the feed: /pffvotes`
+          );
+        } else {
+          const voterHandle = `tg_${msg.from.id}`;
+          const { error: voteErr } = await db
+            .from("votes")
+            .insert([{ submission_id: sub.id, voter_handle: voterHandle }]);
+
+          if (voteErr) {
+            if (voteErr.code === "23505") {
+              await tgSend(chatId,
+                `⚠️ You already voted for <b>${sub.handle}</b>'s submission!`
+              );
+            } else {
+              await tgSend(chatId, `❌ Vote failed. Try again later.`);
+            }
+          } else {
+            const newCount = (Number(sub.vote_count) || 0) + 1;
+            await db.from("submissions").update({ vote_count: newCount }).eq("id", sub.id);
+            await tgSend(chatId,
+              `🗡️ <b>Vote cast!</b>\n` +
+              `${SEP}\n` +
+              `You voted for <b>${sub.handle}</b>\n` +
+              `📜 ${sub.quest_title || "Quest"}\n` +
+              `🗳️ Now at <b>${newCount} vote${newCount !== 1 ? "s" : ""}</b>\n` +
+              `${SEP}\n` +
+              `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+            );
+          }
+        }
       }
     }
 
