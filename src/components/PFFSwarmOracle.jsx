@@ -748,45 +748,59 @@ export default function PFFSwarmOracleHub({
 
 /** ------------ VOTING SECTION ------------- */
 function VotingSection({ submissions = [], loading, quests = [] }) {
-  const [votingId, setVotingId] = useState(null);
-  const [voterHandle, setVoterHandle] = useState("");
+  // Persistent anonymous voter fingerprint (UUID stored in localStorage)
+  const [voterId] = useState(() => {
+    try {
+      let id = localStorage.getItem("pff_voter_id");
+      if (!id) { id = crypto.randomUUID(); localStorage.setItem("pff_voter_id", id); }
+      return id;
+    } catch { return crypto.randomUUID(); }
+  });
+
+  // Track which submissions this browser has already voted on
+  const [votedIds, setVotedIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("pff_voted_ids") || "[]")); }
+    catch { return new Set(); }
+  });
+
   const [localVotes, setLocalVotes] = useState({});
-  const [voteError, setVoteError] = useState(null);
+  const [casting, setCasting] = useState(null); // submission_id being cast, or null
   const [voteSuccess, setVoteSuccess] = useState(null);
-  const [casting, setCasting] = useState(false);
 
   async function castVote(submissionId) {
-    if (!voterHandle.trim() || casting) return;
-    setCasting(true);
-    setVoteError(null);
+    if (casting || votedIds.has(submissionId)) return;
+    setCasting(submissionId);
     try {
       const res = await fetch("/api/submit-quest?action=vote", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ submission_id: submissionId, voter_handle: voterHandle.trim() }),
+        body: JSON.stringify({ submission_id: submissionId, voter_handle: voterId }),
       });
       const json = await res.json();
-      if (res.status === 409) { setVoteError("Already voted on this submission!"); setCasting(false); return; }
-      if (!res.ok) { setVoteError("Vote failed. Try again."); setCasting(false); return; }
-      setLocalVotes((v) => ({ ...v, [submissionId]: json.vote_count }));
-      setVoteSuccess("Vote cast! ⚔️");
-      setVotingId(null);
-      setVoterHandle("");
-      setTimeout(() => setVoteSuccess(null), 4000);
-    } catch {
-      setVoteError("Network error.");
-    }
-    setCasting(false);
+      // Mark as voted locally regardless (409 = already voted server-side)
+      const next = new Set(votedIds);
+      next.add(submissionId);
+      setVotedIds(next);
+      try { localStorage.setItem("pff_voted_ids", JSON.stringify([...next])); } catch {}
+      if (res.ok) {
+        setLocalVotes((v) => ({ ...v, [submissionId]: json.vote_count }));
+        setVoteSuccess("⚔️ Vote cast!");
+        setTimeout(() => setVoteSuccess(null), 3000);
+      }
+    } catch {}
+    setCasting(null);
   }
 
   if (!loading && submissions.length === 0) return null;
+
+  const SWARM_URL = "https://pumpfunfloki.com/swarm";
 
   return (
     <div id="community-feed" className="scroll-mt-24">
       <PffSectionTitle
         kicker="Community"
         title="Horde Feed"
-        desc="Vote on approved quest submissions. Each Viking can vote once per submission."
+        desc="Vote on approved quest submissions. One vote per browser, no account needed."
       />
 
       {voteSuccess && (
@@ -801,15 +815,22 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {submissions.map((sub) => {
             const voteCount = localVotes[sub.id] ?? (sub.vote_count || 0);
-            const isVoting = votingId === sub.id;
+            const hasVoted = votedIds.has(sub.id);
+            const isCasting = casting === sub.id;
             const quest = quests.find((q) => q.id === sub.quest_id);
             const threshold = Number(quest?.vote_threshold || 0);
             const bonusAmount = Number(quest?.vote_bonus_amount || 0);
             const bonusToken = (quest?.vote_bonus_token || "pff").toUpperCase();
             const thresholdPct = threshold > 0 ? Math.min(100, Math.round((voteCount / threshold) * 100)) : 0;
             const bonusReached = threshold > 0 && voteCount >= threshold;
+
+            const shareText = `I just completed the "${quest?.title || sub.quest_id}" quest on @PumpFunFloki!\n⚔️ Support my submission and vote! 🗡️`;
+            const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(SWARM_URL)}`;
+            const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(SWARM_URL)}&text=${encodeURIComponent(shareText)}`;
+
             return (
               <div key={sub.id} className="glass rounded-2xl border border-neon-500/15 p-4 flex flex-col gap-3">
+                {/* Header */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="text-xs text-white/50 truncate">{sub.quest_id}</div>
@@ -820,15 +841,17 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
                   </div>
                 </div>
 
+                {/* Proof */}
                 <p className="text-xs text-white/70 leading-relaxed line-clamp-3 break-all">
                   {sub.proof}
                 </p>
 
+                {/* Vote threshold progress */}
                 {threshold > 0 && bonusAmount > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[11px] text-purple-300/80">
-                        {bonusReached ? `✅ Bonus unlocked!` : `🗳️ ${voteCount}/${threshold} votes → ${bonusAmount.toLocaleString()} $${bonusToken}`}
+                        {bonusReached ? `✅ Bonus unlocked!` : `🗳️ ${voteCount}/${threshold} → ${bonusAmount.toLocaleString()} $${bonusToken}`}
                       </span>
                       <span className="text-[11px] text-white/40">{thresholdPct}%</span>
                     </div>
@@ -841,45 +864,47 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
                   </div>
                 )}
 
+                {/* Footer: vote count + vote button + share */}
                 <div className="mt-auto flex items-center justify-between gap-2">
                   <span className="text-xs text-white/40">{voteCount} vote{voteCount !== 1 ? "s" : ""}</span>
-                  {isVoting ? (
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <input
-                        value={voterHandle}
-                        onChange={(e) => setVoterHandle(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") castVote(sub.id); if (e.key === "Escape") { setVotingId(null); setVoteError(null); } }}
-                        placeholder="@yourhandle"
-                        autoFocus
-                        disabled={casting}
-                        className="flex-1 min-w-0 rounded-lg border border-neon-500/25 bg-black/30 px-2 py-1 text-xs text-white/90 outline-none focus:border-neon-500/50"
-                      />
+
+                  <div className="flex items-center gap-1.5">
+                    {/* Share on X */}
+                    <a
+                      href={xUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Share on X"
+                      className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-white/50 hover:text-white/80 hover:border-white/25 transition-colors"
+                    >
+                      𝕏
+                    </a>
+                    {/* Share on Telegram */}
+                    <a
+                      href={tgUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Share on Telegram"
+                      className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-white/50 hover:text-white/80 hover:border-white/25 transition-colors"
+                    >
+                      ✈️
+                    </a>
+                    {/* Vote button */}
+                    {hasVoted ? (
+                      <span className="rounded-lg border border-neon-500/20 px-3 py-1 text-xs text-neon-500/50">
+                        ✓ Voted
+                      </span>
+                    ) : (
                       <button
                         onClick={() => castVote(sub.id)}
-                        disabled={!voterHandle.trim() || casting}
-                        className="rounded-lg border border-neon-500/35 bg-neon-500/10 px-2 py-1 text-xs text-neon-300 hover:bg-neon-500/20 disabled:opacity-40"
+                        disabled={!!casting}
+                        className="rounded-lg border border-neon-500/25 bg-neon-500/[0.07] px-3 py-1 text-xs text-neon-400 hover:border-neon-500/50 hover:bg-neon-500/15 transition-colors disabled:opacity-40"
                       >
-                        {casting ? "…" : "OK"}
+                        {isCasting ? "…" : "⚔️ Vote"}
                       </button>
-                      <button
-                        onClick={() => { setVotingId(null); setVoteError(null); }}
-                        className="text-white/40 hover:text-white/70 text-xs"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => { setVotingId(sub.id); setVoteError(null); }}
-                      className="rounded-lg border border-neon-500/25 bg-neon-500/[0.07] px-3 py-1 text-xs text-neon-400 hover:border-neon-500/50 hover:bg-neon-500/15 transition-colors"
-                    >
-                      ⚔️ Vote
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
-                {isVoting && voteError && (
-                  <div className="text-xs text-red-400">{voteError}</div>
-                )}
               </div>
             );
           })}
