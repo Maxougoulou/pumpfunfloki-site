@@ -824,7 +824,7 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
             const thresholdPct = threshold > 0 ? Math.min(100, Math.round((voteCount / threshold) * 100)) : 0;
             const bonusReached = threshold > 0 && voteCount >= threshold;
 
-            const shareText = `I just completed the "${quest?.title || sub.quest_id}" quest on @PumpFunFloki!\n⚔️ Support my submission and vote! 🗡️`;
+            const shareText = `${sub.handle} just completed the "${quest?.title || sub.quest_id}" quest on @PumpFunFloki!\n⚔️ Vote for their submission! 🗡️`;
             const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(SWARM_URL)}`;
             const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(SWARM_URL)}&text=${encodeURIComponent(shareText)}`;
 
