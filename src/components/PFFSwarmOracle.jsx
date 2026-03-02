@@ -263,7 +263,7 @@ function useApprovedSubmissions(refreshMs = 45000) {
         setState((s) => ({ ...s, loading: true, error: null }));
         const { data, error } = await supabase
           .from("submissions")
-          .select("id, quest_id, handle, proof, note, status, type, difficulty, points_awarded, created_at")
+          .select("id, quest_id, handle, proof, note, status, type, difficulty, points_awarded, vote_count, created_at")
           .eq("status", "approved")
           .order("created_at", { ascending: false })
           .limit(12);
@@ -623,6 +623,8 @@ export default function PFFSwarmOracleHub({
       points: typeof q.points === "number" ? q.points : Number(q.points || 0),
       expires_at: q.expires_at || null,
       milestone_id: q.milestone_id || null,
+      fixed_reward_amount: Number(q.fixed_reward_amount || 0),
+      fixed_reward_token: q.fixed_reward_token || "pff",
     }));
   }, [publicQuests.rows]);
 
@@ -728,6 +730,8 @@ export default function PFFSwarmOracleHub({
           backendEnabled={Boolean(safeJson(settings?.feature_toggles, { use_backend: false })?.use_backend)}
         />
 
+        <VotingSection submissions={approved.rows} loading={approved.loading} />
+
         <div className="grid gap-5 md:grid-cols-2">
           <LeaderboardPanel leaderboard={leaderboard} />
           <HordeLookupSection />
@@ -736,6 +740,126 @@ export default function PFFSwarmOracleHub({
       </div>
     </section>
     </>
+  );
+}
+
+/** ------------ VOTING SECTION ------------- */
+function VotingSection({ submissions = [], loading }) {
+  const [votingId, setVotingId] = useState(null);
+  const [voterHandle, setVoterHandle] = useState("");
+  const [localVotes, setLocalVotes] = useState({});
+  const [voteError, setVoteError] = useState(null);
+  const [voteSuccess, setVoteSuccess] = useState(null);
+  const [casting, setCasting] = useState(false);
+
+  async function castVote(submissionId) {
+    if (!voterHandle.trim() || casting) return;
+    setCasting(true);
+    setVoteError(null);
+    try {
+      const res = await fetch("/api/submit-quest?action=vote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ submission_id: submissionId, voter_handle: voterHandle.trim() }),
+      });
+      const json = await res.json();
+      if (res.status === 409) { setVoteError("Already voted on this submission!"); setCasting(false); return; }
+      if (!res.ok) { setVoteError("Vote failed. Try again."); setCasting(false); return; }
+      setLocalVotes((v) => ({ ...v, [submissionId]: json.vote_count }));
+      setVoteSuccess("Vote cast! ⚔️");
+      setVotingId(null);
+      setVoterHandle("");
+      setTimeout(() => setVoteSuccess(null), 4000);
+    } catch {
+      setVoteError("Network error.");
+    }
+    setCasting(false);
+  }
+
+  if (!loading && submissions.length === 0) return null;
+
+  return (
+    <div id="community-feed" className="scroll-mt-24">
+      <PffSectionTitle
+        kicker="Community"
+        title="Horde Feed"
+        desc="Vote on approved quest submissions. Each Viking can vote once per submission."
+      />
+
+      {voteSuccess && (
+        <div className="mb-4 rounded-xl border border-neon-500/30 bg-neon-500/10 px-4 py-2 text-sm text-neon-300">
+          {voteSuccess}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-white/50 text-sm">Loading submissions…</div>
+      ) : (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {submissions.map((sub) => {
+            const voteCount = localVotes[sub.id] ?? (sub.vote_count || 0);
+            const isVoting = votingId === sub.id;
+            return (
+              <div key={sub.id} className="glass rounded-2xl border border-neon-500/15 p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-xs text-white/50 truncate">{sub.quest_id}</div>
+                    <div className="text-sm font-bold text-white truncate">{sub.handle}</div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Badge>{sub.type || "quest"}</Badge>
+                  </div>
+                </div>
+
+                <p className="text-xs text-white/70 leading-relaxed line-clamp-3 break-all">
+                  {sub.proof}
+                </p>
+
+                <div className="mt-auto flex items-center justify-between gap-2">
+                  <span className="text-xs text-white/40">{voteCount} vote{voteCount !== 1 ? "s" : ""}</span>
+                  {isVoting ? (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <input
+                        value={voterHandle}
+                        onChange={(e) => setVoterHandle(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") castVote(sub.id); if (e.key === "Escape") { setVotingId(null); setVoteError(null); } }}
+                        placeholder="@yourhandle"
+                        autoFocus
+                        disabled={casting}
+                        className="flex-1 min-w-0 rounded-lg border border-neon-500/25 bg-black/30 px-2 py-1 text-xs text-white/90 outline-none focus:border-neon-500/50"
+                      />
+                      <button
+                        onClick={() => castVote(sub.id)}
+                        disabled={!voterHandle.trim() || casting}
+                        className="rounded-lg border border-neon-500/35 bg-neon-500/10 px-2 py-1 text-xs text-neon-300 hover:bg-neon-500/20 disabled:opacity-40"
+                      >
+                        {casting ? "…" : "OK"}
+                      </button>
+                      <button
+                        onClick={() => { setVotingId(null); setVoteError(null); }}
+                        className="text-white/40 hover:text-white/70 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setVotingId(sub.id); setVoteError(null); }}
+                      className="rounded-lg border border-neon-500/25 bg-neon-500/[0.07] px-3 py-1 text-xs text-neon-400 hover:border-neon-500/50 hover:bg-neon-500/15 transition-colors"
+                    >
+                      ⚔️ Vote
+                    </button>
+                  )}
+                </div>
+                {isVoting && voteError && (
+                  <div className="text-xs text-red-400">{voteError}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1575,6 +1699,11 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
                   <Badge tone="good">{q.reward}</Badge>
                   <Badge>proof: {q.proofType}</Badge>
                   {q.points > 0 && <Badge tone="good">{q.points} pts</Badge>}
+                  {q.fixed_reward_amount > 0 && (
+                    <span className="inline-flex items-center rounded-full border bg-black/30 px-2.5 py-0.5 text-xs border-yellow-400/40 text-yellow-300">
+                      {Number(q.fixed_reward_amount).toLocaleString()} ${(q.fixed_reward_token || "pff").toUpperCase()}
+                    </span>
+                  )}
                   {q.milestone_id && (() => {
                     const ms = milestones.find((m) => m.id === q.milestone_id);
                     return ms ? (

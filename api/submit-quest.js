@@ -4,6 +4,36 @@ import { verifyRecaptcha } from "./_recaptcha.js";
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "method-not-allowed" });
 
+  // ── Vote on an approved submission ─────────────────────────────
+  if (req.query?.action === "vote") {
+    const { submission_id, voter_handle } = req.body || {};
+    if (!submission_id || !voter_handle)
+      return res.status(400).json({ error: "missing-fields" });
+
+    const db = supabaseAdmin();
+
+    const { error: voteErr } = await db
+      .from("votes")
+      .insert([{ submission_id: String(submission_id), voter_handle: String(voter_handle).slice(0, 80) }]);
+
+    if (voteErr) {
+      if (voteErr.code === "23505")
+        return res.status(409).json({ error: "already-voted" });
+      return res.status(500).json({ error: "db-error", details: voteErr });
+    }
+
+    const { data: sub } = await db
+      .from("submissions")
+      .select("vote_count")
+      .eq("id", String(submission_id))
+      .single();
+
+    const newCount = (Number(sub?.vote_count) || 0) + 1;
+    await db.from("submissions").update({ vote_count: newCount }).eq("id", String(submission_id));
+
+    return res.status(200).json({ ok: true, vote_count: newCount });
+  }
+
   try {
     const {
       quest_id,

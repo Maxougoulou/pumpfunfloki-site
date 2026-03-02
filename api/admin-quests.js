@@ -101,6 +101,8 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
       points,
       expires_at,
       milestone_id,
+      fixed_reward_amount,
+      fixed_reward_token,
     } = req.body || {};
 
     if (!id || !title) return res.status(400).json({ error: "missing-fields" });
@@ -121,6 +123,8 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
           points: Number.isFinite(Number(points)) ? Number(points) : 0,
           expires_at: expires_at ? new Date(expires_at).toISOString() : null,
           milestone_id: milestone_id ? String(milestone_id).slice(0, 32) : null,
+          fixed_reward_amount: Number(fixed_reward_amount) || 0,
+          fixed_reward_token: fixed_reward_token === "sol" ? "sol" : "pff",
         },
       ])
       .select()
@@ -130,12 +134,14 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
 
     // Notify Telegram group
     const pts = Number(data.points || 0);
+    const fixedAmt = Number(data.fixed_reward_amount || 0);
     await tgNotify(
       `⚔️ <b>New Quest Available!</b>\n` +
       `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
       `📜 <b>${data.title}</b>\n` +
       (data.description ? `<i>${data.description}</i>\n` : ``) +
       `🎯 Reward: <b>${pts} pts</b>\n` +
+      (fixedAmt > 0 ? `💰 Fixed: <b>${fixedAmt.toLocaleString()} $${(data.fixed_reward_token || "pff").toUpperCase()}</b>\n` : ``) +
       `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
       `Complete it at 👇\n` +
       `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
@@ -174,6 +180,8 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
     if (points !== undefined) patch.points = Number.isFinite(Number(points)) ? Number(points) : 0;
     if (expires_at !== undefined) patch.expires_at = expires_at ? new Date(expires_at).toISOString() : null;
     if (req.body?.milestone_id !== undefined) patch.milestone_id = req.body.milestone_id ? String(req.body.milestone_id).slice(0, 32) : null;
+    if (req.body?.fixed_reward_amount !== undefined) patch.fixed_reward_amount = Number(req.body.fixed_reward_amount) || 0;
+    if (req.body?.fixed_reward_token !== undefined) patch.fixed_reward_token = req.body.fixed_reward_token === "sol" ? "sol" : "pff";
 
     const { data, error } = await db
       .from("quests")

@@ -640,6 +640,8 @@ export default function ValhallaAdmin() {
     points: 0,
     expires_at: "",
     milestone_id: "",
+    fixed_reward_amount: "0",
+    fixed_reward_token: "pff",
   });
   const [questErr, setQuestErr] = useState("");
   const [questSuccess, setQuestSuccess] = useState("");
@@ -879,6 +881,7 @@ export default function ValhallaAdmin() {
     setQuestForm({
       title: "", description: "", type: "raid", difficulty: "easy",
       reward: "", proof_type: "text", time_window: "", status: "LIVE", points: 0, expires_at: "", milestone_id: "",
+      fixed_reward_amount: "0", fixed_reward_token: "pff",
     });
     setQuestSuccess(`Quest ${autoId} created ✓`);
     setTimeout(() => setQuestSuccess(""), 5000);
@@ -1464,6 +1467,31 @@ export default function ValhallaAdmin() {
                     />
                   </div>
 
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <div className="text-xs text-white/60">Fixed reward amount <span className="text-white/30">(0 = none)</span></div>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={questForm.fixed_reward_amount}
+                        onChange={(e) => setQuestForm((v) => ({ ...v, fixed_reward_amount: e.target.value }))}
+                        className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-white/60">Token</div>
+                      <select
+                        value={questForm.fixed_reward_token}
+                        onChange={(e) => setQuestForm((v) => ({ ...v, fixed_reward_token: e.target.value }))}
+                        className="mt-2 rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none"
+                      >
+                        <option className="bg-black" value="pff">$PFF</option>
+                        <option className="bg-black" value="sol">SOL</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div>
                     <div className="text-xs text-white/60">Points <span className="text-white/30">(auto-calculated — editable)</span></div>
                     <input
@@ -1511,6 +1539,7 @@ export default function ValhallaAdmin() {
                           title: "", description: "", type: "raid",
                           difficulty: "easy", reward: "", proof_type: "text",
                           time_window: "", status: "LIVE", points: 0, expires_at: "", milestone_id: "",
+                          fixed_reward_amount: "0", fixed_reward_token: "pff",
                         })
                       }
                     >
@@ -1556,6 +1585,11 @@ export default function ValhallaAdmin() {
                     <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-white/10 text-white/80">
                       proof: {questForm.proof_type || "text"}
                     </span>
+                    {Number(questForm.fixed_reward_amount) > 0 && (
+                      <span className="inline-flex items-center rounded-full border bg-black/30 px-3 py-1 text-xs border-yellow-400/40 text-yellow-300">
+                        {Number(questForm.fixed_reward_amount).toLocaleString()} ${questForm.fixed_reward_token.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 text-[11px] text-white/45">

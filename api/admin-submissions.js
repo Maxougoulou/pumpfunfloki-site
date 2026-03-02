@@ -1,6 +1,9 @@
 import { supabaseAdmin } from "./_supabase.js";
 import { requireAdmin } from "./_session.js";
 import { tgNotify } from "./_telegram.js";
+import { getSolanaConnection, getRewardsKeypair, getPffMint, toRawAmount } from "./_solana.js";
+import { getOrCreateAssociatedTokenAccount, createTransferInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } from "@solana/web3.js";
 
 
 export default async function handler(req, res) {
@@ -58,7 +61,7 @@ export default async function handler(req, res) {
     // Fetch current submission (needed to get quest_id, handle, prevent double-credit)
     const { data: existing, error: e1 } = await db
       .from("submissions")
-      .select("id, status, handle, quest_id, points_awarded")
+      .select("id, status, handle, quest_id, points_awarded, wallet_address")
       .eq("id", id)
       .single();
 
@@ -75,7 +78,7 @@ export default async function handler(req, res) {
       // Get points from the quest definition
       const { data: quest } = await db
         .from("quests")
-        .select("points")
+        .select("points, fixed_reward_amount, fixed_reward_token")
         .eq("id", existing.quest_id)
         .maybeSingle();
       const pts = Math.max(0, Math.round(Number(quest?.points) || 0));
@@ -143,7 +146,45 @@ export default async function handler(req, res) {
         );
       }
 
-      return res.status(200).json({ ok: true, row: updated, points_awarded: pts });
+      // 4) Auto-send fixed reward if quest defines one and submission has a wallet
+      const rewardAmount = Number(quest?.fixed_reward_amount || 0);
+      const rewardToken = quest?.fixed_reward_token === "sol" ? "sol" : "pff";
+      const recipientWallet = existing.wallet_address;
+
+      let rewardTx = null;
+      if (rewardAmount > 0 && recipientWallet) {
+        try {
+          const connection = getSolanaConnection();
+          const payer = getRewardsKeypair();
+          const recipientPubkey = new PublicKey(recipientWallet);
+
+          if (rewardToken === "sol") {
+            const lamports = Math.round(rewardAmount * 1e9);
+            const tx = new Transaction().add(
+              SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: recipientPubkey, lamports })
+            );
+            rewardTx = await sendAndConfirmTransaction(connection, tx, [payer], { commitment: "processed" });
+          } else {
+            const mint = getPffMint();
+            const rawAmount = toRawAmount(rewardAmount);
+            const sourceAta = await getOrCreateAssociatedTokenAccount(connection, payer, mint, payer.publicKey);
+            const recipientAta = await getOrCreateAssociatedTokenAccount(connection, payer, mint, recipientPubkey);
+            const tx = new Transaction().add(
+              createTransferInstruction(sourceAta.address, recipientAta.address, payer.publicKey, rawAmount, [], TOKEN_PROGRAM_ID)
+            );
+            rewardTx = await sendAndConfirmTransaction(connection, tx, [payer], { commitment: "processed" });
+          }
+
+          if (rewardTx) {
+            await db.from("submissions").update({ airdrop_tx: rewardTx, airdrop_amount: rewardAmount }).eq("id", id);
+          }
+        } catch (rewardErr) {
+          console.error("[auto-reward]", rewardErr?.message);
+          // Don't block approval — log and continue
+        }
+      }
+
+      return res.status(200).json({ ok: true, row: updated, points_awarded: pts, reward_tx: rewardTx });
     }
 
     // If NOT approving: just update status (and keep points_awarded as-is)
