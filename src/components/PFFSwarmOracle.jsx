@@ -833,7 +833,7 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
                 {/* Header */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="text-xs text-white/50 truncate">{sub.quest_id}</div>
+                    <div className="text-xs text-white/50 truncate">{quest?.title || sub.quest_id}</div>
                     <div className="text-sm font-bold text-white truncate">{sub.handle}</div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
