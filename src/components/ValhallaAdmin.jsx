@@ -47,9 +47,17 @@ function TxLink({ sig }) {
 }
 
 // ── Airdrop modal ──────────────────────────────────────────────────
-function AirdropModal({ subs, selectedIds, onClose }) {
-  const [amount, setAmount] = useState("50000");
-  const [token, setToken] = useState("pff");
+function AirdropModal({ subs, selectedIds, quests = [], onClose }) {
+  // Pre-fill from quest if all selected subs share the same quest with a fixed reward
+  const selectedList = subs.filter((s) => selectedIds.has(s.id));
+  const firstQuestId = selectedList[0]?.quest_id;
+  const allSameQuest = selectedList.length > 0 && selectedList.every((s) => s.quest_id === firstQuestId);
+  const matchedQuest = allSameQuest ? quests.find((q) => q.id === firstQuestId) : null;
+  const initAmount = matchedQuest?.fixed_reward_amount > 0 ? String(matchedQuest.fixed_reward_amount) : "50000";
+  const initToken = matchedQuest?.fixed_reward_token || "pff";
+
+  const [amount, setAmount] = useState(initAmount);
+  const [token, setToken] = useState(initToken);
   const [dryRun, setDryRun] = useState(null);
   const [result, setResult] = useState(null);
   const [sending, setSending] = useState(false);
@@ -922,7 +930,7 @@ export default function ValhallaAdmin() {
 
   useEffect(() => {
     if (!me.admin) return;
-    if (tab === "submissions") loadSubmissions();
+    if (tab === "submissions") { loadSubmissions(); loadQuests(); }
     if (tab === "logs") loadLogs();
     if (tab === "quests") { loadQuests(); loadMilestones(); }
     if (tab === "milestones") loadMilestones();
@@ -1029,6 +1037,7 @@ export default function ValhallaAdmin() {
         <AirdropModal
           subs={subs}
           selectedIds={selectedSubs}
+          quests={quests}
           onClose={() => setAirdropModal(false)}
         />
       )}
