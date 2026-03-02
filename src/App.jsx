@@ -1152,7 +1152,7 @@ function SiteHeader() {
     ["Roadmap", "/#roadmap"],
     ["How to Buy", "/#howtobuy"],
     ["Creations", "/#gallery"],
-    ["Horde Engine", "/swarm"],
+    ["Horde Engine", "/horde-engine"],
     ["🪖 Helmet", "/helmet"],
     ["FAQ", "/#faq"],
   ];
@@ -1334,7 +1334,7 @@ function HomePage() {
                 🪖 Helmet
               </Link>
               <Link
-                to="/swarm"
+                to="/horde-engine"
                 className="ml-1 inline-flex items-center gap-1.5 rounded-xl border border-neon-500/40 bg-neon-500/[0.08] px-3 py-1.5 text-sm font-semibold text-neon-400 hover:bg-neon-500/15 hover:border-neon-500/70 hover:text-neon-300 transition shadow-[0_0_12px_rgba(0,232,90,.12)]"
               >
                 ⚔️ Horde Engine
@@ -1384,7 +1384,7 @@ function HomePage() {
                   🪖 Helmet
                 </Link>
                 <Link
-                  to="/swarm"
+                  to="/horde-engine"
                   onClick={() => setMobileOpen(false)}
                   className="rounded-xl px-4 py-2.5 text-sm font-semibold text-neon-400 border border-neon-500/30 bg-neon-500/[0.06] hover:bg-neon-500/12 hover:border-neon-500/55 transition"
                 >
@@ -1608,7 +1608,7 @@ function HomePage() {
 
             <div className="mt-9">
               <a
-                href="/swarm"
+                href="/horde-engine"
                 className="inline-flex items-center gap-2.5 rounded-2xl bg-neon-500 px-8 py-4 text-base font-extrabold text-black shadow-neonStrong hover:bg-neon-400 hover:translate-y-[-2px] active:translate-y-0 transition will-change-transform"
               >
                 ⚔️ Enter the Horde Engine
@@ -1689,7 +1689,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/valhalla-admin" element={<ValhallaAdmin />} />
-      <Route path="/swarm" element={<SwarmPage />} />
+      <Route path="/horde-engine" element={<SwarmPage />} />
       <Route path="/helmet" element={<HelmetPage />} />
       <Route path="/" element={<HomePage />} />
     </Routes>
