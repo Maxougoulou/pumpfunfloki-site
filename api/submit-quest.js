@@ -89,7 +89,7 @@ export default async function handler(req, res) {
                 (quest.title ? `📜 Quest: <i>${quest.title}</i>\n` : ``) +
                 `💰 Bonus: <b>${bonusAmount.toLocaleString()} $${(quest.vote_bonus_token || "pff").toUpperCase()}</b> sent\n` +
                 `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
-                `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+                `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
               );
             }
           } catch (bonusErr) {

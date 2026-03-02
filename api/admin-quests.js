@@ -150,7 +150,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
       (fixedAmt > 0 ? `💰 Fixed: <b>${fixedAmt.toLocaleString()} $${(data.fixed_reward_token || "pff").toUpperCase()}</b>\n` : ``) +
       `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n` +
       `Complete it at 👇\n` +
-      `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+      `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
     );
     await tgPin(msgId);
 

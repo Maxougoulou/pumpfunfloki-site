@@ -142,7 +142,7 @@ export default async function handler(req, res) {
           `🎯 Reward: <b>${milestone.reward || "TBD"}</b>\n` +
           actionLine +
           `${SEP}\n` +
-          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+          `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
         );
       }
 
@@ -193,7 +193,7 @@ export default async function handler(req, res) {
         (updated.quest_title ? `📜 ${updated.quest_title}\n` : ``) +
         `⚡ +${pts} pts\n` +
         `${SEP}\n` +
-        `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`,
+        `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`,
         {
           reply_markup: {
             inline_keyboard: [[

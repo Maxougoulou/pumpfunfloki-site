@@ -793,7 +793,7 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
 
   if (!loading && submissions.length === 0) return null;
 
-  const SWARM_URL = "https://pumpfunfloki.com/swarm";
+  const SWARM_URL = "https://pumpfunfloki.com/horde-engine";
 
   return (
     <div id="community-feed" className="scroll-mt-24">

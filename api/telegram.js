@@ -109,7 +109,7 @@ export default async function handler(req, res) {
         `📊 /pffstats\n` +
         `   $PFF price &amp; market cap\n` +
         `${SEP}\n` +
-        `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+        `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
       );
     }
 
@@ -135,7 +135,7 @@ export default async function handler(req, res) {
           await tgSend(chatId,
             `❓ <b>${handle}</b> is not in the Horde yet.\n\n` +
             `Complete a quest to claim your rank 👇\n` +
-            `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+            `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
           );
         } else {
           const row = lb[idx];
@@ -149,7 +149,7 @@ export default async function handler(req, res) {
             `🏅 Rank  <b>#${rank}</b> / ${total}\n` +
             `⚡ Points  <b>${Number(row.points).toLocaleString()}</b>\n` +
             `${SEP}\n` +
-            `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+            `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
           );
         }
       }
@@ -176,7 +176,7 @@ export default async function handler(req, res) {
           `${SEP}\n` +
           `${lines.join("\n\n")}\n` +
           `${SEP}\n` +
-          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+          `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
         );
       }
     }
@@ -203,7 +203,7 @@ export default async function handler(req, res) {
           `${lines.join("\n\n")}\n` +
           `${SEP}\n` +
           `Complete them at 👇\n` +
-          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+          `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
         );
       }
     }
@@ -220,7 +220,7 @@ export default async function handler(req, res) {
       if (!subs?.length) {
         await tgSend(chatId,
           `🗳️ No approved submissions yet.\nComplete a quest to be the first ⚔️\n` +
-          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+          `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
         );
       } else {
         const lines = subs.map((s, i) =>
@@ -233,7 +233,7 @@ export default async function handler(req, res) {
           `${lines.join("\n\n")}\n` +
           `${SEP}\n` +
           `Vote with: <code>/pffvote &lt;handle&gt;</code>\n` +
-          `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+          `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
         );
       }
     }
@@ -286,7 +286,7 @@ export default async function handler(req, res) {
               `📜 ${sub.quest_title || "Quest"}\n` +
               `🗳️ Now at <b>${newCount} vote${newCount !== 1 ? "s" : ""}</b>\n` +
               `${SEP}\n` +
-              `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+              `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
             );
           }
         }

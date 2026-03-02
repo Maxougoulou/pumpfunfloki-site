@@ -2151,10 +2151,10 @@ function TelegramTab() {
   const [status, setStatus] = useState(null); // null | "sending" | "ok" | "err"
 
   const QUICK = [
-    { label: "🗡️ New Quest", text: "⚔️ <b>New quest available!</b>\n\nA new quest has just been added to the Horde Engine.\n\nComplete it and earn points 👇\nhttps://pumpfunfloki.com/swarm" },
+    { label: "🗡️ New Quest", text: "⚔️ <b>New quest available!</b>\n\nA new quest has just been added to the Horde Engine.\n\nComplete it and earn points 👇\nhttps://pumpfunfloki.com/horde-engine" },
     { label: "🔥 Burn", text: "🔥 <b>$PFF Burn incoming.</b>\n\nThe treasury feeds the fire.\n\nWatch the supply drop → https://pumpfunfloki.com" },
-    { label: "🏆 Leaderboard", text: "🏆 <b>Leaderboard update!</b>\n\nThe Horde rankings have shifted. Check your position 👇\nhttps://pumpfunfloki.com/swarm" },
-    { label: "💰 Airdrop", text: "💰 <b>Airdrop incoming for the Horde!</b>\n\nApproved Vikings — rewards are on their way.\n\nKeep grinding → https://pumpfunfloki.com/swarm" },
+    { label: "🏆 Leaderboard", text: "🏆 <b>Leaderboard update!</b>\n\nThe Horde rankings have shifted. Check your position 👇\nhttps://pumpfunfloki.com/horde-engine" },
+    { label: "💰 Airdrop", text: "💰 <b>Airdrop incoming for the Horde!</b>\n\nApproved Vikings — rewards are on their way.\n\nKeep grinding → https://pumpfunfloki.com/horde-engine" },
   ];
 
   async function send() {

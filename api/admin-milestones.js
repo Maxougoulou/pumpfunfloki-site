@@ -70,7 +70,7 @@ export default async function handler(req, res) {
       `🎯 Reward: <b>${m.reward || "TBD"}</b>\n` +
       actionLine +
       `${SEP}\n` +
-      `🌐 <a href="https://pumpfunfloki.com/swarm">pumpfunfloki.com/swarm</a>`
+      `🌐 <a href="https://pumpfunfloki.com/horde-engine">pumpfunfloki.com/horde-engine</a>`
     );
 
     return res.status(200).json({ ok: true });
