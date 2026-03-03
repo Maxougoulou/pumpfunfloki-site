@@ -2511,12 +2511,22 @@ function OracleTab() {
             <div key={i} className="glass rounded-2xl border border-neon-500/15 p-4 flex flex-col gap-3">
               <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Variante {i + 1}</div>
               <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{v}</p>
-              <button
-                onClick={() => copy(v, i)}
-                className="self-end rounded-lg border border-neon-500/20 bg-neon-500/[0.06] px-3 py-1 text-xs text-neon-400 hover:bg-neon-500/15 transition"
-              >
-                {copied === i ? "✓ Copié" : "Copier"}
-              </button>
+              <div className="flex gap-2 self-end">
+                <button
+                  onClick={() => copy(v, i)}
+                  className="rounded-lg border border-neon-500/20 bg-neon-500/[0.06] px-3 py-1 text-xs text-neon-400 hover:bg-neon-500/15 transition"
+                >
+                  {copied === i ? "✓ Copié" : "Copier"}
+                </button>
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(v)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-sky-500/30 bg-sky-500/[0.08] px-3 py-1 text-xs text-sky-400 hover:bg-sky-500/20 transition"
+                >
+                  𝕏 Partager
+                </a>
+              </div>
             </div>
           ))}
         </div>
