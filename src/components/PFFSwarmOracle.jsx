@@ -1747,21 +1747,39 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
 
                 <p className="mt-3 text-sm text-white/80 leading-relaxed">{q.desc}</p>
 
-                <div className="mt-auto pt-5 flex flex-wrap gap-2">
+                {/* Reward highlight block */}
+                {(q.fixed_reward_amount > 0 || (q.vote_threshold > 0 && q.vote_bonus_amount > 0)) && (
+                  <div className="mt-4 rounded-xl border border-yellow-400/25 bg-yellow-400/[0.06] px-4 py-3 flex flex-col gap-2">
+                    {q.fixed_reward_amount > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-300 text-base">💰</span>
+                        <div>
+                          <div className="text-yellow-200 font-extrabold text-sm leading-tight">
+                            {Number(q.fixed_reward_amount).toLocaleString()} ${(q.fixed_reward_token || "pff").toUpperCase()}
+                          </div>
+                          <div className="text-yellow-400/60 text-[10px]">fixed reward per submission</div>
+                        </div>
+                      </div>
+                    )}
+                    {q.vote_threshold > 0 && q.vote_bonus_amount > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-purple-300 text-base">🗳️</span>
+                        <div>
+                          <div className="text-purple-200 font-extrabold text-sm leading-tight">
+                            {Number(q.vote_bonus_amount).toLocaleString()} ${(q.vote_bonus_token || "pff").toUpperCase()}
+                          </div>
+                          <div className="text-purple-400/60 text-[10px]">bonus unlocked at {q.vote_threshold} votes</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-auto pt-4 flex flex-wrap gap-2">
                   <Badge>{q.difficulty}</Badge>
                   <Badge tone="good">{q.reward}</Badge>
                   <Badge>proof: {q.proofType}</Badge>
                   {q.points > 0 && <Badge tone="good">{q.points} pts</Badge>}
-                  {q.fixed_reward_amount > 0 && (
-                    <span className="inline-flex items-center rounded-full border bg-black/30 px-2.5 py-0.5 text-xs border-yellow-400/40 text-yellow-300">
-                      {Number(q.fixed_reward_amount).toLocaleString()} ${(q.fixed_reward_token || "pff").toUpperCase()}
-                    </span>
-                  )}
-                  {q.vote_threshold > 0 && q.vote_bonus_amount > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-full border bg-black/30 px-2.5 py-0.5 text-xs border-purple-400/40 text-purple-300">
-                      🗳️ {q.vote_threshold} votes → {Number(q.vote_bonus_amount).toLocaleString()} ${(q.vote_bonus_token || "pff").toUpperCase()}
-                    </span>
-                  )}
                   {q.milestone_id && (() => {
                     const ms = milestones.find((m) => m.id === q.milestone_id);
                     return ms ? (
