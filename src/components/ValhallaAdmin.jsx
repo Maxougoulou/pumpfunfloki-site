@@ -2241,16 +2241,6 @@ function TelegramTab() {
           </button>
         </div>
       </div>
-
-      {/* Setup instructions */}
-      <div className="glass rounded-2xl border border-white/5 p-5 grid gap-2 text-xs text-white/50">
-        <div className="text-white/70 font-bold text-sm mb-1">⚙️ Webhook Setup</div>
-        <p>After deploying, activate the webhook once by visiting this URL in your browser:</p>
-        <code className="block bg-white/[0.04] rounded-lg px-3 py-2 text-neon-400 break-all">
-          https://api.telegram.org/bot[TOKEN]/setWebhook?url=https://pumpfunfloki.vercel.app/api/telegram
-        </code>
-        <p className="mt-1">Replace <b>[TOKEN]</b> with your <code>TELEGRAM_BOT_TOKEN</code>. Only needs to be done once.</p>
-      </div>
     </div>
   );
 }
