@@ -1748,8 +1748,14 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
                 <p className="mt-3 text-sm text-white/80 leading-relaxed">{q.desc}</p>
 
                 {/* Reward highlight block */}
-                {(q.fixed_reward_amount > 0 || (q.vote_threshold > 0 && q.vote_bonus_amount > 0)) && (
+                {(q.reward || q.fixed_reward_amount > 0 || (q.vote_threshold > 0 && q.vote_bonus_amount > 0)) && (
                   <div className="mt-4 rounded-xl border border-yellow-400/25 bg-yellow-400/[0.06] px-4 py-3 flex flex-col gap-2">
+                    {q.reward && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-300 text-base">🎁</span>
+                        <div className="text-yellow-200 font-bold text-sm leading-snug">{q.reward}</div>
+                      </div>
+                    )}
                     {q.fixed_reward_amount > 0 && (
                       <div className="flex items-center gap-2">
                         <span className="text-yellow-300 text-base">💰</span>
@@ -1777,7 +1783,6 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
 
                 <div className="mt-auto pt-4 flex flex-wrap gap-2">
                   <Badge>{q.difficulty}</Badge>
-                  <Badge tone="good">{q.reward}</Badge>
                   <Badge>proof: {q.proofType}</Badge>
                   {q.points > 0 && <Badge tone="good">{q.points} pts</Badge>}
                   {q.milestone_id && (() => {
