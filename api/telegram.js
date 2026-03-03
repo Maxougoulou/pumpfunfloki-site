@@ -33,6 +33,68 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  // ── Admin: PFF Oracle — generate X content via Claude ─────────────
+  if (req.method === "POST" && req.body?.action === "oracle") {
+    if (!requireAdmin(req)) return res.status(401).json({ error: "unauthorized" });
+    const { mode, target_tweet, trends, signal, market_energy } = req.body;
+    if (!mode) return res.status(400).json({ error: "missing-mode" });
+
+    const SYSTEM = `Tu es le PFF Oracle — la voix officielle de $PFF (PumpFunFloki) sur X (Twitter).
+
+LOIS DE VOIX — INVIOLABLES :
+1. JAMAIS mention du prix, market cap, ou conseil financier
+2. JAMAIS sonner comme un compte marketing ou un bot
+3. 1 à 3 lignes MAXIMUM par tweet — moins c'est plus
+4. Parler en métaphore Viking, imagerie de bataille, prophétie ancienne — jamais de littéral
+5. Ton : féroce, malicieux, intrépide, cryptique, occasionnellement chaotique
+6. Maximum 1 hashtag si vraiment essentiel. Ne pas mettre $PFF dans chaque post.
+7. Le Viking est éternel. PFF est un raid, un mouvement, une Horde — pas juste un token.
+8. Pas de ponctuation excessive. Pas d'emojis forcés. Chaque mot compte.
+
+MODES :
+- PROPHECY : Tweet oraculaire cryptique. Ex: "The tide does not ask permission. Neither does the Horde."
+- VIKING DROP : Annonce d'un drop à un membre. Utiliser [TAG_USER] comme placeholder. Ex: "This warrior spoke the old tongue. The blessing finds its mark. [TAG_USER]"
+- BURN RITUAL : Annonce de burn. Offrande sacrée Viking, pas un événement tokenomics. Ex: "Another offering to the fire. The cycle does not negotiate."
+- RAID REPLY : Réponse à un tweet. Un fantôme Viking apparu dans un thread moderne.
+
+FORMAT : Génère exactement 3 variantes séparées par ---
+Sans label, sans guillemets, sans préambule. Juste les 3 variantes.`;
+
+    const contextParts = [];
+    if (target_tweet) contextParts.push(`Tweet cible : "${target_tweet}"`);
+    if (trends) contextParts.push(`Trends du moment : ${trends}`);
+    if (signal) contextParts.push(`Signal caché à infuser : ${signal}`);
+    if (market_energy) contextParts.push(`Énergie de marché : ${market_energy}`);
+    const context = contextParts.length ? `\n\nCONTEXTE :\n${contextParts.join("\n")}` : "";
+
+    const userMsg = `Génère 3 variantes pour MODE ${mode}.${context}`;
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "missing-anthropic-key" });
+
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 512,
+        system: SYSTEM,
+        messages: [{ role: "user", content: userMsg }],
+      }),
+    });
+
+    const j = await r.json();
+    if (!r.ok) return res.status(500).json({ error: "claude-error", detail: j });
+
+    const raw = j?.content?.[0]?.text || "";
+    const variants = raw.split(/\n?---\n?/).map((v) => v.trim()).filter(Boolean).slice(0, 3);
+    return res.status(200).json({ ok: true, variants });
+  }
+
   // ── Telegram webhook ───────────────────────────────────────────────
   if (req.method === "POST") {
     const update = req.body;

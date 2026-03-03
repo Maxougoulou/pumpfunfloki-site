@@ -1028,6 +1028,7 @@ export default function ValhallaAdmin() {
     ["airdrop", "💰 Airdrop"],
     ["milestones", "🏆 Milestones"],
     ["telegram", "📣 Telegram"],
+    ["oracle", "🔮 Oracle"],
   ];
 
   return (
@@ -2140,6 +2141,9 @@ export default function ValhallaAdmin() {
       {/* ── Telegram tab ────────────────────────────────────────── */}
       {tab === "telegram" && <TelegramTab />}
 
+      {/* ── Oracle tab ───────────────────────────────────────────── */}
+      {tab === "oracle" && <OracleTab />}
+
       </div>{/* /max-w-6xl */}
     </main>
   );
@@ -2246,6 +2250,160 @@ function TelegramTab() {
           https://api.telegram.org/bot[TOKEN]/setWebhook?url=https://pumpfunfloki.vercel.app/api/telegram
         </code>
         <p className="mt-1">Replace <b>[TOKEN]</b> with your <code>TELEGRAM_BOT_TOKEN</code>. Only needs to be done once.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── PFF Oracle tab ─────────────────────────────────────────────────
+function OracleTab() {
+  const MODES = [
+    { id: "PROPHECY",    label: "🔮 Prophecy",    desc: "Tweet oraculaire cryptique" },
+    { id: "VIKING DROP", label: "⚡ Viking Drop",  desc: "Annonce de drop à un membre" },
+    { id: "BURN RITUAL", label: "🔥 Burn Ritual",  desc: "Annonce de burn de tokens" },
+    { id: "RAID REPLY",  label: "🗡️ Raid Reply",   desc: "Réponse à un tweet viral" },
+  ];
+
+  const [mode, setMode] = useState("PROPHECY");
+  const [targetTweet, setTargetTweet] = useState("");
+  const [trends, setTrends] = useState("");
+  const [signal, setSignal] = useState("");
+  const [marketEnergy, setMarketEnergy] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [variants, setVariants] = useState([]);
+  const [err, setErr] = useState("");
+  const [copied, setCopied] = useState(null);
+
+  async function generate() {
+    setLoading(true);
+    setErr("");
+    setVariants([]);
+    const r = await fetch("/api/telegram", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        action: "oracle",
+        mode,
+        target_tweet: targetTweet || undefined,
+        trends: trends || undefined,
+        signal: signal || undefined,
+        market_energy: marketEnergy || undefined,
+      }),
+    });
+    const j = await r.json();
+    setLoading(false);
+    if (!r.ok) { setErr(j?.error || "error"); return; }
+    setVariants(j.variants || []);
+  }
+
+  function copy(text, idx) {
+    navigator.clipboard.writeText(text);
+    setCopied(idx);
+    setTimeout(() => setCopied(null), 2000);
+  }
+
+  const inputCls = "w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40 placeholder:text-white/25 resize-none";
+
+  return (
+    <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Left — inputs */}
+      <Card>
+        <div className="text-white font-extrabold text-lg mb-1">🔮 PFF Oracle</div>
+        <div className="text-white/40 text-xs mb-5">Génère du contenu X dans la voix Viking. Tu valides avant de poster.</div>
+
+        {/* Mode selector */}
+        <div className="text-xs text-white/60 mb-2">Mode</div>
+        <div className="grid grid-cols-2 gap-2 mb-5">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              className={`rounded-xl border px-3 py-2 text-left transition ${
+                mode === m.id
+                  ? "border-neon-500/60 bg-neon-500/10 text-neon-300"
+                  : "border-white/10 bg-black/20 text-white/60 hover:border-white/25"
+              }`}
+            >
+              <div className="text-sm font-bold">{m.label}</div>
+              <div className="text-[10px] text-white/40 mt-0.5">{m.desc}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Raid reply: target tweet */}
+        {mode === "RAID REPLY" && (
+          <div className="mb-4">
+            <div className="text-xs text-white/60 mb-1">Tweet cible *</div>
+            <textarea
+              rows={3}
+              value={targetTweet}
+              onChange={(e) => setTargetTweet(e.target.value)}
+              placeholder="Colle le tweet ici..."
+              className={inputCls}
+            />
+          </div>
+        )}
+
+        {/* Viking Drop: reminder */}
+        {mode === "VIKING DROP" && (
+          <div className="mb-4 rounded-xl border border-yellow-400/20 bg-yellow-400/[0.05] px-3 py-2 text-xs text-yellow-200/70">
+            [TAG_USER] sera placé automatiquement — remplace-le avant de poster.
+          </div>
+        )}
+
+        {/* Optional context */}
+        <div className="flex flex-col gap-3">
+          <div>
+            <div className="text-xs text-white/60 mb-1">Trends du moment <span className="text-white/30">(optionnel)</span></div>
+            <textarea rows={2} value={trends} onChange={(e) => setTrends(e.target.value)} placeholder="Ex: Bitcoin ATH, Solana trending, meme szn..." className={inputCls} />
+          </div>
+          <div>
+            <div className="text-xs text-white/60 mb-1">Signal caché à infuser <span className="text-white/30">(optionnel — ex: burn dans 48h)</span></div>
+            <input value={signal} onChange={(e) => setSignal(e.target.value)} placeholder="Ex: milestone atteint, airdrop imminent..." className={inputCls} />
+          </div>
+          <div>
+            <div className="text-xs text-white/60 mb-1">Énergie de marché <span className="text-white/30">(optionnel)</span></div>
+            <select value={marketEnergy} onChange={(e) => setMarketEnergy(e.target.value)} className={inputCls}>
+              <option value="">— choisir —</option>
+              <option value="bullish">📈 Bullish</option>
+              <option value="bearish">📉 Bearish</option>
+              <option value="chaotique">⚡ Chaotique</option>
+            </select>
+          </div>
+        </div>
+
+        {err && <div className="mt-3 text-sm text-red-300">{err}</div>}
+
+        <Btn className="mt-5 w-full" onClick={generate} disabled={loading}>
+          {loading ? "L'Oracle consulte les runes…" : "⚔️ Générer 3 variantes"}
+        </Btn>
+      </Card>
+
+      {/* Right — results */}
+      <div className="flex flex-col gap-4">
+        {variants.length === 0 && !loading && (
+          <div className="rounded-2xl border border-white/5 bg-black/10 p-8 text-center text-white/25 text-sm">
+            Les variantes apparaîtront ici
+          </div>
+        )}
+        {loading && (
+          <div className="rounded-2xl border border-neon-500/15 bg-black/10 p-8 text-center text-neon-400/60 text-sm animate-pulse">
+            L'Oracle invoque les runes…
+          </div>
+        )}
+        {variants.map((v, i) => (
+          <div key={i} className="glass rounded-2xl border border-neon-500/15 p-4 flex flex-col gap-3">
+            <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Variante {i + 1}</div>
+            <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{v}</p>
+            <button
+              onClick={() => copy(v, i)}
+              className="self-end rounded-lg border border-neon-500/20 bg-neon-500/[0.06] px-3 py-1 text-xs text-neon-400 hover:bg-neon-500/15 transition"
+            >
+              {copied === i ? "✓ Copié" : "Copier"}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
