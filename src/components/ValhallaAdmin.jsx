@@ -2248,10 +2248,10 @@ function TelegramTab() {
 // ── PFF Oracle tab ─────────────────────────────────────────────────
 function OracleTab() {
   const MODES = [
-    { id: "PROPHECY",    label: "🔮 Prophecy",    desc: "Tweet oraculaire cryptique" },
-    { id: "VIKING DROP", label: "⚡ Viking Drop",  desc: "Annonce de drop à un membre" },
-    { id: "BURN RITUAL", label: "🔥 Burn Ritual",  desc: "Annonce de burn de tokens" },
-    { id: "RAID REPLY",  label: "🗡️ Raid Reply",   desc: "Réponse à un tweet viral" },
+    { id: "PROPHECY",    label: "🔮 Prophecy",    desc: "Cryptic oracle tweet" },
+    { id: "VIKING DROP", label: "⚡ Viking Drop",  desc: "Drop announcement to a member" },
+    { id: "BURN RITUAL", label: "🔥 Burn Ritual",  desc: "Token burn announcement" },
+    { id: "RAID REPLY",  label: "🗡️ Raid Reply",   desc: "Reply to a viral tweet" },
   ];
 
   // Step 1 — Grok scan
@@ -2340,24 +2340,24 @@ function OracleTab() {
         <div className="flex items-center justify-between mb-1">
           <div>
             <div className="text-white font-extrabold text-lg">📡 X Trend Scanner</div>
-            <div className="text-white/40 text-xs mt-0.5">Grok analyse Crypto Twitter en temps réel → viral tweets + sentiment CT</div>
+            <div className="text-white/40 text-xs mt-0.5">Grok scans Crypto Twitter in real time → viral tweets + CT sentiment</div>
           </div>
           <Btn onClick={scan} disabled={scanning} className="text-xs px-4 py-1.5 shrink-0 ml-4">
-            {scanning ? "⚡ Scanning…" : "📡 Scanner X"}
+            {scanning ? "⚡ Scanning…" : "📡 Scan X"}
           </Btn>
         </div>
 
         {scanErr && (
           <div className="mt-3 text-sm text-red-300">
             {scanErr === "missing-xai-key"
-              ? "❌ XAI_API_KEY manquante dans Vercel → Settings → Environment Variables"
+              ? "❌ XAI_API_KEY missing in Vercel → Settings → Environment Variables"
               : `❌ ${scanErr}`}
           </div>
         )}
 
         {scanning && (
           <div className="mt-4 rounded-xl border border-neon-500/15 bg-black/10 p-6 text-center text-neon-400/60 text-sm animate-pulse">
-            Grok scanne Crypto Twitter…
+            Grok scanning Crypto Twitter…
           </div>
         )}
 
@@ -2388,7 +2388,7 @@ function OracleTab() {
             {/* Viral tweets */}
             {scanData.viral_tweets?.length > 0 && (
               <div>
-                <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-2">Tweets Viraux — Cibles de Raid</div>
+                <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-2">Viral Tweets — Raid Targets</div>
                 <div className="flex flex-col gap-2">
                   {scanData.viral_tweets.map((tw, i) => (
                     <div key={i} className="rounded-xl border border-white/8 bg-white/[0.03] p-3 flex justify-between items-start gap-3">
@@ -2413,7 +2413,7 @@ function OracleTab() {
 
         {!scanData && !scanning && !scanErr && (
           <div className="mt-4 rounded-xl border border-white/5 bg-black/10 p-6 text-center text-white/20 text-sm">
-            Lance un scan pour voir les trends Crypto Twitter en temps réel
+            Run a scan to see Crypto Twitter trends in real time
           </div>
         )}
       </Card>
@@ -2422,7 +2422,7 @@ function OracleTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <div className="text-white font-extrabold text-lg mb-1">⚔️ Viking Generator</div>
-          <div className="text-white/40 text-xs mb-4">Claude Opus génère du contenu Viking calibré sur l'énergie du moment.</div>
+          <div className="text-white/40 text-xs mb-4">Claude Opus generates Viking content calibrated to the current market energy.</div>
 
           {/* Mode selector */}
           <div className="text-xs text-white/60 mb-2">Mode</div>
@@ -2446,12 +2446,12 @@ function OracleTab() {
           {/* Raid reply: target tweet */}
           {mode === "RAID REPLY" && (
             <div className="mb-4">
-              <div className="text-xs text-white/60 mb-1">Tweet cible *</div>
+              <div className="text-xs text-white/60 mb-1">Target tweet *</div>
               <textarea
                 rows={3}
                 value={targetTweet}
                 onChange={(e) => setTargetTweet(e.target.value)}
-                placeholder="Colle le tweet ici ou clique 🗡️ Raid ci-dessus…"
+                placeholder="Paste the tweet here or click 🗡️ Raid above…"
                 className={inputCls}
               />
             </div>
@@ -2459,16 +2459,16 @@ function OracleTab() {
 
           {mode === "VIKING DROP" && (
             <div className="mb-4 rounded-xl border border-yellow-400/20 bg-yellow-400/[0.05] px-3 py-2 text-xs text-yellow-200/70">
-              [TAG_USER] sera placé automatiquement — remplace-le avant de poster.
+              [TAG_USER] will be placed automatically — replace it before posting.
             </div>
           )}
 
           <div>
-            <div className="text-xs text-white/60 mb-1">Signal caché <span className="text-white/30">(optionnel)</span></div>
+            <div className="text-xs text-white/60 mb-1">Hidden signal <span className="text-white/30">(optional)</span></div>
             <input
               value={signal}
               onChange={(e) => setSignal(e.target.value)}
-              placeholder="Ex: burn dans 48h, milestone atteint, airdrop imminent…"
+              placeholder="Ex: burn in 48h, milestone reached, airdrop incoming…"
               className={inputCls}
             />
           </div>
@@ -2476,13 +2476,13 @@ function OracleTab() {
           {genErr && (
             <div className="mt-3 text-sm text-red-300">
               {genErr === "missing-anthropic-key"
-                ? "❌ ANTHROPIC_API_KEY manquante dans Vercel → Settings → Environment Variables"
+                ? "❌ ANTHROPIC_API_KEY missing in Vercel → Settings → Environment Variables"
                 : `❌ ${genErr}`}
             </div>
           )}
 
           <Btn className="mt-5 w-full" onClick={generate} disabled={generating}>
-            {generating ? "⚡ L'Oracle forge le texte…" : "⚔️ Générer 3 variantes"}
+            {generating ? "⚡ Oracle is forging the text…" : "⚔️ Generate 3 variants"}
           </Btn>
         </Card>
 
@@ -2490,7 +2490,7 @@ function OracleTab() {
         <div className="flex flex-col gap-4">
           {liveCtx.length > 0 && (
             <div className="rounded-xl border border-neon-500/10 bg-neon-500/[0.03] px-4 py-3">
-              <div className="text-[10px] text-neon-400/50 font-bold uppercase tracking-widest mb-2">Intelligence live analysée</div>
+              <div className="text-[10px] text-neon-400/50 font-bold uppercase tracking-widest mb-2">Live intelligence analysed</div>
               {liveCtx.map((line, i) => (
                 <div key={i} className="text-[11px] text-white/40 leading-relaxed">{line}</div>
               ))}
@@ -2499,24 +2499,24 @@ function OracleTab() {
 
           {variants.length === 0 && !generating && (
             <div className="rounded-2xl border border-white/5 bg-black/10 p-8 text-center text-white/25 text-sm">
-              Les variantes apparaîtront ici
+              Variants will appear here
             </div>
           )}
           {generating && (
             <div className="rounded-2xl border border-neon-500/15 bg-black/10 p-8 text-center text-neon-400/60 text-sm animate-pulse">
-              Claude forge les variantes Viking…
+              Claude is forging your Viking variants…
             </div>
           )}
           {variants.map((v, i) => (
             <div key={i} className="glass rounded-2xl border border-neon-500/15 p-4 flex flex-col gap-3">
-              <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Variante {i + 1}</div>
+              <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Variant {i + 1}</div>
               <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{v}</p>
               <div className="flex gap-2 self-end">
                 <button
                   onClick={() => copy(v, i)}
                   className="rounded-lg border border-neon-500/20 bg-neon-500/[0.06] px-3 py-1 text-xs text-neon-400 hover:bg-neon-500/15 transition"
                 >
-                  {copied === i ? "✓ Copié" : "Copier"}
+                  {copied === i ? "✓ Copied" : "Copy"}
                 </button>
                 <a
                   href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(v)}`}
@@ -2524,7 +2524,7 @@ function OracleTab() {
                   rel="noreferrer"
                   className="rounded-lg border border-sky-500/30 bg-sky-500/[0.08] px-3 py-1 text-xs text-sky-400 hover:bg-sky-500/20 transition"
                 >
-                  𝕏 Partager
+                  𝕏 Share
                 </a>
               </div>
             </div>
