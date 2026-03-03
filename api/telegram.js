@@ -33,6 +33,71 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  // ── Admin: Oracle scan — Grok searches X live ─────────────────────
+  if (req.method === "POST" && req.body?.action === "oracle-scan") {
+    if (!requireAdmin(req)) return res.status(401).json({ error: "unauthorized" });
+
+    const xaiKey = process.env.XAI_API_KEY;
+    if (!xaiKey) return res.status(500).json({ error: "missing-xai-key" });
+
+    const r = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${xaiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "grok-3-beta",
+        stream: false,
+        search_parameters: {
+          mode: "on",
+          sources: [{ type: "x" }],
+          return_citations: true,
+        },
+        messages: [
+          {
+            role: "system",
+            content: "You are a Crypto Twitter intelligence agent. Your job is to scan X (Twitter) right now and identify high-value engagement opportunities for a Solana meme coin account. Return ONLY valid JSON, no explanation.",
+          },
+          {
+            role: "user",
+            content: `Search X right now and return a JSON object with this exact structure:
+{
+  "sentiment": "bullish" | "bearish" | "chaotic",
+  "sentiment_reason": "one sentence explaining CT vibe right now",
+  "trending_topics": ["topic1", "topic2", "topic3"],
+  "viral_tweets": [
+    {
+      "author": "@handle",
+      "text": "exact tweet text",
+      "why": "why this is a good raid target (chaotic, viral, relevant to meme coins/Solana/CT culture)",
+      "url": "tweet URL if available"
+    }
+  ]
+}
+
+Focus on: Solana ecosystem, meme coins, crypto culture tweets, viral CT drama, big KOL posts. Find 4-5 viral tweets worth replying to. Only return the JSON object.`,
+          },
+        ],
+      }),
+    });
+
+    const j = await r.json();
+    if (!r.ok) return res.status(500).json({ error: "grok-error", detail: j?.error?.message || j });
+
+    const raw = j?.choices?.[0]?.message?.content || "";
+    // Extract JSON from response
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return res.status(500).json({ error: "grok-parse-error", raw });
+
+    try {
+      const data = JSON.parse(jsonMatch[0]);
+      return res.status(200).json({ ok: true, ...data });
+    } catch {
+      return res.status(500).json({ error: "grok-parse-error", raw });
+    }
+  }
+
   // ── Admin: PFF Oracle — generate X content via Claude ─────────────
   if (req.method === "POST" && req.body?.action === "oracle") {
     if (!requireAdmin(req)) return res.status(401).json({ error: "unauthorized" });
