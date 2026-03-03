@@ -2266,11 +2266,10 @@ function OracleTab() {
 
   const [mode, setMode] = useState("PROPHECY");
   const [targetTweet, setTargetTweet] = useState("");
-  const [trends, setTrends] = useState("");
   const [signal, setSignal] = useState("");
-  const [marketEnergy, setMarketEnergy] = useState("");
   const [loading, setLoading] = useState(false);
   const [variants, setVariants] = useState([]);
+  const [liveCtx, setLiveCtx] = useState([]);
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(null);
 
@@ -2278,6 +2277,7 @@ function OracleTab() {
     setLoading(true);
     setErr("");
     setVariants([]);
+    setLiveCtx([]);
     const r = await fetch("/api/telegram", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -2286,15 +2286,14 @@ function OracleTab() {
         action: "oracle",
         mode,
         target_tweet: targetTweet || undefined,
-        trends: trends || undefined,
         signal: signal || undefined,
-        market_energy: marketEnergy || undefined,
       }),
     });
     const j = await r.json();
     setLoading(false);
-    if (!r.ok) { setErr(j?.error || "error"); return; }
+    if (!r.ok) { setErr(j?.error || j?.detail || "error"); return; }
     setVariants(j.variants || []);
+    setLiveCtx(j.live_context || []);
   }
 
   function copy(text, idx) {
@@ -2310,7 +2309,8 @@ function OracleTab() {
       {/* Left — inputs */}
       <Card>
         <div className="text-white font-extrabold text-lg mb-1">🔮 PFF Oracle</div>
-        <div className="text-white/40 text-xs mb-5">Génère du contenu X dans la voix Viking. Tu valides avant de poster.</div>
+        <div className="text-white/40 text-xs mb-1">Analyse le marché en temps réel et génère du contenu Viking calibré sur l'énergie du moment.</div>
+        <div className="text-neon-400/50 text-[10px] mb-5">↳ DexScreener · CoinGecko trending · Global market — fetché automatiquement</div>
 
         {/* Mode selector */}
         <div className="text-xs text-white/60 mb-2">Mode</div>
@@ -2352,36 +2352,42 @@ function OracleTab() {
           </div>
         )}
 
-        {/* Optional context */}
-        <div className="flex flex-col gap-3">
-          <div>
-            <div className="text-xs text-white/60 mb-1">Trends du moment <span className="text-white/30">(optionnel)</span></div>
-            <textarea rows={2} value={trends} onChange={(e) => setTrends(e.target.value)} placeholder="Ex: Bitcoin ATH, Solana trending, meme szn..." className={inputCls} />
-          </div>
-          <div>
-            <div className="text-xs text-white/60 mb-1">Signal caché à infuser <span className="text-white/30">(optionnel — ex: burn dans 48h)</span></div>
-            <input value={signal} onChange={(e) => setSignal(e.target.value)} placeholder="Ex: milestone atteint, airdrop imminent..." className={inputCls} />
-          </div>
-          <div>
-            <div className="text-xs text-white/60 mb-1">Énergie de marché <span className="text-white/30">(optionnel)</span></div>
-            <select value={marketEnergy} onChange={(e) => setMarketEnergy(e.target.value)} className={inputCls}>
-              <option value="">— choisir —</option>
-              <option value="bullish">📈 Bullish</option>
-              <option value="bearish">📉 Bearish</option>
-              <option value="chaotique">⚡ Chaotique</option>
-            </select>
-          </div>
+        {/* Signal caché — seul champ manuel restant */}
+        <div>
+          <div className="text-xs text-white/60 mb-1">Signal caché à infuser <span className="text-white/30">(optionnel)</span></div>
+          <input
+            value={signal}
+            onChange={(e) => setSignal(e.target.value)}
+            placeholder="Ex: burn dans 48h, milestone atteint, airdrop imminent…"
+            className={inputCls}
+          />
         </div>
 
-        {err && <div className="mt-3 text-sm text-red-300">{err}</div>}
+        {err && (
+          <div className="mt-3 text-sm text-red-300">
+            {err === "missing-anthropic-key"
+              ? "❌ ANTHROPIC_API_KEY manquante dans Vercel → Settings → Environment Variables"
+              : `❌ ${err}`}
+          </div>
+        )}
 
         <Btn className="mt-5 w-full" onClick={generate} disabled={loading}>
-          {loading ? "L'Oracle consulte les runes…" : "⚔️ Générer 3 variantes"}
+          {loading ? "⚡ L'Oracle analyse le marché…" : "⚔️ Générer 3 variantes"}
         </Btn>
       </Card>
 
       {/* Right — results */}
       <div className="flex flex-col gap-4">
+        {/* Live context fetched */}
+        {liveCtx.length > 0 && (
+          <div className="rounded-xl border border-neon-500/10 bg-neon-500/[0.03] px-4 py-3">
+            <div className="text-[10px] text-neon-400/50 font-bold uppercase tracking-widest mb-2">Intelligence live analysée</div>
+            {liveCtx.map((line, i) => (
+              <div key={i} className="text-[11px] text-white/40 leading-relaxed">{line}</div>
+            ))}
+          </div>
+        )}
+
         {variants.length === 0 && !loading && (
           <div className="rounded-2xl border border-white/5 bg-black/10 p-8 text-center text-white/25 text-sm">
             Les variantes apparaîtront ici
@@ -2389,7 +2395,7 @@ function OracleTab() {
         )}
         {loading && (
           <div className="rounded-2xl border border-neon-500/15 bg-black/10 p-8 text-center text-neon-400/60 text-sm animate-pulse">
-            L'Oracle invoque les runes…
+            Analyse DexScreener · CoinGecko · Global market…
           </div>
         )}
         {variants.map((v, i) => (

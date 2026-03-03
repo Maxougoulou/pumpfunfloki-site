@@ -36,10 +36,61 @@ export default async function handler(req, res) {
   // ── Admin: PFF Oracle — generate X content via Claude ─────────────
   if (req.method === "POST" && req.body?.action === "oracle") {
     if (!requireAdmin(req)) return res.status(401).json({ error: "unauthorized" });
-    const { mode, target_tweet, trends, signal, market_energy } = req.body;
+    const { mode, target_tweet, signal } = req.body;
     if (!mode) return res.status(400).json({ error: "missing-mode" });
 
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "missing-anthropic-key" });
+
+    // ── 1. Fetch live market intelligence in parallel ──────────────
+    const to = (ms) => AbortSignal.timeout(ms);
+    const [dexRes, geckoRes, globalRes] = await Promise.allSettled([
+      fetch(`https://api.dexscreener.com/latest/dex/tokens/${CONTRACT}`, { signal: to(4000) }).then(r => r.json()),
+      fetch("https://api.coingecko.com/api/v3/search/trending", { signal: to(4000) }).then(r => r.json()),
+      fetch("https://api.coingecko.com/api/v3/global", { signal: to(4000) }).then(r => r.json()),
+    ]);
+
+    const liveLines = [];
+
+    // $PFF market
+    try {
+      const pair = dexRes.value?.pairs?.[0];
+      if (pair) {
+        const ch = Number(pair.priceChange?.h24 || 0);
+        const dir = ch > 5 ? "strong bullish surge" : ch > 0 ? "slight upward drift" : ch < -10 ? "heavy sell pressure" : ch < 0 ? "slight dip" : "flat";
+        liveLines.push(`$PFF market energy right now: ${dir} (${ch > 0 ? "+" : ""}${ch.toFixed(1)}% 24h), vol $${Math.round(pair.volume?.h24 || 0).toLocaleString()}`);
+      }
+    } catch {}
+
+    // CoinGecko trending coins
+    try {
+      const trending = geckoRes.value?.coins?.slice(0, 6).map(c => c.item?.name).filter(Boolean) || [];
+      if (trending.length) liveLines.push(`Trending coins on crypto Twitter right now: ${trending.join(", ")}`);
+    } catch {}
+
+    // Global market sentiment
+    try {
+      const g = globalRes.value?.data;
+      if (g) {
+        const btcDom = Number(g.market_cap_percentage?.btc || 0).toFixed(1);
+        const totalMcap = g.total_market_cap?.usd ? `$${(g.total_market_cap.usd / 1e12).toFixed(2)}T` : null;
+        const chg = Number(g.market_cap_change_percentage_24h_usd || 0);
+        liveLines.push(`Global crypto: ${totalMcap ? `total mcap ${totalMcap}, ` : ""}${chg > 0 ? "+" : ""}${chg.toFixed(1)}% 24h, BTC dominance ${btcDom}%`);
+      }
+    } catch {}
+
+    const liveContext = liveLines.length
+      ? `\n\nLIVE MARKET INTELLIGENCE (fetched right now — use to calibrate tone and energy, never cite numbers directly):\n${liveLines.join("\n")}`
+      : "";
+
+    const userContext = [];
+    if (target_tweet) userContext.push(`Tweet cible à répondre : "${target_tweet}"`);
+    if (signal) userContext.push(`Signal caché à infuser subtilement : ${signal}`);
+    const manualCtx = userContext.length ? `\n\nCONTEXTE ADMIN :\n${userContext.join("\n")}` : "";
+
+    // ── 2. Build system prompt ──────────────────────────────────────
     const SYSTEM = `Tu es le PFF Oracle — la voix officielle de $PFF (PumpFunFloki) sur X (Twitter).
+Tu reçois des données de marché live. Tu les analyses, tu ressens l'énergie du moment, et tu génères du contenu qui résonne avec ce qui se passe MAINTENANT dans le marché crypto — sans jamais citer de chiffres ni de prix.
 
 LOIS DE VOIX — INVIOLABLES :
 1. JAMAIS mention du prix, market cap, ou conseil financier
@@ -50,28 +101,22 @@ LOIS DE VOIX — INVIOLABLES :
 6. Maximum 1 hashtag si vraiment essentiel. Ne pas mettre $PFF dans chaque post.
 7. Le Viking est éternel. PFF est un raid, un mouvement, une Horde — pas juste un token.
 8. Pas de ponctuation excessive. Pas d'emojis forcés. Chaque mot compte.
+9. Utilise l'énergie du marché pour calibrer le ton — marché rouge = combativité et résilience, vert = conquête et momentum. Jamais de façon littérale.
 
 MODES :
 - PROPHECY : Tweet oraculaire cryptique. Ex: "The tide does not ask permission. Neither does the Horde."
 - VIKING DROP : Annonce d'un drop à un membre. Utiliser [TAG_USER] comme placeholder. Ex: "This warrior spoke the old tongue. The blessing finds its mark. [TAG_USER]"
 - BURN RITUAL : Annonce de burn. Offrande sacrée Viking, pas un événement tokenomics. Ex: "Another offering to the fire. The cycle does not negotiate."
-- RAID REPLY : Réponse à un tweet. Un fantôme Viking apparu dans un thread moderne.
+- RAID REPLY : Réponse percutante à un tweet spécifique. Un fantôme Viking surgit dans un thread moderne.
 
 FORMAT : Génère exactement 3 variantes séparées par ---
-Sans label, sans guillemets, sans préambule. Juste les 3 variantes.`;
+Sans label, sans guillemets, sans préambule. Juste les 3 variantes brutes.`;
 
-    const contextParts = [];
-    if (target_tweet) contextParts.push(`Tweet cible : "${target_tweet}"`);
-    if (trends) contextParts.push(`Trends du moment : ${trends}`);
-    if (signal) contextParts.push(`Signal caché à infuser : ${signal}`);
-    if (market_energy) contextParts.push(`Énergie de marché : ${market_energy}`);
-    const context = contextParts.length ? `\n\nCONTEXTE :\n${contextParts.join("\n")}` : "";
+    const userMsg = `MODE : ${mode}${liveContext}${manualCtx}
 
-    const userMsg = `Génère 3 variantes pour MODE ${mode}.${context}`;
+Analyse l'énergie du marché et génère 3 variantes adaptées au moment présent.`;
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "missing-anthropic-key" });
-
+    // ── 3. Call Claude ──────────────────────────────────────────────
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -80,19 +125,19 @@ Sans label, sans guillemets, sans préambule. Juste les 3 variantes.`;
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 512,
+        model: "claude-opus-4-6",
+        max_tokens: 600,
         system: SYSTEM,
         messages: [{ role: "user", content: userMsg }],
       }),
     });
 
     const j = await r.json();
-    if (!r.ok) return res.status(500).json({ error: "claude-error", detail: j });
+    if (!r.ok) return res.status(500).json({ error: "claude-error", detail: j?.error?.message || j });
 
     const raw = j?.content?.[0]?.text || "";
     const variants = raw.split(/\n?---\n?/).map((v) => v.trim()).filter(Boolean).slice(0, 3);
-    return res.status(200).json({ ok: true, variants });
+    return res.status(200).json({ ok: true, variants, live_context: liveLines });
   }
 
   // ── Telegram webhook ───────────────────────────────────────────────
