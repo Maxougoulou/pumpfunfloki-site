@@ -1750,7 +1750,7 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
                   </div>
                 </div>
 
-                <p className="mt-3 text-sm text-white/80 leading-relaxed">{q.desc}</p>
+                <p className="mt-3 text-sm text-white/75 leading-relaxed whitespace-pre-line">{q.desc}</p>
 
                 {/* Reward highlight block */}
                 {(q.reward || q.fixed_reward_amount > 0 || (q.vote_threshold > 0 && q.vote_bonus_amount > 0)) && (
