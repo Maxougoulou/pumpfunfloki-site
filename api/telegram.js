@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "grok-3-beta",
+        model: "grok-2-1212",
         stream: false,
         search_parameters: {
           mode: "on",
@@ -83,7 +83,7 @@ Focus on: Solana ecosystem, meme coins, crypto culture tweets, viral CT drama, b
     });
 
     const j = await r.json();
-    if (!r.ok) return res.status(500).json({ error: "grok-error", detail: j?.error?.message || j });
+    if (!r.ok) return res.status(500).json({ error: "grok-error", detail: j?.error?.message || j?.error || JSON.stringify(j) });
 
     const raw = j?.choices?.[0]?.message?.content || "";
     // Extract JSON from response

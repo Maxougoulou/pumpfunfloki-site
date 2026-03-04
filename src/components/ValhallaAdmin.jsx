@@ -2502,7 +2502,7 @@ function OracleTab() {
     });
     const j = await r.json();
     setScanning(false);
-    if (!r.ok) { setScanErr(j?.error || j?.detail || "scan-error"); return; }
+    if (!r.ok) { setScanErr(j?.detail || j?.error || "scan-error"); return; }
     setScanData(j);
   }
 
