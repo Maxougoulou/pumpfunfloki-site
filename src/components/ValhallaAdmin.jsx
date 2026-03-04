@@ -1194,7 +1194,9 @@ export default function ValhallaAdmin() {
                         <div className="min-w-0">
                           <div className="text-white font-extrabold">
                             {s.handle}{" "}
-                            <span className="text-white/50 text-xs">({s.quest_id})</span>
+                            <span className="text-white/50 text-xs">
+                              ({quests.find(q => q.id === s.quest_id)?.title || s.quest_id})
+                            </span>
                           </div>
                           <div className="text-white/60 text-xs">
                             {new Date(s.created_at).toLocaleString()}
@@ -1257,7 +1259,11 @@ export default function ValhallaAdmin() {
                       </div>
                     </div>
 
-                    <div className="mt-3 text-white/85 text-sm whitespace-pre-wrap">{s.proof}</div>
+                    <div className="mt-3 text-white/85 text-sm whitespace-pre-wrap">
+                      {/^https?:\/\//i.test(s.proof) ? (
+                        <a href={s.proof} target="_blank" rel="noreferrer" className="text-neon-400 hover:underline break-all">{s.proof}</a>
+                      ) : s.proof}
+                    </div>
                     {s.note ? (
                       <div className="mt-2 text-white/60 text-xs">Note: {s.note}</div>
                     ) : null}
