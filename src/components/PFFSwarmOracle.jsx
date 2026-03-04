@@ -1523,10 +1523,13 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
     setLocalSubmissions(loadSubmissions());
   }, []);
 
-  const submittedQuestIds = useMemo(
-    () => new Set(localSubmissions.map((s) => s.questId)),
-    [localSubmissions]
-  );
+  const submittedQuestCounts = useMemo(() => {
+    const map = new Map();
+    for (const s of localSubmissions) {
+      map.set(s.questId, (map.get(s.questId) || 0) + 1);
+    }
+    return map;
+  }, [localSubmissions]);
 
   useEffect(() => {
     supabase
@@ -1572,7 +1575,7 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
         setTimeout(() => setToast(null), 2500);
         return true;
       } catch (e) {
-        if (e.message === "already-submitted") throw e; // re-throw → modal affiche l'erreur, pas de fallback local
+        if (e.message === "max-submissions") throw e; // re-throw → modal affiche l'erreur
         setToast({ tone: "warn", msg: `Backend not ready (${e.message}). Saved locally.` });
         setTimeout(() => setToast(null), 3200);
       }
@@ -1721,8 +1724,10 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="flex items-center gap-1.5">
-                      {submittedQuestIds.has(q.id) && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-neon-500/40 bg-neon-500/10 text-neon-300">✓ Submitted</span>
+                      {submittedQuestCounts.has(q.id) && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-neon-500/40 bg-neon-500/10 text-neon-300">
+                          ✓ {submittedQuestCounts.get(q.id)}/3
+                        </span>
                       )}
                       <button
                         type="button"
@@ -1864,8 +1869,8 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
     try {
       await onSubmit({ handle: handle.trim(), proof: proof.trim(), note: note.trim(), wallet_address: walletAddress.trim() });
     } catch (e) {
-      const msg = e?.message === "already-submitted"
-        ? "⚠️ You already submitted this quest."
+      const msg = e?.message === "max-submissions"
+        ? "⚠️ Max 3 submissions per quest reached."
         : e?.message || "Submission failed. Please try again.";
       setErrMsg(msg);
       setSubmitting(false);

@@ -123,6 +123,18 @@ export default async function handler(req, res) {
     }
 
     const db = supabaseAdmin();
+
+    // Max 3 submissions per (quest_id, handle)
+    const { count: existingCount } = await db
+      .from("submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("quest_id", String(quest_id))
+      .eq("handle", String(handle).slice(0, 80));
+
+    if ((existingCount ?? 0) >= 3) {
+      return res.status(409).json({ error: "max-submissions", message: "Max 3 submissions per quest reached." });
+    }
+
     const { data, error } = await db
       .from("submissions")
       .insert([
@@ -142,14 +154,9 @@ export default async function handler(req, res) {
       .select()
       .single();
 
-    if (error) {
-      if (error.code === "23505") {
-        return res.status(409).json({ error: "already-submitted", message: "You already submitted this quest with this handle." });
-      }
-      return res.status(500).json({ error: "db-error", details: error });
-    }
+    if (error) return res.status(500).json({ error: "db-error", details: error });
 
-    return res.status(200).json({ ok: true, submission: data });
+    return res.status(200).json({ ok: true, submission: data, submissions_count: (existingCount ?? 0) + 1 });
   } catch (e) {
     return res.status(500).json({ error: "server-error", message: e?.message });
   }
