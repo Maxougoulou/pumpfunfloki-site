@@ -40,43 +40,35 @@ export default async function handler(req, res) {
     const xaiKey = process.env.XAI_API_KEY;
     if (!xaiKey) return res.status(500).json({ error: "missing-xai-key" });
 
-    const r = await fetch("https://api.x.ai/v1/chat/completions", {
+    const r = await fetch("https://api.x.ai/v1/responses", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${xaiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "grok-2-1212",
+        model: "grok-3-mini-fast",
         stream: false,
-        search_parameters: {
-          mode: "on",
-          sources: [{ type: "x" }],
-          return_citations: true,
-        },
-        messages: [
-          {
-            role: "system",
-            content: "You are a Crypto Twitter intelligence agent. Your job is to scan X (Twitter) right now and identify high-value engagement opportunities for a Solana meme coin account. Return ONLY valid JSON, no explanation.",
-          },
+        tools: [{ type: "x_search" }],
+        input: [
           {
             role: "user",
-            content: `Search X right now and return a JSON object with this exact structure:
+            content: `You are a Crypto Twitter intelligence agent. Search X right now for the latest activity in Solana, meme coins, and Crypto Twitter culture. Return ONLY a valid JSON object with this exact structure (no explanation, no markdown):
 {
   "sentiment": "bullish" | "bearish" | "chaotic",
   "sentiment_reason": "one sentence explaining CT vibe right now",
   "trending_topics": ["topic1", "topic2", "topic3"],
   "viral_tweets": [
     {
-      "author": "@handle",
+      "author": "handle without @",
       "text": "exact tweet text",
-      "why": "why this is a good raid target (chaotic, viral, relevant to meme coins/Solana/CT culture)",
+      "why": "why this is a good raid target",
       "url": "tweet URL if available"
     }
   ]
 }
 
-Focus on: Solana ecosystem, meme coins, crypto culture tweets, viral CT drama, big KOL posts. Find 4-5 viral tweets worth replying to. Only return the JSON object.`,
+Focus on: Solana ecosystem, meme coins, crypto culture tweets, viral CT drama, big KOL posts. Find 4-5 viral tweets worth replying to.`,
           },
         ],
       }),
@@ -85,8 +77,19 @@ Focus on: Solana ecosystem, meme coins, crypto culture tweets, viral CT drama, b
     const j = await r.json();
     if (!r.ok) return res.status(500).json({ error: "grok-error", detail: j?.error?.message || j?.error || JSON.stringify(j) });
 
-    const raw = j?.choices?.[0]?.message?.content || "";
-    // Extract JSON from response
+    // Responses API: extract text from output array
+    let raw = "";
+    for (const item of j?.output || []) {
+      if (item.type === "message") {
+        for (const c of item.content || []) {
+          if (c.type === "output_text") { raw = c.text; break; }
+        }
+      }
+      if (raw) break;
+    }
+    // Fallback: also try choices format
+    if (!raw) raw = j?.choices?.[0]?.message?.content || "";
+
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return res.status(500).json({ error: "grok-parse-error", raw });
 
