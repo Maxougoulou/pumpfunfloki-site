@@ -674,6 +674,9 @@ export default function ValhallaAdmin() {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiErr, setAiErr] = useState("");
+  const [editingQuestId, setEditingQuestId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
 
   // Auto-calculate points from type × difficulty
   const BASE_PTS = { raid: 10, art: 15, lore: 8, oracle: 12 };
@@ -925,6 +928,42 @@ export default function ValhallaAdmin() {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { setQuestErr(j?.error || "failed-to-delete-quest"); return; }
+    await loadQuests();
+  }
+
+  function startEditQuest(q) {
+    setEditingQuestId(q.id);
+    setEditForm({
+      title: q.title || "",
+      description: q.description || "",
+      type: q.type || "raid",
+      difficulty: q.difficulty || "easy",
+      reward: q.reward || "",
+      proof_type: q.proof_type || "text",
+      time_window: q.time_window || "",
+      status: q.status || "LIVE",
+      points: String(q.points ?? 0),
+      fixed_reward_amount: String(q.fixed_reward_amount ?? 0),
+      fixed_reward_token: q.fixed_reward_token || "pff",
+      vote_threshold: String(q.vote_threshold ?? 0),
+      vote_bonus_amount: String(q.vote_bonus_amount ?? 0),
+      vote_bonus_token: q.vote_bonus_token || "pff",
+    });
+  }
+
+  async function saveEditQuest() {
+    setEditSaving(true);
+    const r = await fetch("/api/admin-quests", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id: editingQuestId, ...editForm }),
+    });
+    const j = await r.json().catch(() => ({}));
+    setEditSaving(false);
+    if (!r.ok) { setQuestErr(j?.error || "failed-to-update-quest"); return; }
+    setEditingQuestId(null);
+    setEditForm({});
     await loadQuests();
   }
 
@@ -1681,25 +1720,129 @@ export default function ValhallaAdmin() {
               <div className="mt-4 text-white/60">No quests yet.</div>
             ) : (
               <div className="mt-5 grid gap-3">
-                {quests.map((q) => (
-                  <div key={q.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-white font-extrabold truncate">
-                          {q.title}{" "}
-                          <span className="text-white/50 text-xs">({q.id})</span>
+                {quests.map((q) => {
+                  const isEditing = editingQuestId === q.id;
+                  const iCls = "w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40 placeholder:text-white/25";
+                  const sCls = `${iCls} appearance-none`;
+                  return (
+                    <div key={q.id} className="rounded-2xl border border-neon-500/10 bg-black/20 p-4">
+                      {/* Header row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-white font-extrabold truncate">
+                            {q.title}{" "}
+                            <span className="text-white/50 text-xs">({q.id})</span>
+                          </div>
+                          <div className="mt-1 text-xs text-white/60">
+                            {q.status} • {q.type} • {q.difficulty} • proof:{q.proof_type} • {q.time_window}
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-white/60">
-                          {q.status} • {q.type} • {q.difficulty} • proof:{q.proof_type} • {q.time_window}
+                        <div className="flex gap-2 shrink-0">
+                          <Btn tone="outline" onClick={() => isEditing ? setEditingQuestId(null) : startEditQuest(q)}>
+                            {isEditing ? "Cancel" : "Edit"}
+                          </Btn>
+                          <Btn tone="outline" onClick={() => deleteQuest(q.id)}>Delete</Btn>
                         </div>
                       </div>
-                      <Btn tone="outline" onClick={() => deleteQuest(q.id)}>Delete</Btn>
+
+                      {!isEditing && q.description && (
+                        <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap">{q.description}</div>
+                      )}
+
+                      {/* Inline edit form */}
+                      {isEditing && (
+                        <div className="mt-4 grid gap-3 border-t border-white/5 pt-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Title</div>
+                              <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} className={iCls} />
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Reward label</div>
+                              <input value={editForm.reward} onChange={e => setEditForm(f => ({ ...f, reward: e.target.value }))} className={iCls} />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-white/50 mb-1">Description</div>
+                            <textarea rows={3} value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} className={iCls} />
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Type</div>
+                              <select value={editForm.type} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))} className={sCls}>
+                                {["raid","art","lore","oracle"].map(v => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Difficulty</div>
+                              <select value={editForm.difficulty} onChange={e => setEditForm(f => ({ ...f, difficulty: e.target.value }))} className={sCls}>
+                                {["easy","medium","hard"].map(v => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Proof type</div>
+                              <select value={editForm.proof_type} onChange={e => setEditForm(f => ({ ...f, proof_type: e.target.value }))} className={sCls}>
+                                {["text","link","image"].map(v => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Status</div>
+                              <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} className={sCls}>
+                                {["LIVE","HIDDEN"].map(v => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Time window</div>
+                              <input value={editForm.time_window} onChange={e => setEditForm(f => ({ ...f, time_window: e.target.value }))} className={iCls} />
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Points</div>
+                              <input type="number" value={editForm.points} onChange={e => setEditForm(f => ({ ...f, points: e.target.value }))} className={iCls} />
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Fixed reward</div>
+                              <input type="number" value={editForm.fixed_reward_amount} onChange={e => setEditForm(f => ({ ...f, fixed_reward_amount: e.target.value }))} className={iCls} />
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Token</div>
+                              <select value={editForm.fixed_reward_token} onChange={e => setEditForm(f => ({ ...f, fixed_reward_token: e.target.value }))} className={sCls}>
+                                <option value="pff">PFF</option>
+                                <option value="sol">SOL</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Vote threshold</div>
+                              <input type="number" value={editForm.vote_threshold} onChange={e => setEditForm(f => ({ ...f, vote_threshold: e.target.value }))} className={iCls} />
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Vote bonus</div>
+                              <input type="number" value={editForm.vote_bonus_amount} onChange={e => setEditForm(f => ({ ...f, vote_bonus_amount: e.target.value }))} className={iCls} />
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Bonus token</div>
+                              <select value={editForm.vote_bonus_token} onChange={e => setEditForm(f => ({ ...f, vote_bonus_token: e.target.value }))} className={sCls}>
+                                <option value="pff">PFF</option>
+                                <option value="sol">SOL</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <Btn onClick={saveEditQuest} disabled={editSaving} className="w-full mt-1">
+                            {editSaving ? "Saving…" : "💾 Save changes"}
+                          </Btn>
+                        </div>
+                      )}
                     </div>
-                    {q.description ? (
-                      <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap">{q.description}</div>
-                    ) : null}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Card>
