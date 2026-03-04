@@ -40,6 +40,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ data });
     }
 
+    // ?view=rewards — all submissions that received an auto-reward
+    if (req.query?.view === "rewards") {
+      const { data, error } = await db
+        .from("submissions")
+        .select("id, handle, quest_id, airdrop_tx, airdrop_amount, created_at, wallet_address")
+        .not("airdrop_tx", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) return res.status(500).json({ error: "db-error", details: error });
+      return res.status(200).json({ data });
+    }
+
     const status = (req.query?.status || "pending").toString();
     const { data, error } = await db
       .from("submissions")

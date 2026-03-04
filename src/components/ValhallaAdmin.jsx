@@ -566,6 +566,16 @@ export default function ValhallaAdmin() {
   const [airdropResult, setAirdropResult] = useState(null);
   const [airdropSending, setAirdropSending] = useState(false);
   const [airdropErr, setAirdropErr] = useState("");
+  const [rewardLogs, setRewardLogs] = useState([]);
+  const [rewardLogsLoading, setRewardLogsLoading] = useState(false);
+
+  async function loadRewardLogs() {
+    setRewardLogsLoading(true);
+    const r = await fetch("/api/admin-submissions?view=rewards", { credentials: "include" });
+    const j = await r.json();
+    setRewardLogs(j.data || []);
+    setRewardLogsLoading(false);
+  }
 
   async function loadAirdropData() {
     setAirdropLoading(true);
@@ -973,6 +983,7 @@ export default function ValhallaAdmin() {
     if (tab === "logs") loadLogs();
     if (tab === "quests") { loadQuests(); loadMilestones(); }
     if (tab === "milestones") loadMilestones();
+    if (tab === "airdrop") loadRewardLogs();
     // "actions" tab is self-loading via ActionsTab component
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.admin, tab, subStatus]);
@@ -2061,6 +2072,67 @@ export default function ValhallaAdmin() {
               </div>
             </Card>
           )}
+
+          {/* ── Reward History ──────────────────────────────────── */}
+          <Card>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="text-white font-extrabold">💸 Reward History</div>
+                <div className="text-xs text-white/45 mt-0.5">Auto-rewards sent on submission approval.</div>
+              </div>
+              <Btn tone="outline" onClick={loadRewardLogs} disabled={rewardLogsLoading}>
+                {rewardLogsLoading ? "Loading…" : "↻ Refresh"}
+              </Btn>
+            </div>
+
+            {rewardLogsLoading && <div className="text-white/50 text-sm">Loading…</div>}
+
+            {!rewardLogsLoading && rewardLogs.length === 0 && (
+              <div className="text-white/35 text-sm text-center py-6">No rewards sent yet.</div>
+            )}
+
+            {rewardLogs.length > 0 && (
+              <div className="overflow-x-auto rounded-xl border border-neon-500/10">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/5 text-white/40 text-xs uppercase tracking-wider">
+                      <th className="px-3 py-2.5 text-left">Date</th>
+                      <th className="px-3 py-2.5 text-left">Handle</th>
+                      <th className="px-3 py-2.5 text-left">Quest</th>
+                      <th className="px-3 py-2.5 text-right">Amount</th>
+                      <th className="px-3 py-2.5 text-center">Tx</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rewardLogs.map((r) => (
+                      <tr key={r.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition">
+                        <td className="px-3 py-2.5 text-white/40 text-xs whitespace-nowrap">
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 py-2.5 text-white font-semibold">{r.handle}</td>
+                        <td className="px-3 py-2.5 text-white/60 text-xs">
+                          {quests.find(q => q.id === r.quest_id)?.title || r.quest_id}
+                        </td>
+                        <td className="px-3 py-2.5 text-right text-neon-300 font-bold whitespace-nowrap">
+                          {Number(r.airdrop_amount).toLocaleString()} $PFF
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <a
+                            href={`https://solscan.io/tx/${r.airdrop_tx}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-sky-400 hover:underline font-mono"
+                          >
+                            {r.airdrop_tx.slice(0, 8)}…
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
         </div>
       )}
 
