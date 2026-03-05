@@ -1270,10 +1270,12 @@ export default function ValhallaAdmin() {
                       </div>
                     </div>
 
-                    <div className="mt-3 text-white/85 text-sm whitespace-pre-wrap">
-                      {/^https?:\/\//i.test(s.proof) ? (
-                        <a href={s.proof} target="_blank" rel="noreferrer" className="text-neon-400 hover:underline break-all">{s.proof}</a>
-                      ) : s.proof}
+                    <div className="mt-3 text-sm flex flex-col gap-1">
+                      {s.proof.split(/\s+/).map((token, i) =>
+                        /^https?:\/\//i.test(token)
+                          ? <a key={i} href={token} target="_blank" rel="noreferrer" className="text-neon-400 hover:underline break-all">{token}</a>
+                          : token ? <span key={i} className="text-white/85 break-words">{token}</span> : null
+                      )}
                     </div>
                     {s.note ? (
                       <div className="mt-2 text-white/60 text-xs">Note: {s.note}</div>
