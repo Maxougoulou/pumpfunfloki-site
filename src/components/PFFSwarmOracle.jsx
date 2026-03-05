@@ -812,7 +812,8 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
       {loading ? (
         <div className="text-white/50 text-sm">Loading submissions…</div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 max-h-[780px] overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-neon-500/20">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {submissions.map((sub) => {
             const voteCount = localVotes[sub.id] ?? (sub.vote_count || 0);
             const hasVoted = votedIds.has(sub.id);
@@ -842,11 +843,13 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
                 </div>
 
                 {/* Proof */}
-                <p className="text-xs text-white/70 leading-relaxed line-clamp-3 break-all">
-                  {/^https?:\/\//i.test(sub.proof)
-                    ? <a href={sub.proof} target="_blank" rel="noopener noreferrer" className="text-neon-400 underline underline-offset-2 hover:text-neon-300">{sub.proof}</a>
-                    : sub.proof}
-                </p>
+                <div className="text-xs text-white/70 leading-relaxed flex flex-col gap-1">
+                  {sub.proof.split(/\s+/).map((token, i) =>
+                    /^https?:\/\//i.test(token)
+                      ? <a key={i} href={token} target="_blank" rel="noopener noreferrer" className="text-neon-400 underline underline-offset-2 hover:text-neon-300 break-all">{token}</a>
+                      : token ? <span key={i} className="break-words">{token}</span> : null
+                  )}
+                </div>
 
                 {/* Vote threshold progress */}
                 {threshold > 0 && bonusAmount > 0 && (
@@ -910,6 +913,7 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
               </div>
             );
           })}
+        </div>
         </div>
       )}
     </div>
