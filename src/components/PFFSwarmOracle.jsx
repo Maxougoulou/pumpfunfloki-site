@@ -1676,9 +1676,10 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
 
             {nextMilestone && (
               <div className="mt-3 text-center text-[11px] text-white/35">
+                <span className="text-white/55 font-semibold">{approvedCount}</span>
+                <span> / {nextMilestone} — </span>
                 <span className="text-neon-300 font-extrabold">{nextMilestone - approvedCount}</span>
-                <span> more to reach </span>
-                <span className="text-white/55 font-semibold">{nextMilestone}</span>
+                <span> more to unlock next milestone</span>
               </div>
             )}
           </div>
