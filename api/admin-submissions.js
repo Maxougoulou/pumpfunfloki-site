@@ -210,6 +210,7 @@ export default async function handler(req, res) {
           reply_markup: {
             inline_keyboard: [[
               { text: "🗡️ Vote", callback_data: `vote:${updated.id}` },
+              { text: "𝕏 Share", url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${existing.handle} just completed "${updated.quest_title || existing.quest_id}" on $PFF! ⚔️ Vote for their submission 🗡️\n\npumpfunfloki.com/horde-engine`)}` },
             ]],
           },
         }
