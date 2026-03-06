@@ -368,6 +368,39 @@ function BurnModal({ prefillAmount = "", prefillReason = "", onClose, onSuccess 
   );
 }
 
+// ── Post Leaderboard card ─────────────────────────────────────────
+function PostLeaderboardCard() {
+  const [status, setStatus] = useState(null); // null | "loading" | "ok" | "error"
+
+  async function handlePost() {
+    setStatus("loading");
+    try {
+      const r = await fetch("/api/post-leaderboard", { method: "GET" });
+      const j = await r.json();
+      setStatus(j.ok ? "ok" : "error");
+    } catch {
+      setStatus("error");
+    }
+    setTimeout(() => setStatus(null), 4000);
+  }
+
+  return (
+    <Card>
+      <div className="text-white font-extrabold">Post Leaderboard to Telegram</div>
+      <div className="mt-1 text-xs text-white/55">
+        Sends the current top 10 leaderboard to the Telegram group immediately.
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <Btn tone="outline" onClick={handlePost} disabled={status === "loading"}>
+          {status === "loading" ? "Posting…" : "📊 Post Leaderboard"}
+        </Btn>
+        {status === "ok" && <span className="text-xs text-neon-400">✓ Posted to Telegram</span>}
+        {status === "error" && <span className="text-xs text-red-400">✗ Error — check logs</span>}
+      </div>
+    </Card>
+  );
+}
+
 // ── Actions tab — Milestones + Burn ───────────────────────────────
 function ActionsTab() {
   const [milestones, setMilestones] = useState([]);
@@ -502,6 +535,9 @@ function ActionsTab() {
           </div>
         )}
       </Card>
+
+      {/* Post Leaderboard to Telegram */}
+      <PostLeaderboardCard />
 
       {/* Manual burn — always available */}
       <Card>
