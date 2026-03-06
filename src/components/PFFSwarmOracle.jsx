@@ -1114,7 +1114,7 @@ function LeaderboardPanel({ leaderboard }) {
           text-neon-300
           shadow-[0_0_18px_rgba(0,232,90,.35)]
           backdrop-blur-sm">
-            Top 5
+            {leaderboard.rows?.length ? `Top ${leaderboard.rows.length}` : "Top 5"}
         </span>} />
 
       <PffCard className="mt-8 overflow-hidden border border-neon-500/15">
@@ -1123,7 +1123,7 @@ function LeaderboardPanel({ leaderboard }) {
           <div className="text-xs text-white/55">{leaderboard.loading ? "Loading…" : leaderboard.error ? "Offline" : "Live"}</div>
         </div>
 
-        <div className="divide-y divide-neon-500/10">
+        <div className="divide-y divide-neon-500/10 max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-neon-500/20">
           {(leaderboard.rows || []).length ? (
             leaderboard.rows.map((r, idx) => {
               const tier = getTier(Number(r.points || 0));
