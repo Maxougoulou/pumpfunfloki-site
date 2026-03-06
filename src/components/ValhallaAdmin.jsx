@@ -368,39 +368,6 @@ function BurnModal({ prefillAmount = "", prefillReason = "", onClose, onSuccess 
   );
 }
 
-// ── Post Leaderboard card ─────────────────────────────────────────
-function PostLeaderboardCard() {
-  const [status, setStatus] = useState(null); // null | "loading" | "ok" | "error"
-
-  async function handlePost() {
-    setStatus("loading");
-    try {
-      const r = await fetch("/api/post-leaderboard", { method: "GET" });
-      const j = await r.json();
-      setStatus(j.ok ? "ok" : "error");
-    } catch {
-      setStatus("error");
-    }
-    setTimeout(() => setStatus(null), 4000);
-  }
-
-  return (
-    <Card>
-      <div className="text-white font-extrabold">Post Leaderboard to Telegram</div>
-      <div className="mt-1 text-xs text-white/55">
-        Sends the current top 10 leaderboard to the Telegram group immediately.
-      </div>
-      <div className="mt-4 flex items-center gap-3">
-        <Btn tone="outline" onClick={handlePost} disabled={status === "loading"}>
-          {status === "loading" ? "Posting…" : "📊 Post Leaderboard"}
-        </Btn>
-        {status === "ok" && <span className="text-xs text-neon-400">✓ Posted to Telegram</span>}
-        {status === "error" && <span className="text-xs text-red-400">✗ Error — check logs</span>}
-      </div>
-    </Card>
-  );
-}
-
 // ── Actions tab — Milestones + Burn ───────────────────────────────
 function ActionsTab() {
   const [milestones, setMilestones] = useState([]);
@@ -535,9 +502,6 @@ function ActionsTab() {
           </div>
         )}
       </Card>
-
-      {/* Post Leaderboard to Telegram */}
-      <PostLeaderboardCard />
 
       {/* Manual burn — always available */}
       <Card>
@@ -2437,8 +2401,38 @@ function TelegramTab() {
     setTimeout(() => setStatus(null), 3000);
   }
 
+  const [lbStatus, setLbStatus] = useState(null);
+  async function postLeaderboard() {
+    setLbStatus("loading");
+    try {
+      const r = await fetch("/api/post-leaderboard");
+      const j = await r.json();
+      setLbStatus(j.ok ? "ok" : "error");
+    } catch { setLbStatus("error"); }
+    setTimeout(() => setLbStatus(null), 4000);
+  }
+
   return (
     <div className="mt-6 grid gap-5">
+      {/* Post Leaderboard */}
+      <div className="glass rounded-2xl border border-neon-500/15 p-6 flex items-center justify-between gap-4">
+        <div>
+          <div className="font-extrabold text-white">📊 Post Leaderboard</div>
+          <div className="text-xs text-white/40 mt-0.5">Sends the current top 10 to the Telegram group immediately.</div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {lbStatus === "ok" && <span className="text-xs text-neon-400">✓ Posted!</span>}
+          {lbStatus === "error" && <span className="text-xs text-red-400">✗ Error</span>}
+          <button
+            onClick={postLeaderboard}
+            disabled={lbStatus === "loading"}
+            className="rounded-xl bg-neon-500 text-black px-4 py-2 text-sm font-extrabold shadow-neon hover:bg-neon-400 transition disabled:opacity-40"
+          >
+            {lbStatus === "loading" ? "Posting…" : "Post Now"}
+          </button>
+        </div>
+      </div>
+
       <div className="glass rounded-2xl border border-neon-500/15 p-6 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="text-neon-400 text-lg">📣</span>
