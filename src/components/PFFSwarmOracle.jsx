@@ -203,7 +203,7 @@ function usePublicLeaderboard(refreshMs = 45000) {
     async function run() {
       try {
         setState((s) => ({ ...s, loading: true, error: null }));
-        const { data, error } = await supabase.from("leaderboard").select("pseudo, points, last_update").order("points", { ascending: false }).limit(5);
+        const { data, error } = await supabase.from("leaderboard").select("pseudo, points, last_update").order("points", { ascending: false });
         if (error) throw error;
         if (!cancelled) setState({ loading: false, error: null, rows: data || [], updatedAt: Date.now() });
       } catch (e) {
