@@ -188,7 +188,7 @@ export default async function handler(req, res) {
           }
 
           if (rewardTx) {
-            await db.from("submissions").update({ airdrop_tx: rewardTx, airdrop_amount: rewardAmount }).eq("id", id);
+            await db.from("submissions").update({ airdrop_tx: rewardTx, airdrop_amount: rewardAmount, airdrop_token_type: rewardToken }).eq("id", id);
           }
         } catch (rewardErr) {
           console.error("[auto-reward]", rewardErr?.message);
