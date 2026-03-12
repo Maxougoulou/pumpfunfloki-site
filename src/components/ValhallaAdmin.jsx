@@ -1226,7 +1226,9 @@ export default function ValhallaAdmin() {
                               <span className="text-xs text-green-300/80">airdropped</span>
                               {s.airdrop_amount && (
                                 <span className="text-xs text-white/40">
-                                  {Number(s.airdrop_amount).toLocaleString()} $PFF
+                                  {s.airdrop_token_type === "sol"
+                                    ? `${Number(s.airdrop_amount)} SOL`
+                                    : `${Number(s.airdrop_amount).toLocaleString()} $PFF`}
                                 </span>
                               )}
                               <a
@@ -2116,7 +2118,9 @@ export default function ValhallaAdmin() {
                           {quests.find(q => q.id === r.quest_id)?.title || r.quest_id}
                         </td>
                         <td className="px-3 py-2.5 text-right text-neon-300 font-bold whitespace-nowrap">
-                          {Number(r.airdrop_amount).toLocaleString()} $PFF
+                          {r.airdrop_token_type === "sol"
+                            ? `${Number(r.airdrop_amount)} SOL`
+                            : `${Number(r.airdrop_amount).toLocaleString()} $PFF`}
                         </td>
                         <td className="px-3 py-2.5 text-center">
                           <a

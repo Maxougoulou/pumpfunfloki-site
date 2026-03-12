@@ -137,7 +137,7 @@ export default async function handler(req, res) {
         const db = supabaseAdmin();
         for (const meta of chunkMeta) {
           if (meta.submission_id) {
-            await db.from("submissions").update({ airdrop_tx: sig, airdrop_amount: amount }).eq("id", meta.submission_id);
+            await db.from("submissions").update({ airdrop_tx: sig, airdrop_amount: amount, airdrop_token_type: "sol" }).eq("id", meta.submission_id);
           }
         }
         results.push({ tx_signature: sig, solscan: `https://solscan.io/tx/${sig}`, wallets: chunkMeta.map(m => m.wallet_address), count: chunkMeta.length });
@@ -176,7 +176,7 @@ export default async function handler(req, res) {
         const db = supabaseAdmin();
         for (const meta of chunkMeta) {
           if (meta.submission_id) {
-            await db.from("submissions").update({ airdrop_tx: sig, airdrop_amount: amount }).eq("id", meta.submission_id);
+            await db.from("submissions").update({ airdrop_tx: sig, airdrop_amount: amount, airdrop_token_type: "pff" }).eq("id", meta.submission_id);
           }
         }
         results.push({ tx_signature: sig, solscan: `https://solscan.io/tx/${sig}`, wallets: chunkMeta.map(m => m.wallet_address), count: chunkMeta.length });

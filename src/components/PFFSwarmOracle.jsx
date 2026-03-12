@@ -812,7 +812,7 @@ function VotingSection({ submissions = [], loading, quests = [] }) {
       {loading ? (
         <div className="text-white/50 text-sm">Loading submissions…</div>
       ) : (
-        <div className="mt-6 max-h-[540px] overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-neon-500/20">
+        <div className="mt-6 max-h-[900px] overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-neon-500/20">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {submissions.map((sub) => {
             const voteCount = localVotes[sub.id] ?? (sub.vote_count || 0);

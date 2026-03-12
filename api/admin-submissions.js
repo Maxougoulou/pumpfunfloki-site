@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     if (req.query?.view === "rewards") {
       const { data, error } = await db
         .from("submissions")
-        .select("id, handle, quest_id, airdrop_tx, airdrop_amount, created_at, wallet_address")
+        .select("id, handle, quest_id, airdrop_tx, airdrop_amount, airdrop_token_type, created_at, wallet_address")
         .not("airdrop_tx", "is", null)
         .order("created_at", { ascending: false })
         .limit(500);
