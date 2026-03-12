@@ -106,6 +106,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
       vote_threshold,
       vote_bonus_amount,
       vote_bonus_token,
+      max_submissions,
     } = req.body || {};
 
     if (!id || !title) return res.status(400).json({ error: "missing-fields" });
@@ -131,6 +132,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
           vote_threshold: Number(vote_threshold) || 0,
           vote_bonus_amount: Number(vote_bonus_amount) || 0,
           vote_bonus_token: vote_bonus_token === "sol" ? "sol" : "pff",
+          max_submissions: max_submissions !== undefined ? Number(max_submissions) : 3,
         },
       ])
       .select()
@@ -192,6 +194,7 @@ Make them varied: at least 1 art quest, 1 raid quest, 1 lore quest. Mix easy/med
     if (req.body?.vote_threshold !== undefined) patch.vote_threshold = Number(req.body.vote_threshold) || 0;
     if (req.body?.vote_bonus_amount !== undefined) patch.vote_bonus_amount = Number(req.body.vote_bonus_amount) || 0;
     if (req.body?.vote_bonus_token !== undefined) patch.vote_bonus_token = req.body.vote_bonus_token === "sol" ? "sol" : "pff";
+    if (req.body?.max_submissions !== undefined) patch.max_submissions = Number(req.body.max_submissions);
 
     const { data, error } = await db
       .from("quests")

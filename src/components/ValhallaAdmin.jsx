@@ -678,6 +678,7 @@ export default function ValhallaAdmin() {
     vote_threshold: "0",
     vote_bonus_amount: "0",
     vote_bonus_token: "pff",
+    max_submissions: "3",
   });
   const [questErr, setQuestErr] = useState("");
   const [questSuccess, setQuestSuccess] = useState("");
@@ -922,6 +923,7 @@ export default function ValhallaAdmin() {
       reward: "", proof_type: "text", time_window: "", status: "LIVE", points: 0, expires_at: "", milestone_id: "",
       fixed_reward_amount: "0", fixed_reward_token: "pff",
       vote_threshold: "0", vote_bonus_amount: "0", vote_bonus_token: "pff",
+      max_submissions: "3",
     });
     setQuestSuccess(`Quest ${autoId} created ✓`);
     setTimeout(() => setQuestSuccess(""), 5000);
@@ -958,6 +960,7 @@ export default function ValhallaAdmin() {
       vote_threshold: String(q.vote_threshold ?? 0),
       vote_bonus_amount: String(q.vote_bonus_amount ?? 0),
       vote_bonus_token: q.vote_bonus_token || "pff",
+      max_submissions: String(q.max_submissions ?? 3),
     });
   }
 
@@ -1544,6 +1547,17 @@ export default function ValhallaAdmin() {
                         className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
                       />
                     </div>
+                    <div>
+                      <div className="text-xs text-white/60">Max submissions per user <span className="text-white/30">(0 = unlimited)</span></div>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="3"
+                        value={questForm.max_submissions}
+                        onChange={(e) => setQuestForm((v) => ({ ...v, max_submissions: e.target.value }))}
+                        className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -1853,6 +1867,10 @@ export default function ValhallaAdmin() {
                                 <option value="pff">PFF</option>
                                 <option value="sol">SOL</option>
                               </select>
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/50 mb-1">Max submissions/user <span className="text-white/30">(0=∞)</span></div>
+                              <input type="number" min="0" value={editForm.max_submissions ?? "3"} onChange={e => setEditForm(f => ({ ...f, max_submissions: e.target.value }))} className={iCls} />
                             </div>
                           </div>
 

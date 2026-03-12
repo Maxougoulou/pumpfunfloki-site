@@ -124,15 +124,25 @@ export default async function handler(req, res) {
 
     const db = supabaseAdmin();
 
-    // Max 3 submissions per (quest_id, handle)
-    const { count: existingCount } = await db
-      .from("submissions")
-      .select("id", { count: "exact", head: true })
-      .eq("quest_id", String(quest_id))
-      .eq("handle", String(handle).slice(0, 80));
+    // Fetch quest to get max_submissions limit
+    const { data: quest } = await db
+      .from("quests")
+      .select("max_submissions")
+      .eq("id", String(quest_id))
+      .maybeSingle();
 
-    if ((existingCount ?? 0) >= 3) {
-      return res.status(409).json({ error: "max-submissions", message: "Max 3 submissions per quest reached." });
+    const maxSubs = Number(quest?.max_submissions ?? 3);
+
+    if (maxSubs > 0) {
+      const { count: existingCount } = await db
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("quest_id", String(quest_id))
+        .eq("handle", String(handle).slice(0, 80));
+
+      if ((existingCount ?? 0) >= maxSubs) {
+        return res.status(409).json({ error: "max-submissions", message: `Max ${maxSubs} submission${maxSubs > 1 ? "s" : ""} per quest reached.` });
+      }
     }
 
     const { data, error } = await db
