@@ -126,12 +126,16 @@ export default async function handler(req, res) {
 
     const db = supabaseAdmin();
 
-    // Fetch quest to get max_submissions limit
+    // Fetch quest to get status + max_submissions limit
     const { data: quest } = await db
       .from("quests")
-      .select("max_submissions")
+      .select("max_submissions, status")
       .eq("id", String(quest_id))
       .maybeSingle();
+
+    if (!quest || quest.status === "HIDDEN") {
+      return res.status(403).json({ error: "quest-unavailable", message: "This quest is no longer accepting submissions." });
+    }
 
     const maxSubs = Number(quest?.max_submissions ?? 3);
 
