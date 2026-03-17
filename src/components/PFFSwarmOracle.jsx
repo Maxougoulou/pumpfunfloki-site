@@ -609,6 +609,7 @@ export default function PFFSwarmOracleHub({
   const questsFromDb = useMemo(() => {
     const now = Date.now();
     return (publicQuests.rows || [])
+      .filter((q) => q.status !== "HIDDEN")
       .filter((q) => !q.expires_at || new Date(q.expires_at).getTime() > now)
       .map((q) => ({
       id: q.id,
