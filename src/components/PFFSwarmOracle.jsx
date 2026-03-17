@@ -1730,7 +1730,7 @@ function QuestBoard({ quests, milestones = [], backendEnabled }) {
                     <div className="flex items-center gap-1.5">
                       {submittedQuestCounts.has(q.id) && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-neon-500/40 bg-neon-500/10 text-neon-300">
-                          ✓ {submittedQuestCounts.get(q.id)}/3
+                          ✓ {submittedQuestCounts.get(q.id)}{q.max_submissions_per_user > 0 ? `/${q.max_submissions_per_user}` : ""}
                         </span>
                       )}
                       <button
