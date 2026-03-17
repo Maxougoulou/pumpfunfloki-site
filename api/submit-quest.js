@@ -122,6 +122,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "missing-fields" });
     }
 
+    const normalizedHandle = String(handle).toLowerCase().trim().slice(0, 80);
+
     const db = supabaseAdmin();
 
     // Fetch quest to get max_submissions limit
@@ -138,7 +140,7 @@ export default async function handler(req, res) {
         .from("submissions")
         .select("id", { count: "exact", head: true })
         .eq("quest_id", String(quest_id))
-        .eq("handle", String(handle).slice(0, 80));
+        .eq("handle", normalizedHandle);
 
       if ((existingCount ?? 0) >= maxSubs) {
         return res.status(409).json({ error: "max-submissions", message: `Max ${maxSubs} submission${maxSubs > 1 ? "s" : ""} per quest reached.` });
@@ -153,7 +155,7 @@ export default async function handler(req, res) {
           quest_title: quest_title ? String(quest_title).slice(0, 140) : null,
           type: type ? String(type).slice(0, 40) : null,
           difficulty: difficulty ? String(difficulty).slice(0, 40) : null,
-          handle: String(handle).slice(0, 80),
+          handle: normalizedHandle,
           proof: String(proof).slice(0, 2000),
           note: note ? String(note).slice(0, 300) : null,
           wallet_address: wallet_address ? String(wallet_address).slice(0, 44) : null,
