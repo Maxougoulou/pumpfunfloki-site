@@ -1851,6 +1851,75 @@ function Select({ label, value, onChange, options }) {
   );
 }
 
+function ImageUploadZone({ onChange, disabled }) {
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const fileRef = useRef(null);
+
+  async function uploadFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data, error } = await supabase.storage.from("proof-images").upload(path, file, { upsert: false });
+    if (error) { setUploading(false); return; }
+    const { data: pub } = supabase.storage.from("proof-images").getPublicUrl(data.path);
+    setPreview(pub.publicUrl);
+    onChange(pub.publicUrl);
+    setUploading(false);
+  }
+
+  function onPaste(e) {
+    const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith("image/"));
+    if (item) uploadFile(item.getAsFile());
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadFile(file);
+  }
+
+  return (
+    <div>
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+        onPaste={onPaste}
+        tabIndex={0}
+        className={`mt-2 rounded-xl border-2 border-dashed transition cursor-pointer flex flex-col items-center justify-center gap-2 py-5 px-3 text-center outline-none focus:border-neon-500/60
+          ${dragOver ? "border-neon-500/70 bg-neon-500/10" : "border-neon-500/20 bg-black/20"}
+          ${disabled ? "opacity-50 pointer-events-none" : "hover:border-neon-500/40"}`}
+        onClick={() => fileRef.current?.click()}
+      >
+        {uploading ? (
+          <span className="text-sm text-neon-400">Uploading…</span>
+        ) : preview ? (
+          <img src={preview} alt="proof" className="max-h-40 rounded-lg object-contain" />
+        ) : (
+          <>
+            <span className="text-2xl">🖼️</span>
+            <span className="text-sm text-white/60">Drop image here, click to select, or <kbd className="bg-white/10 rounded px-1 text-xs">Ctrl+V</kbd> to paste</span>
+          </>
+        )}
+      </div>
+      {preview && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setPreview(null); onChange(""); }}
+          className="mt-1 text-[11px] text-white/30 hover:text-red-400 transition"
+        >
+          ✕ Remove image
+        </button>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadFile(e.target.files?.[0])} />
+    </div>
+  );
+}
+
 function SubmitProofModal({ quest, onClose, onSubmit }) {
   const [handle, setHandle] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
@@ -1861,14 +1930,15 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
   const [errMsg, setErrMsg] = useState("");
 
   const isBoth = quest.proofType === "link+image";
+  const isImageOnly = quest.proofType === "image";
 
   const placeholder =
-    quest.proofType === "image" ? "Paste an image link (Imgur, Twitter, etc.)" :
     isBoth ? "Paste the link to your post/tweet" :
     quest.proofType === "link" ? "Paste the link(s) to your post/thread" :
     "Paste your text proof here";
 
-  const canSubmit = handle.trim().length > 0 && proof.trim().length > 0 && !submitting &&
+  const canSubmit = handle.trim().length > 0 && !submitting &&
+    (isImageOnly ? imageProof.trim().length > 0 : proof.trim().length > 0) &&
     (!isBoth || imageProof.trim().length > 0);
 
   async function handleSubmit() {
@@ -1878,6 +1948,8 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
 
     const finalProof = isBoth
       ? `Link: ${proof.trim()}\nImage: ${imageProof.trim()}`
+      : isImageOnly
+      ? imageProof.trim()
       : proof.trim();
 
     try {
@@ -1899,7 +1971,7 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70" onClick={() => !submitting && onClose?.()} />
 
-      <div className="relative w-full max-w-lg glass rounded-2xl border border-neon-500/20 shadow-[0_0_90px_rgba(0,232,90,.22)]">
+      <div className="relative w-full max-w-lg glass rounded-2xl border border-neon-500/20 shadow-[0_0_90px_rgba(0,232,90,.22)] max-h-[90vh] overflow-y-auto">
         <div className="p-5 border-b border-neon-500/10">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -1955,29 +2027,25 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
             <div className="mt-1 text-[11px] text-white/45">Used to receive $PFF rewards if your proof is approved.</div>
           </div>
 
-          <div>
-            <div className="text-xs text-white/60">{isBoth ? "Post link" : "Proof"}</div>
-            <textarea
-              value={proof}
-              onChange={(e) => setProof(e.target.value)}
-              rows={4}
-              className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-              placeholder={placeholder}
-              disabled={submitting}
-            />
-            {!isBoth && <div className="mt-1 text-[11px] text-white/45">Tip: put a direct link to your tweet / thread or a short text proof.</div>}
-          </div>
-
-          {isBoth && (
+          {!isImageOnly && (
             <div>
-              <div className="text-xs text-white/60">Image proof <span className="text-white/40">(Imgur, Twitter image link…)</span></div>
-              <input
-                value={imageProof}
-                onChange={(e) => setImageProof(e.target.value)}
+              <div className="text-xs text-white/60">{isBoth ? "Post link" : "Proof"}</div>
+              <textarea
+                value={proof}
+                onChange={(e) => setProof(e.target.value)}
+                rows={4}
                 className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
-                placeholder="https://i.imgur.com/..."
+                placeholder={placeholder}
                 disabled={submitting}
               />
+              {!isBoth && <div className="mt-1 text-[11px] text-white/45">Tip: put a direct link to your tweet / thread or a short text proof.</div>}
+            </div>
+          )}
+
+          {(isBoth || isImageOnly) && (
+            <div>
+              <div className="text-xs text-white/60">Image proof</div>
+              <ImageUploadZone value={imageProof} onChange={setImageProof} disabled={submitting} />
             </div>
           )}
 
