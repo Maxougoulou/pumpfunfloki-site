@@ -1855,24 +1855,33 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
   const [handle, setHandle] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [proof, setProof] = useState("");
+  const [imageProof, setImageProof] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
+  const isBoth = quest.proofType === "link+image";
+
   const placeholder =
-    quest.proofType === "image" ? "Paste an image link (upload later)" :
-    quest.proofType === "link" ? "Paste the link(s) to your post/thread)" :
+    quest.proofType === "image" ? "Paste an image link (Imgur, Twitter, etc.)" :
+    isBoth ? "Paste the link to your post/tweet" :
+    quest.proofType === "link" ? "Paste the link(s) to your post/thread" :
     "Paste your text proof here";
 
-  const canSubmit = handle.trim().length > 0 && proof.trim().length > 0 && !submitting;
+  const canSubmit = handle.trim().length > 0 && proof.trim().length > 0 && !submitting &&
+    (!isBoth || imageProof.trim().length > 0);
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setErrMsg("");
     setSubmitting(true);
 
+    const finalProof = isBoth
+      ? `Link: ${proof.trim()}\nImage: ${imageProof.trim()}`
+      : proof.trim();
+
     try {
-      await onSubmit({ handle: handle.trim(), proof: proof.trim(), note: note.trim(), wallet_address: walletAddress.trim() });
+      await onSubmit({ handle: handle.trim(), proof: finalProof, note: note.trim(), wallet_address: walletAddress.trim() });
     } catch (e) {
       const msg = e?.message === "max-submissions"
         ? "⚠️ Max 3 submissions per quest reached."
@@ -1947,7 +1956,7 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
           </div>
 
           <div>
-            <div className="text-xs text-white/60">Proof</div>
+            <div className="text-xs text-white/60">{isBoth ? "Post link" : "Proof"}</div>
             <textarea
               value={proof}
               onChange={(e) => setProof(e.target.value)}
@@ -1956,8 +1965,21 @@ function SubmitProofModal({ quest, onClose, onSubmit }) {
               placeholder={placeholder}
               disabled={submitting}
             />
-            <div className="mt-1 text-[11px] text-white/45">Tip: put a direct link to your tweet / thread or a short text proof.</div>
+            {!isBoth && <div className="mt-1 text-[11px] text-white/45">Tip: put a direct link to your tweet / thread or a short text proof.</div>}
           </div>
+
+          {isBoth && (
+            <div>
+              <div className="text-xs text-white/60">Image proof <span className="text-white/40">(Imgur, Twitter image link…)</span></div>
+              <input
+                value={imageProof}
+                onChange={(e) => setImageProof(e.target.value)}
+                className="mt-2 w-full rounded-xl border border-neon-500/15 bg-black/20 px-3 py-2 text-sm text-white/90 outline-none focus:border-neon-500/40"
+                placeholder="https://i.imgur.com/..."
+                disabled={submitting}
+              />
+            </div>
+          )}
 
           <div>
             <div className="text-xs text-white/60">Note (optional)</div>

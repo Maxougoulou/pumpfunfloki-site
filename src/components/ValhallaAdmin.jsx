@@ -1527,6 +1527,7 @@ export default function ValhallaAdmin() {
                         <option className="bg-black" value="text">text</option>
                         <option className="bg-black" value="link">link</option>
                         <option className="bg-black" value="image">image</option>
+                        <option className="bg-black" value="link+image">link + image</option>
                       </select>
                     </div>
                     <div>
@@ -1819,7 +1820,7 @@ export default function ValhallaAdmin() {
                             <div>
                               <div className="text-xs text-white/50 mb-1">Proof type</div>
                               <select value={editForm.proof_type} onChange={e => setEditForm(f => ({ ...f, proof_type: e.target.value }))} className={sCls}>
-                                {["text","link","image"].map(v => <option key={v} value={v}>{v}</option>)}
+                                {["text","link","image","link+image"].map(v => <option key={v} value={v}>{v}</option>)}
                               </select>
                             </div>
                             <div>
