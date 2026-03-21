@@ -553,6 +553,9 @@ export default function ValhallaAdmin() {
   const [subs, setSubs] = useState([]);
   const [subsLoading, setSubsLoading] = useState(false);
   const [selectedSubs, setSelectedSubs] = useState(new Set());
+  const [subPage, setSubPage] = useState(0);
+  const [subTotal, setSubTotal] = useState(null);
+  const SUB_LIMIT = 50;
   const [airdropModal, setAirdropModal] = useState(false);
 
   // ── Airdrop leaderboard ────────────────────────────────────────
@@ -732,15 +735,16 @@ export default function ValhallaAdmin() {
   }
 
   // ── Submissions ────────────────────────────────────────────────
-  async function loadSubmissions() {
+  async function loadSubmissions(page = subPage) {
     setSubsLoading(true);
     setSelectedSubs(new Set());
     const r = await fetch(
-      `/api/admin-submissions?status=${encodeURIComponent(subStatus)}`,
+      `/api/admin-submissions?status=${encodeURIComponent(subStatus)}&page=${page}&limit=${SUB_LIMIT}`,
       { credentials: "include" }
     );
     const j = await r.json();
     setSubs(j?.data || []);
+    setSubTotal(j?.total ?? null);
     setSubsLoading(false);
   }
 
@@ -982,7 +986,7 @@ export default function ValhallaAdmin() {
 
   useEffect(() => {
     if (!me.admin) return;
-    if (tab === "submissions") { loadSubmissions(); loadQuests(); }
+    if (tab === "submissions") { setSubPage(0); loadSubmissions(0); loadQuests(); }
     if (tab === "logs") loadLogs();
     if (tab === "quests") { loadQuests(); loadMilestones(); }
     if (tab === "milestones") loadMilestones();
@@ -1287,6 +1291,31 @@ export default function ValhallaAdmin() {
                     ) : null}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {subTotal !== null && subTotal > SUB_LIMIT && (
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <span className="text-xs text-white/40">
+                  {subPage * SUB_LIMIT + 1}–{Math.min((subPage + 1) * SUB_LIMIT, subTotal)} of {subTotal}
+                </span>
+                <div className="flex gap-2">
+                  <Btn
+                    tone="outline"
+                    disabled={subPage === 0}
+                    onClick={() => { const p = subPage - 1; setSubPage(p); loadSubmissions(p); }}
+                  >
+                    ← Prev
+                  </Btn>
+                  <Btn
+                    tone="outline"
+                    disabled={(subPage + 1) * SUB_LIMIT >= subTotal}
+                    onClick={() => { const p = subPage + 1; setSubPage(p); loadSubmissions(p); }}
+                  >
+                    Next →
+                  </Btn>
+                </div>
               </div>
             )}
           </Card>

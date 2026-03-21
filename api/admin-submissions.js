@@ -53,15 +53,20 @@ export default async function handler(req, res) {
     }
 
     const status = (req.query?.status || "pending").toString();
-    const { data, error } = await db
+    const page = Math.max(0, parseInt(req.query?.page || "0", 10));
+    const limit = Math.min(100, Math.max(10, parseInt(req.query?.limit || "50", 10)));
+    const from = page * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await db
       .from("submissions")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("status", status)
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range(from, to);
 
     if (error) return res.status(500).json({ error: "db-error", details: error });
-    return res.status(200).json({ data });
+    return res.status(200).json({ data, total: count, page, limit });
   }
 
   if (req.method === "PATCH") {
