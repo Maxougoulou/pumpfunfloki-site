@@ -58,21 +58,15 @@ export default async function handler(req, res) {
     const from = page * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await db
-      .from("submissions")
-      .select("*, quests(title)", { count: "exact" })
-      .eq("status", status)
-      .order("created_at", { ascending: false })
-      .range(from, to);
+    const [{ data, error, count }, { data: questRows }] = await Promise.all([
+      db.from("submissions").select("*", { count: "exact" }).eq("status", status).order("created_at", { ascending: false }).range(from, to),
+      db.from("quests").select("id, title"),
+    ]);
 
     if (error) return res.status(500).json({ error: "db-error", details: error });
 
-    // Flatten quest title into each submission
-    const enriched = (data || []).map(s => ({
-      ...s,
-      quest_title: s.quests?.title || null,
-      quests: undefined,
-    }));
+    const questMap = Object.fromEntries((questRows || []).map(q => [q.id, q.title]));
+    const enriched = (data || []).map(s => ({ ...s, quest_title: questMap[s.quest_id] || null }));
 
     return res.status(200).json({ data: enriched, total: count, page, limit });
   }
