@@ -1154,7 +1154,7 @@ export default function ValhallaAdmin() {
                   <option className="bg-black" value="approved">approved</option>
                   <option className="bg-black" value="rejected">rejected</option>
                 </select>
-                <Btn tone="outline" onClick={loadSubmissions}>Refresh</Btn>
+                <Btn tone="outline" onClick={() => loadSubmissions(subPage)}>Refresh</Btn>
 
                 {/* Airdrop button — only in approved view */}
                 {subStatus === "approved" && selectedSubs.size > 0 && (
@@ -1213,7 +1213,7 @@ export default function ValhallaAdmin() {
                           <div className="text-white font-extrabold">
                             {s.handle}{" "}
                             <span className="text-white/50 text-xs">
-                              ({quests.find(q => q.id === s.quest_id)?.title || s.quest_id})
+                              ({quests.find(q => q.quest_id === s.quest_id)?.title || s.quest_id})
                             </span>
                           </div>
                           <div className="text-white/60 text-xs">
