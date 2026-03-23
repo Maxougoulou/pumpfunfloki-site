@@ -60,13 +60,21 @@ export default async function handler(req, res) {
 
     const { data, error, count } = await db
       .from("submissions")
-      .select("*", { count: "exact" })
+      .select("*, quests(title)", { count: "exact" })
       .eq("status", status)
       .order("created_at", { ascending: false })
       .range(from, to);
 
     if (error) return res.status(500).json({ error: "db-error", details: error });
-    return res.status(200).json({ data, total: count, page, limit });
+
+    // Flatten quest title into each submission
+    const enriched = (data || []).map(s => ({
+      ...s,
+      quest_title: s.quests?.title || null,
+      quests: undefined,
+    }));
+
+    return res.status(200).json({ data: enriched, total: count, page, limit });
   }
 
   if (req.method === "PATCH") {

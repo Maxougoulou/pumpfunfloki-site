@@ -1213,7 +1213,7 @@ export default function ValhallaAdmin() {
                           <div className="text-white font-extrabold">
                             {s.handle}{" "}
                             <span className="text-white/50 text-xs">
-                              ({quests.find(q => q.id === s.quest_id)?.title || s.quest_id})
+                              ({s.quest_title || s.quest_id})
                             </span>
                           </div>
                           <div className="text-white/60 text-xs">
