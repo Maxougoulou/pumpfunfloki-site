@@ -345,6 +345,14 @@ function usePublicQuests(refreshMs = 45000) {
   return state;
 }
 
+function useHallOfFame() {
+  const [legends, setLegends] = useState([]);
+  useEffect(() => {
+    fetch("/api/hall-of-fame").then(r => r.json()).then(j => setLegends(j.data || [])).catch(() => {});
+  }, []);
+  return legends;
+}
+
 function useHordeStats(refreshMs = 60000) {
   const [stats, setStats] = useState({ vikings: null, quests: null, pts: null });
 
@@ -736,6 +744,8 @@ export default function PFFSwarmOracleHub({
 
         <VotingSection submissions={approved.rows} loading={approved.loading} quests={questsToShow} />
 
+        <HallOfFameSection />
+
         <div className="grid gap-5 md:grid-cols-2">
           <LeaderboardPanel leaderboard={leaderboard} />
           <HordeLookupSection />
@@ -1083,6 +1093,56 @@ function MilestonesCounter({ milestones, dexStatus, justHit = [] }) {
             </motion.div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/** ------------ HALL OF FAME ------------- */
+function HallOfFameSection() {
+  const legends = useHallOfFame();
+  if (!legends.length) return null;
+
+  return (
+    <div id="hall-of-fame" className="scroll-mt-24 mt-16">
+      <PffSectionTitle
+        kicker="Legends"
+        title="PFF Hall of Fame"
+        desc="The warriors who forged the Horde from the beginning."
+      />
+      <div className="mt-8 grid gap-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+        {legends.map((l) => (
+          <div key={l.id} className="flex flex-col items-center gap-3">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full border-2 border-neon-500/50 shadow-[0_0_20px_rgba(0,232,90,.3)] overflow-hidden bg-black/40">
+                {l.x_handle ? (
+                  <img
+                    src={`https://unavatar.io/twitter/${l.x_handle}`}
+                    alt={l.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display = "none"; }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl">⚔️</div>
+                )}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-yellow-400/20 border border-yellow-400/60 flex items-center justify-center text-xs">👑</div>
+            </div>
+            <div className="text-center">
+              <div className="text-white font-extrabold text-sm">{l.name}</div>
+              {l.x_handle && (
+                <a
+                  href={`https://x.com/${l.x_handle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-neon-400 hover:text-neon-300 hover:underline transition"
+                >
+                  @{l.x_handle}
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

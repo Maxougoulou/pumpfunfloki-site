@@ -1085,6 +1085,7 @@ export default function ValhallaAdmin() {
     ["airdrop", "💰 Airdrop"],
     ["milestones", "🏆 Milestones"],
     ["telegram", "📣 Telegram"],
+    ["hof", "👑 Hall of Fame"],
     ["oracle", "🔮 Oracle"],
   ];
 
@@ -2416,6 +2417,9 @@ export default function ValhallaAdmin() {
       {/* ── Telegram tab ────────────────────────────────────────── */}
       {tab === "telegram" && <TelegramTab />}
 
+      {/* ── Hall of Fame tab ─────────────────────────────────────── */}
+      {tab === "hof" && <HallOfFameTab />}
+
       {/* ── Oracle tab ───────────────────────────────────────────── */}
       {tab === "oracle" && <OracleTab />}
 
@@ -2545,6 +2549,125 @@ function TelegramTab() {
             Clear
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Hall of Fame tab ───────────────────────────────────────────────
+function HallOfFameTab() {
+  const [legends, setLegends] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ name: "", x_handle: "", display_order: "" });
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    const r = await fetch("/api/admin-hall-of-fame", { credentials: "include" });
+    const j = await r.json();
+    setLegends(j?.data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleAdd() {
+    if (!form.name.trim()) return;
+    setSaving(true);
+    await fetch("/api/admin-hall-of-fame", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(form),
+    });
+    setForm({ name: "", x_handle: "", display_order: "" });
+    await load();
+    setSaving(false);
+  }
+
+  async function handleSave(id) {
+    setSaving(true);
+    await fetch("/api/admin-hall-of-fame", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    setEditId(null);
+    await load();
+    setSaving(false);
+  }
+
+  async function handleDelete(id) {
+    if (!confirm("Remove this legend?")) return;
+    await fetch("/api/admin-hall-of-fame", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id }),
+    });
+    await load();
+  }
+
+  return (
+    <div className="mt-6 grid gap-5">
+      {/* Add new */}
+      <div className="glass rounded-2xl border border-neon-500/15 p-6 grid gap-4">
+        <div className="font-extrabold text-white">👑 Add Legend</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input value={form.name} onChange={e => setForm(v => ({ ...v, name: e.target.value }))} placeholder="Name" className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-neon-500/40" />
+          <input value={form.x_handle} onChange={e => setForm(v => ({ ...v, x_handle: e.target.value }))} placeholder="X handle (without @)" className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-neon-500/40" />
+          <input value={form.display_order} onChange={e => setForm(v => ({ ...v, display_order: e.target.value }))} placeholder="Order (1, 2, 3…)" type="number" className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-neon-500/40" />
+        </div>
+        <Btn tone="solid" onClick={handleAdd} disabled={saving || !form.name.trim()}>+ Add Legend</Btn>
+      </div>
+
+      {/* List */}
+      <div className="glass rounded-2xl border border-neon-500/15 overflow-hidden">
+        <div className="p-4 border-b border-neon-500/10 flex items-center justify-between">
+          <div className="font-extrabold text-white">Legends</div>
+          <Btn tone="outline" onClick={load}>Refresh</Btn>
+        </div>
+        {loading ? (
+          <div className="p-6 text-sm text-white/40">Loading…</div>
+        ) : legends.length === 0 ? (
+          <div className="p-6 text-sm text-white/40">No legends yet.</div>
+        ) : (
+          <div className="divide-y divide-neon-500/10">
+            {legends.map(l => (
+              <div key={l.id} className="p-4 flex items-center gap-4">
+                <img src={l.x_handle ? `https://unavatar.io/twitter/${l.x_handle}` : ""} alt="" className="w-10 h-10 rounded-full border border-neon-500/30 object-cover bg-black/40 shrink-0" onError={e => e.target.style.display="none"} />
+                {editId === l.id ? (
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input value={editForm.name ?? l.name} onChange={e => setEditForm(v => ({ ...v, name: e.target.value }))} className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-neon-500/40" />
+                    <input value={editForm.x_handle ?? l.x_handle ?? ""} onChange={e => setEditForm(v => ({ ...v, x_handle: e.target.value }))} placeholder="X handle" className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-neon-500/40" />
+                    <input value={editForm.display_order ?? l.display_order} onChange={e => setEditForm(v => ({ ...v, display_order: e.target.value }))} type="number" placeholder="Order" className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-neon-500/40" />
+                  </div>
+                ) : (
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold">{l.name}</div>
+                    <div className="text-xs text-neon-400">{l.x_handle ? `@${l.x_handle}` : <span className="text-white/30">no handle</span>}</div>
+                  </div>
+                )}
+                <div className="flex gap-2 shrink-0">
+                  {editId === l.id ? (
+                    <>
+                      <Btn tone="solid" onClick={() => handleSave(l.id)} disabled={saving}>Save</Btn>
+                      <Btn tone="outline" onClick={() => setEditId(null)}>Cancel</Btn>
+                    </>
+                  ) : (
+                    <>
+                      <Btn tone="outline" onClick={() => { setEditId(l.id); setEditForm({}); }}>Edit</Btn>
+                      <Btn tone="danger" onClick={() => handleDelete(l.id)}>✕</Btn>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
