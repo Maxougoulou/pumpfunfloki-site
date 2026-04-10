@@ -26,7 +26,12 @@ function HallOfFameSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16">
       <div className="text-center">
-        <SectionTitle kicker="Legends" title="PFF Hall of Fame" desc="The warriors who forged the Horde from the beginning." />
+        <div className="inline-flex items-center gap-2 mb-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-neon-400 shadow-neon" />
+          <span className="text-sm font-extrabold tracking-widest uppercase text-neon-400 drop-shadow-[0_0_14px_rgba(0,232,90,.45)]">Legends</span>
+        </div>
+        <h2 className="mt-2 text-3xl md:text-4xl font-extrabold tracking-tight text-white drop-shadow-[0_0_18px_rgba(0,232,90,.25)]">PFF Hall of Fame</h2>
+        <p className="mt-3 text-base text-white/90 drop-shadow-[0_0_10px_rgba(0,0,0,.6)]">The warriors who forged the Horde from the beginning.</p>
       </div>
       <div className="mt-12 flex flex-wrap justify-center gap-10">
         {legends.map(l => (
