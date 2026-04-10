@@ -40,9 +40,9 @@ function HallOfFameSection() {
               <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-yellow-400/20 border border-yellow-400/60 flex items-center justify-center text-sm">👑</div>
             </div>
             <div className="text-center">
-              <div className="text-white font-extrabold">{l.name}</div>
+              <div className="text-white font-extrabold drop-shadow-[0_0_8px_rgba(0,232,90,.3)]">{l.name}</div>
               {l.x_handle && (
-                <a href={`https://x.com/${l.x_handle}`} target="_blank" rel="noopener noreferrer" className="text-xs text-neon-400 hover:text-neon-300 hover:underline transition">
+                <a href={`https://x.com/${l.x_handle}`} target="_blank" rel="noopener noreferrer" className="text-xs text-neon-400 hover:text-neon-300 hover:underline transition drop-shadow-[0_0_6px_rgba(0,232,90,.4)]">
                   @{l.x_handle}
                 </a>
               )}
