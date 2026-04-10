@@ -744,8 +744,6 @@ export default function PFFSwarmOracleHub({
 
         <VotingSection submissions={approved.rows} loading={approved.loading} quests={questsToShow} />
 
-        <HallOfFameSection />
-
         <div className="grid gap-5 md:grid-cols-2">
           <LeaderboardPanel leaderboard={leaderboard} />
           <HordeLookupSection />

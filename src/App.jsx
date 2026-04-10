@@ -17,6 +17,47 @@ import ValhallaAdmin from "./components/ValhallaAdmin";
 
 const CONTRACT = "DPgo26tLZXdNfB24ahP2LTXsxSPxvxPq7takvavppump";
 
+function HallOfFameSection() {
+  const [legends, setLegends] = useState([]);
+  useEffect(() => {
+    fetch("/api/hall-of-fame").then(r => r.json()).then(j => setLegends(j.data || [])).catch(() => {});
+  }, []);
+  if (!legends.length) return null;
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-16">
+      <div className="text-center mb-10">
+        <div className="text-xs font-bold uppercase tracking-widest text-neon-400 mb-2">Legends</div>
+        <h2 className="text-4xl md:text-5xl font-extrabold text-white">PFF Hall of Fame</h2>
+        <p className="mt-3 text-white/50 text-sm">The warriors who forged the Horde from the beginning.</p>
+      </div>
+      <div className="flex flex-wrap justify-center gap-8">
+        {legends.map(l => (
+          <div key={l.id} className="flex flex-col items-center gap-3">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full border-2 border-neon-500/50 shadow-[0_0_24px_rgba(0,232,90,.3)] overflow-hidden bg-black/40">
+                {l.x_handle ? (
+                  <img src={`https://unavatar.io/twitter/${l.x_handle}`} alt={l.name} className="w-full h-full object-cover" onError={e => { e.target.style.display = "none"; }} />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl">⚔️</div>
+                )}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-yellow-400/20 border border-yellow-400/60 flex items-center justify-center text-sm">👑</div>
+            </div>
+            <div className="text-center">
+              <div className="text-white font-extrabold">{l.name}</div>
+              {l.x_handle && (
+                <a href={`https://x.com/${l.x_handle}`} target="_blank" rel="noopener noreferrer" className="text-xs text-neon-400 hover:text-neon-300 hover:underline transition">
+                  @{l.x_handle}
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // Links
 const BUY_LINK =
   "https://dexscreener.com/solana/eeb1xu5dp9iz573spxxsubjvpduxdr7knpbrrynfl91z";
@@ -1556,6 +1597,8 @@ function HomePage() {
 
 
       <CommunityGallery />
+
+      <HallOfFameSection />
 
       <HelmetGallery />
 
