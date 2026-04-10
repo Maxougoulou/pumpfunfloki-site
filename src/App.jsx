@@ -25,11 +25,7 @@ function HallOfFameSection() {
   if (!legends.length) return null;
   return (
     <section className="mx-auto max-w-6xl px-4 py-16">
-      <div className="text-center mb-10">
-        <div className="text-xs font-bold uppercase tracking-widest text-neon-400 mb-2">Legends</div>
-        <h2 className="text-4xl md:text-5xl font-extrabold text-white">PFF Hall of Fame</h2>
-        <p className="mt-3 text-white/50 text-sm">The warriors who forged the Horde from the beginning.</p>
-      </div>
+      <SectionTitle kicker="Legends" title="PFF Hall of Fame" desc="The warriors who forged the Horde from the beginning." />
       <div className="flex flex-wrap justify-center gap-8">
         {legends.map(l => (
           <div key={l.id} className="flex flex-col items-center gap-3">
