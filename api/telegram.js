@@ -21,7 +21,11 @@ function tier(pts) {
   return "🪓 Recruit";
 }
 
+// Kill switch — bot Telegram désactivé. Mettre à true pour réactiver.
+const BOT_ENABLED = false;
+
 export default async function handler(req, res) {
+  if (!BOT_ENABLED) return res.status(200).json({ ok: true, disabled: true });
   if (!TOKEN) return res.status(500).json({ error: "missing-token" });
 
   // ── Admin: broadcast announcement ─────────────────────────────────

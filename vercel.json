@@ -7,10 +7,6 @@
     {
       "path": "/api/cleanup-expired-quests",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/post-leaderboard",
-      "schedule": "0 9,21 * * *"
     }
   ]
 }
